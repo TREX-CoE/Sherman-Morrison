@@ -6,22 +6,12 @@
 using namespace std;
 
 uint getMaxIndex(double* arr, uint size);
-void showScalar(uint scalar, string name);
-void showScalar(int scalar, string name);
-void showScalar(double scalar, string name);
-void showVector(uint* vector, uint size, string name);
-void showVector(int* vector, uint size, string name);
-void showVector(double* vector, uint size, string name);
-void showMatrix(uint** matrix, uint sizeR, uint sizeC, string name);
-void showMatrix(int** matrix, uint sizeR, uint sizeC, string name);
-void showMatrix(double** matrix, uint sizeR, uint sizeC, string name);
-void showMatrixT(uint** matrix, uint sizeR, uint sizeC, string name);
-void showMatrixT(int** matrix, uint sizeR, uint sizeC, string name);
-void showMatrixT(double** matrix, uint sizeR, uint sizeC, string name);
-int** matMul(int** A, int** B, uint size);
-double** matMul(double** A, double** B, uint size);
-int** outProd(int* vec1, int* vec2, uint size);
-double** outProd(double* vec1, int* vec2, uint size);
+template<typename T>void showScalar(T scalar, string name);
+template<typename T>void showVector(T* vector, uint size, string name);
+template<typename T>void showMatrix(T** matrix, uint size, string name);
+template<typename T>void showMatrixT(T** matrix, uint size, string name);
+template<typename T>T** matMul(T** A, T** B, uint size);
+template<typename T1, typename T2>T1** outProd(T1* vec1, T2* vec2, uint size);
 
 int main() {
 
@@ -98,7 +88,7 @@ int main() {
         }
     }
 
-    showMatrix(A, M, M, "A");
+    showMatrix(A, M, "A");
     // showMatrix(A0, M, M, "A0");
     // showMatrix(Ar, M, M, "Ar");
     // showMatrix(A0inv, M, M, "A0inv");
@@ -110,7 +100,7 @@ int main() {
         }
         // showVector(ylk[0][k], M+1, "y0k");
     }
-    showMatrixT(ylk[0], M+1, M+1, "y0k");
+    showMatrixT(ylk[0], M+1, "y0k");
 
     // Calculate all the ylk from the y0k
     // showVector(p, M+1, "p");
@@ -141,8 +131,8 @@ int main() {
             // showVector(ylk[l][p[k]], M+1, "ylk");
         }
     }
-    showMatrixT(ylk[1], M+1, M+1, "y1k");
-    showMatrixT(ylk[2], M+1, M+1, "y2k");
+    showMatrixT(ylk[1], M+1, "y1k");
+    showMatrixT(ylk[2], M+1, "y2k");
     // EVERYTHING WORKS UPTO HERE
 
     // Construct A-inverse from A0-inverse and the ylk
@@ -161,7 +151,7 @@ int main() {
         }
         Ainv = matMul(Ap, Ainv, M);
     }
-    showMatrixT(Ainv, M, M, "Ainv");
+    showMatrixT(Ainv, M, "Ainv");
     
     // Deallocate all vectors and matrices 
     for (i = 0; i < M; i++) {
@@ -199,31 +189,13 @@ uint getMaxIndex(double* arr, uint size) {
     return maxi; 
 }
 
-void showScalar(uint scalar, string name) {
-    cout << name << " = " << scalar << endl << endl;
-}
-void showScalar(int scalar, string name) {
-    cout << name << " = " << scalar << endl << endl;
-}
-void showScalar(double scalar, string name) {
+template<typename T>
+void showScalar(T scalar, string name) {
     cout << name << " = " << scalar << endl << endl;
 }
 
-void showVector(uint* vector, uint size, string name) {
-    cout << name << " = " << endl;
-    for (uint i = 0; i < size; i++) {
-        cout << "[ " << vector[i] << " ]" << endl;
-    }
-    cout << endl;
-}
-void showVector(int* vector, uint size, string name) {
-    cout << name << " = " << endl;
-    for (uint i = 0; i < size; i++) {
-        cout << "[ " << vector[i] << " ]" << endl;
-    }
-    cout << endl;
-}
-void showVector(double* vector, uint size, string name) {
+template<typename T>
+void showVector(T* vector, uint size, string name) {
     cout << name << " = " << endl;
     for (uint i = 0; i < size; i++) {
         cout << "[ " << vector[i] << " ]" << endl;
@@ -231,92 +203,37 @@ void showVector(double* vector, uint size, string name) {
     cout << endl;
 }
 
-void showMatrix(uint** matrix, uint sizeR, uint sizeC, string name) {
+template<typename T>
+void showMatrix(T** matrix, uint size, string name) {
     cout << name << " = " << endl;
-    for (uint i = 0; i < sizeR; i++) {
-        cout << "[ ";
-        for (uint j = 0; j < sizeC; j++) {
-            cout << matrix[i][j] << " ";
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-void showMatrix(int** matrix, uint sizeR, uint sizeC, string name) {
-    cout << name << " = " << endl;
-    for (uint i = 0; i < sizeR; i++) {
-        cout << "[ ";
-        for (uint j = 0; j < sizeC; j++) {
-            cout << matrix[i][j] << " ";
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-
-void showMatrix(double** matrix, uint sizeR, uint sizeC, string name) {
-    cout << name << " = " << endl;
-    for (uint i = 0; i < sizeR; i++) {
-        cout << "[ ";
-        for (uint j = 0; j < sizeC; j++) {
-            cout << matrix[i][j] << " ";
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-void showMatrixT(uint** matrix, uint sizeR, uint sizeC, string name) {
-    cout << name << " = " << endl;
-    for (uint i = 0; i < sizeR; i++) {
-        cout << "[ ";
-        for (uint j = 0; j < sizeC; j++) {
-            cout << matrix[j][i] << " ";
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-void showMatrixT(int** matrix, uint sizeR, uint sizeC, string name) {
-    cout << name << " = " << endl;
-    for (uint i = 0; i < sizeR; i++) {
-        cout << "[ ";
-        for (uint j = 0; j < sizeC; j++) {
-            cout << matrix[j][i] << " ";
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-void showMatrixT(double** matrix, uint sizeR, uint sizeC, string name) {
-    cout << name << " = " << endl;
-    for (uint i = 0; i < sizeR; i++) {
-        cout << "[ ";
-        for (uint j = 0; j < sizeC; j++) {
-            cout << matrix[j][i] << " ";
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-
-int** matMul(int** A, int** B, uint size) {
-    int** C = new int*[size];
     for (uint i = 0; i < size; i++) {
-        C[i] = new int[size];
-    }
-    for (uint i = 0; i < size; i++) {
+        cout << "[ ";
         for (uint j = 0; j < size; j++) {
-            for (uint k = 0; k < size; k++) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
+            cout << matrix[i][j] << " ";
         }
+        cout << " ]" << endl;
     }
-    return C;
+    cout << endl;
 }
-double** matMul(double** A, double** B, uint size) {
-    double** C = new double*[size];
+
+template<typename T>
+void showMatrixT(T** matrix, uint size, string name) {
+    cout << name << " = " << endl;
     for (uint i = 0; i < size; i++) {
-        C[i] = new double[size];
+        cout << "[ ";
+        for (uint j = 0; j < size; j++) {
+            cout << matrix[j][i] << " ";
+        }
+        cout << " ]" << endl;
+    }
+    cout << endl;
+}
+
+template<typename T>
+T** matMul(T** A, T** B, uint size) {
+    T** C = new T*[size];
+    for (uint i = 0; i < size; i++) {
+        C[i] = new T[size];
     }
     for (uint i = 0; i < size; i++) {
         for (uint j = 0; j < size; j++) {
@@ -328,22 +245,11 @@ double** matMul(double** A, double** B, uint size) {
     return C;
 }
 
-int** outProd(int* vec1, int* vec2, uint size) {
-    int** C = new int*[size];
+template<typename T1, typename T2>
+T1** outProd(T1* vec1, T2* vec2, uint size) {
+    T1** C = new T1*[size];
     for (uint i = 0; i < size; i++) {
-        C[i] = new int[size];
-    }
-    for (uint i = 0; i < size; i++) {
-        for (uint j = 0; j < size; j++) {
-            C[i][j] = vec1[i+1] * vec2[j];
-        }
-    }
-    return C;
-}
-double** outProd(double* vec1, int* vec2, uint size) {
-    double** C = new double*[size];
-    for (uint i = 0; i < size; i++) {
-        C[i] = new double[size];
+        C[i] = new T1[size];
     }
     for (uint i = 0; i < size; i++) {
         for (uint j = 0; j < size; j++) {
