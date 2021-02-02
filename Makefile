@@ -5,12 +5,12 @@ CXXFLAGS=-O0 -debug full -traceback
 # ARCH=-xCORE-AVX2 
 
 DEPS = SM-MaponiA3.cpp
-OBJ = SM-MaponiA3.o 
+OBJ = SM-MaponiA3.o main.o
 
-%.o: %.c $(DEPS)
+%.o: %.cpp $(DEPS)
 	$(CXX) $(ARCH) -c -o $@ $< $(CFLAGS)
 
-SM-MaponiA3: $(OBJ)
+Sherman-Morrison: $(OBJ)
 	$(CXX) $(ARCH) -o $@ $^ $(CFLAGS)
 
 clean:

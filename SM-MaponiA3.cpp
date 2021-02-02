@@ -1,107 +1,5 @@
-// Algorithm 3 from P. Maponi,
-// p. 283, doi:10.1016/j.laa.2006.07.007
-
-#include <iostream>
-#include <string>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-using namespace std;
-
-uint getMaxIndex(double *arr, uint size);
-template<typename T>void showScalar(T scalar, string name);
-template<typename T>void showVector(T *vector, uint size, string name);
-template<typename T>void showMatrix(T **matrix, uint size, string name);
-template<typename T>void showMatrixT(T **matrix, uint size, string name);
-template<typename T>T **matMul(T **A, T **B, uint size);
-template<typename T1, typename T2>T1 **outProd(T1 *vec1, T2 *vec2, uint size);
-template<typename T>T matDet(T **A, int M);
-void Sherman_Morrison(int **Slater0, double **Slater_inv, uint *Dim, uint *N_updates, int **Updates, uint *Updates_index);
-
-int main() {
-
-    srand((unsigned) time(0));
-    uint randRange = 1; // to get random integers in range [-randRange, randRange]
-    uint M = 3; // Dimension of the Slater-matrix
-    uint i, j; // Indices for iterators
-
-    // Declare and allocate all vectors and matrices
-    uint *indices_of_updates = new uint[M];
-    int **A = new int*[M]; // The matrix to be inverted
-    int **A0 = new int*[M]; // A diagonal matrix with the digonal elements of A
-    int **Ar = new int*[M]; // The update matrix
-    double **A0inv = new double*[M]; // Inverse of A0
-    for (i = 0; i < M; i++) { 
-        A[i] = new int[M];
-        A0[i] = new int[M];
-        Ar[i] = new int[M];
-        A0inv[i] = new double[M];
-    }
-
-    // Initialize all matrices with zeros
-    for (i = 0; i < M; i++) {
-        for (j = 0; j < M; j++) {
-            A0[i][j] = 0;
-            Ar[i][j] = 0;
-            A0inv[i][j] = 0;
-        }
-    }
-
-    // Initialize A with M=3 and Eq. (17) from paper
-    A[0][0] = 1;    A[0][1] = 1;    A[0][2] = -1;
-    A[1][0] = 1;    A[1][1] = 1;    A[1][2] = 0;
-    A[2][0] = -1;   A[2][1] = 0;    A[2][2] = -1;
-
-    // // Fill A with random numbers from [-randRange,randRange] 
-    // // and check if A and A0 are invertable
-    // do {
-    //     for (i = 0; i < M; i++) {
-    //         for (j = 0; j < M; j++) {
-    //             A[i][j] = rand()%(2*randRange+1)-randRange;
-    //         }
-    //     }
-    //     for (i = 0; i < M; i++) {
-    //         A0[i][i] = A[i][i];
-    //     }
-    // } while (matDet(A, M) == 0 || matDet(A0, M) == 0);
- 
-    showMatrix(A, M, "A");
-
-    // Init Ar: the update matrix
-    for (i = 0; i < M; i++) {
-        for (j = 0; j < M; j++) {
-            Ar[i][j] = A[i][j] - A0[i][j];
-        }
-    }
-
-    // Define A0inv
-    for (i = 0; i < M; i++) {
-        A0inv[i][i] = 1.0/A[i][i];
-    }
-    showMatrix(A0inv, M, "A0inv");
-
-    // Populate indices_of_updates
-    for (i = 0; i < M; i++) {
-        indices_of_updates[i] = i;
-    }
-
-    uint *dim = new uint(M);
-    Sherman_Morrison(A0, A0inv, dim, dim, Ar, indices_of_updates);
-    
-    showMatrixT(A0inv, M, "A0inv");
-    
-    // Deallocate all vectors and matrices 
-    for (i = 0; i < M; i++) {
-        delete [] A[i];
-        delete [] A0[i];
-        delete [] A0inv[i];
-        delete [] Ar[i];
-    }
-
-    delete [] A, A0, A0inv, Ar;
-
-    return 0;
-}
+// SM-MaponiA3.cpp
+#include "SM-MaponiA3.hpp"
 
 uint getMaxIndex(double *arr, uint size) {
     uint i;     
@@ -223,8 +121,6 @@ T matDet(T** A, int M) {
 }
 
 void Sherman_Morrison(int **Slater0, double **Slater_inv, uint *Dim, uint *N_updates, int **Updates, uint *Updates_index) {
-    cout << "We just entered Sherman-Morrison" << endl;
-    showMatrix(Slater_inv, *Dim, "Slater_inv");
     uint k, l, lbar, i, j, tmp, M = *Dim;
     uint *p = new uint[M+1];
     double *breakdown = new double[M+1];
@@ -292,13 +188,11 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, uint *Dim, uint *N_upd
         }
     }
 
-    cout << "Just before the final construction of the inverse..." << endl;
-    showMatrix(Slater_inv, M, "Slater_inv");
-
     // Construct A-inverse from A0-inverse and the ylk
-    double** U;
-    double** Al = new double*[M];
+    double **U;
+    double **Al = new double*[M];
     for (i = 0; i < M; i++) Al[i] = new double[M];
+  
     for (l = 0; l < M; l++) {
         k = l+1;
         U = outProd(ylk[l][p[k]], Id[p[k]-1], M);
@@ -310,10 +204,11 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, uint *Dim, uint *N_upd
         }
         Slater_inv = matMul(Al, Slater_inv, M);
     }
-    cout << "Just after the final construction of the inverse..." << endl;
-    showMatrix(Slater_inv, M, "Slater_inv");
+
+    delete [] p, breakdown;
 
     for (i = 0; i < M; i++) {
+        delete [] Id[i];
         delete [] U[i];
         delete [] Al[i];
     }
