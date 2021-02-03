@@ -1,20 +1,19 @@
 // Algorithm 3 from P. Maponi,
 // p. 283, doi:10.1016/j.laa.2006.07.007
 
+#include "SM-MaponiA3.hpp"
 #include <cstdlib>
 #include <ctime>
-#include "SM-MaponiA3.hpp"
-using namespace std;
 
 int main() {
 
     srand((unsigned) time(0));
-    uint randRange = 1; // to get random integers in range [-randRange, randRange]
-    uint M = 3; // Dimension of the Slater-matrix
-    uint i, j; // Indices for iterators
+    unsigned int randRange = 1; // to get random integers in range [-randRange, randRange]
+    unsigned int M = 3; // Dimension of the Slater-matrix
+    unsigned int i, j; // Indices for iterators
 
     // Declare and allocate all vectors and matrices
-    uint *Ar_index = new uint[M];
+    unsigned int *Ar_index = new unsigned int[M];
     int **A = new int*[M]; // The matrix to be inverted
     int **A0 = new int*[M]; // A diagonal matrix with the digonal elements of A
     int **Ar = new int*[M]; // The update matrix
@@ -64,8 +63,8 @@ int main() {
         }
     }
 
-    uint *dim = new uint(M);
-    uint *n_updates = new uint(M);
+    unsigned int *dim = new unsigned int(M);
+    unsigned int *n_updates = new unsigned int(M);
     Sherman_Morrison(A0, A0_inv, dim, n_updates, Ar, Ar_index);
     
     showMatrix(A0_inv, M, "A0_inv");
