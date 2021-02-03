@@ -1,5 +1,8 @@
 // SM-MaponiA3.cpp
+// Algorithm 3 from P. Maponi,
+// p. 283, doi:10.1016/j.laa.2006.07.007
 #include "SM-MaponiA3.hpp"
+#include "Helpers.hpp"
 
 void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, unsigned int *N_updates, int **Updates, unsigned int *Updates_index) {
     unsigned int k, l, lbar, i, j, tmp, M = *Dim;
@@ -83,7 +86,9 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
                 Al[i][j] = Id[i][j] - U[i][j] / beta;
             }
         }
+        showMatrix(Slater_inv, M, "Slater_inv");
         Slater_inv = matMul(Al, Slater_inv, M);
+        showMatrix(Slater_inv, M, "Slater_inv");
     }
 
     delete [] p, breakdown;
