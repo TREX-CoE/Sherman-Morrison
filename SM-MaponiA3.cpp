@@ -7,20 +7,15 @@
 void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, unsigned int *N_updates, int **Updates, unsigned int *Updates_index) {
     unsigned int k, l, lbar, i, j, tmp, M = *Dim;
     unsigned int *p = new unsigned int[M+1];
-    double *breakdown = new double[M+1];
+    unsigned int **Id = new unsigned int*[M];
     double alpha, beta;
-
-    for (i = 0; i < M+1; i++) {
-        p[i] = i;
-    }
-
-    int **Id = new int*[M];
-    for (i = 0; i < M; i++) Id[i] = new int[M];
+    double **U, *breakdown = new double[M+1];
+    double **Al = new double*[M];
+    p[0] = 0;
     for (i = 0; i < M; i++) {
-        for (j = 0; j < M; j++) {
-            if (i != j) Id[i][j] = 0;
-            else Id[i][j] = 1;
-        }
+        p[i+1] = i + 1;
+        Id[i] = new unsigned int[M];
+        Al[i] = new double[M];
     }
 
     // Declare auxiliary solution matrix ylk
@@ -31,6 +26,15 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
             ylk[l][k] = new double[M+1];
         }
     }
+
+    // Initialize identity matrix
+    for (i = 0; i < M; i++) {
+        for (j = 0; j < M; j++) {
+            if (i != j) Id[i][j] = 0;
+            else Id[i][j] = 1;
+        }
+    }
+    
     // Initialize ylk with zeros
     for (l = 0; l < M; l++) {
         for (k = 0; k < M+1; k++) {
@@ -73,10 +77,11 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
     }
 
     // Construct A-inverse from A0-inverse and the ylk
-    double **U;
-    double **Al = new double*[M];
-    for (i = 0; i < M; i++) Al[i] = new double[M];
-  
+    // Keep the memory location of the passed array 'Slater_inv' before 'Slater_inv'
+    // gets reassigned by 'matMul(...)' in the next line, by creating a new
+    // pointer 'copy' that points to whereever 'Slater_inv' points to now.
+    double **copy = Slater_inv;
+
     for (l = 0; l < M; l++) {
         k = l+1;
         U = outProd(ylk[l][p[k]], Id[p[k]-1], M);
@@ -86,23 +91,21 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
                 Al[i][j] = Id[i][j] - U[i][j] / beta;
             }
         }
-        showMatrix(Slater_inv, M, "Slater_inv");
         Slater_inv = matMul(Al, Slater_inv, M);
-        showMatrix(Slater_inv, M, "Slater_inv");
     }
 
-    delete [] p, breakdown;
-
+    // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
     for (i = 0; i < M; i++) {
-        delete [] Id[i];
-        delete [] U[i];
-        delete [] Al[i];
+        for (j = 0; j < M; j++) {
+            copy[i][j] = Slater_inv[i][j];
+        }
     }
 
     for (l = 0; l < M; l++) {
         for (k = 0; k < M+1; k++) {
             delete [] ylk[l][k];
         }
-        delete [] ylk[l];
+        delete [] ylk[l], Id[l], U[l], Al[l], Slater_inv[l];
     }
+    delete [] p, breakdown;
 }

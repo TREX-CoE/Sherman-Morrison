@@ -66,7 +66,6 @@ int main() {
     unsigned int *dim = new unsigned int(M);
     unsigned int *n_updates = new unsigned int(M);
     Sherman_Morrison(A0, A0_inv, dim, n_updates, Ar, Ar_index);
-    
     showMatrix(A0_inv, M, "A0_inv");
     
     // Deallocate all vectors and matrices 

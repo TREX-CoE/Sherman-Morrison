@@ -25,7 +25,7 @@ void showScalar(T scalar, string name) {
 }
 
 template<typename T>
-void showVector(T* vector, unsigned int size, string name) {
+void showVector(T *vector, unsigned int size, string name) {
     cout << name << " = " << endl;
     for (unsigned int i = 0; i < size; i++) {
         cout << "[ " << vector[i] << " ]" << endl;
@@ -34,7 +34,7 @@ void showVector(T* vector, unsigned int size, string name) {
 }
 
 template<typename T>
-void showMatrix(T** matrix, unsigned int size, string name) {
+void showMatrix(T **matrix, unsigned int size, string name) {
     cout << name << " = " << endl;
     for (unsigned int i = 0; i < size; i++) {
         cout << "[ ";
@@ -47,7 +47,7 @@ void showMatrix(T** matrix, unsigned int size, string name) {
 }
 
 template<typename T>
-void showMatrixT(T** matrix, unsigned int size, string name) {
+void showMatrixT(T **matrix, unsigned int size, string name) {
     cout << name << " = " << endl;
     for (unsigned int i = 0; i < size; i++) {
         cout << "[ ";
@@ -60,8 +60,8 @@ void showMatrixT(T** matrix, unsigned int size, string name) {
 }
 
 template<typename T>
-T** matMul(T** A, T** B, unsigned int size) {
-    T** C = new T*[size];
+T **matMul(T **A, T **B, unsigned int size) {
+    T **C = new T*[size];
     for (unsigned int i = 0; i < size; i++) {
         C[i] = new T[size];
     }
@@ -72,13 +72,12 @@ T** matMul(T** A, T** B, unsigned int size) {
             }
         }
     }
-    showMatrix(C, size, "C");
     return C;
 }
 
 template<typename T1, typename T2>
-T1** outProd(T1* vec1, T2* vec2, unsigned int size) {
-    T1** C = new T1*[size];
+T1 **outProd(T1 *vec1, T2 *vec2, unsigned int size) {
+    T1 **C = new T1*[size];
     for (unsigned int i = 0; i < size; i++) {
         C[i] = new T1[size];
     }
@@ -91,9 +90,9 @@ T1** outProd(T1* vec1, T2* vec2, unsigned int size) {
 }
 
 template<typename T>
-T matDet(T** A, unsigned int M) {
+T matDet(T **A, unsigned int M) {
     int det = 0, p, h, k, i, j;
-    T** temp = new T*[M];
+    T **temp = new T*[M];
     for (int i = 0; i < M; i++) temp[i] = new T[M];
     if(M == 1) {
         return A[0][0];
