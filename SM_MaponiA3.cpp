@@ -4,7 +4,7 @@
 #include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
 
-void Sherman_Morrison_(int **Slater0, double **Slater_inv, unsigned int *Dim, unsigned int *N_updates, int **Updates, unsigned int *Updates_index) {
+void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, unsigned int *N_updates, int **Updates, unsigned int *Updates_index) {
     unsigned int k, l, lbar, i, j, tmp, M = *Dim;
     unsigned int *p = new unsigned int[M+1];
     unsigned int **Id = new unsigned int*[M];

@@ -24,12 +24,29 @@ program Interface_test
     A(3,2) = 0
     A(3,3) = -1
 
-    do i=1,3
-        do j=1,3
-            write(*,"(I)", advance="no") A(i,j)
+    !! Prepare the diagonal matrix A0 and the update matrix Ar
+    do i=1,dim
+        Ar_index(i) = i
+        do j=1,dim
+            if (i == j) then
+                A0(i,j) = A(i,j)
+                A0_inv(i,j) = 1.0d0 / A0(i,j)
+            else
+                A0(i,j) = 0
+                A0_inv(i,j) = 0.0d0
+            end if
+            Ar(i,j) = A(i,j) - A0(i,j)
         end do
-        write(*,*)
     end do
+
+    ! do i=1,dim
+    !     do j=1,dim
+    !         write(*,"(I)", advance="no") Ar_index(i)
+    !     end do
+    !     write(*,*)
+    ! end do
+  
+    call MYSUBROUTINE(A0, A0_inv, dim, n_updates, Ar, Ar_index)
 
     deallocate(Ar_index, A, A0, Ar, A0_inv)
 end program
