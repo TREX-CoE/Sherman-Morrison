@@ -1,6 +1,9 @@
+## Used compilers
 CXX = icpc
-CXXFLAGS = -O0 -debug full -traceback
 FC = ifort
+
+## Compiler flags
+CXXFLAGS = -O0 -debug full -traceback
 FFLAGS = -O0 -debug full -traceback
 # ARCH = -xCORE-AVX2 
 
@@ -13,7 +16,6 @@ fDEPS = fmain.f90 SM_MaponiA3_mod.f90
 fOBJ = SM_MaponiA3.o SM_MaponiA3_mod.o fmain.o
 fLIBS = -lstdc++
 
-
 ## Compile recipes for C++ stuff
 %.o: %.cpp $(cppDEPS)
 	$(CXX) $(ARCH) $(CXXFLAGS) -c -o $@ $<
@@ -22,6 +24,7 @@ fLIBS = -lstdc++
 %.o: %.f90 $(fDEPS)
 	$(FC) $(ARCH) $(FFLAGS) -c -o $@ $<
 
+## Build tagets
 .PHONY: all clean distclean
 
 all: cppSherman-Morrison fSherman-Morrison
