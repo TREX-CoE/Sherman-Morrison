@@ -1,17 +1,30 @@
-CC=icc
 CXX=icpc
-CFLAGS=-O0 -debug full
 CXXFLAGS=-O0 -debug full -traceback
+FC=ifort
+FFLAGS=-O0 -debug full -traceback
 # ARCH=-xCORE-AVX2 
 
-DEPS = SM-MaponiA3.cpp
-OBJ = SM-MaponiA3.o main.o
+## Deps & objs for the C++ stuff
+cppDEPS = cppmain.cpp SM_MaponiA3.cpp SM_MaponiA3.hpp Helpers.hpp
+cppOBJ = cppmain.o SM_MaponiA3.o
+## Deps & objs for the Fortran stuff
+fDEPS = fmain.f90 SM_MaponiA3_mod.f90
+fOBJ = SM_MaponiA3_mod.o fmain.o
 
-%.o: %.cpp $(DEPS)
-	$(CXX) $(ARCH) -c -o $@ $< $(CFLAGS)
+%.o: %.cpp $(cppDEPS)
+	$(CXX) $(ARCH) $(CXXFLAGS) -c -o $@ $<
 
-Sherman-Morrison: $(OBJ)
-	$(CXX) $(ARCH) -o $@ $^ $(CFLAGS)
+%.o: %.f90 $(fDEPS)
+	$(FC) $(ARCH) $(FFLAGS) -c -o $@ $<
+
+all: cppSherman-Morrison fSherman-Morrison
+
+cppSherman-Morrison: $(cppOBJ)
+	$(CXX) $(ARCH) $(CXXFLAGS) -o $@ $^
+
+fSherman-Morrison: $(fOBJ)
+	$(FC) $(ARCH) $(FFLAGS) -o $@ $^
 
 clean:
-	@rm -vf *.o
+	@rm -vf *.o *.mod
+	

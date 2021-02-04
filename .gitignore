@@ -1,4 +1,5 @@
 *.o
-SM-MaponiA3
-Sherman-Morrison
+*.mod
+cppSherman-Morrison
+fSherman-Morrison
 .vscode

@@ -1,5 +1,5 @@
 // main.cpp
-#include "SM-MaponiA3.hpp"
+#include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
 #include <cstdlib>
 #include <ctime>
@@ -65,7 +65,7 @@ int main() {
     // Define pointers dim and n_updates to use in Sherman-Morrison(...) function call
     unsigned int *dim = new unsigned int(M);
     unsigned int *n_updates = new unsigned int(M);
-    Sherman_Morrison(A0, A0_inv, dim, n_updates, Ar, Ar_index);
+    Sherman_Morrison_(A0, A0_inv, dim, n_updates, Ar, Ar_index);
     showMatrix(A0_inv, M, "A0_inv");
     
     // Deallocate all vectors and matrices 
