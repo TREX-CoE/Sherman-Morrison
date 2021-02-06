@@ -8,8 +8,8 @@ void MaponiA3(int **linSlater0, double **linSlater_inv, unsigned int *Dim, unsig
 
     // Define new 2D arrays and copy the elements of the 
     // linear passed Fortran arrays. This block needs to
-    // be replaced with some casting mechanism to avoid
-    // copying of arrays.
+    // be replaced with a suitable casting mechanism to
+    // avoid copying of memory.
     int **Slater0 = new int*[*Dim];
     int **Updates = new int*[*Dim];
     double **Slater_inv = new double*[*Dim];
@@ -25,7 +25,6 @@ void MaponiA3(int **linSlater0, double **linSlater_inv, unsigned int *Dim, unsig
             Updates[i][j] = linUpdates[0][i+*Dim*j];
         }
     }
-
     // Possible casting candidates
     // int (*Slater0)[*Dim] = (int(*)[*Dim])linSlater0[0];
     // double (*Slater_inv)[*Dim] = (double(*)[*Dim])linSlater_inv[0];
@@ -103,12 +102,12 @@ void MaponiA3(int **linSlater0, double **linSlater_inv, unsigned int *Dim, unsig
         }
     }
 
-    // Construct A-inverse from A0-inverse and the ylk
     // Keep the memory location of the passed array 'Slater_inv' before 'Slater_inv'
     // gets reassigned by 'matMul(...)' in the next line, by creating a new
     // pointer 'copy' that points to whereever 'Slater_inv' points to now.
     // double **copy  = Slater_inv;
 
+    // Construct A-inverse from A0-inverse and the ylk
     for (l = 0; l < M; l++) {
         k = l+1;
         U = outProd(ylk[l][p[k]], Id[p[k]-1], M);
@@ -121,14 +120,14 @@ void MaponiA3(int **linSlater0, double **linSlater_inv, unsigned int *Dim, unsig
         Slater_inv = matMul(Al, Slater_inv, M);
     }
 
-    // // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
+    // Overwrite the old values in 'copy' with the new ones in Slater_inv
     // for (i = 0; i < M; i++) {
     //     for (j = 0; j < M; j++) {
     //         copy[i][j] = Slater_inv[i][j];
     //     }
     // }
 
-    // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
+    // Overwrite the old values in 'linSlater_inv' with the new values in Slater_inv
     for (i = 0; i < M; i++) {
         for (j = 0; j < M; j++) {
             linSlater_inv[0][i+*Dim*j] = Slater_inv[i][j];
