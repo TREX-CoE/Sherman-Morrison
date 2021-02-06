@@ -13,7 +13,7 @@ cppOBJ = cppmain.o SM_MaponiA3.o
 
 ## Deps & objs for the Fortran stuff
 fDEPS = fmain.f90 SM_MaponiA3_mod.f90
-fOBJ = SM_MaponiA3.o SM_MaponiA3_mod.o fmain.o
+fOBJ = SM_MaponiA3_f.o SM_MaponiA3_mod.o fmain.o
 fLIBS = -lstdc++
 
 ## Compile recipes for C++ stuff

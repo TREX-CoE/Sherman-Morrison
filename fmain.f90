@@ -1,6 +1,6 @@
 program Interface_test
+    use Sherman_Morrison, only : MaponiA3
     use, intrinsic :: iso_c_binding, only : c_int, c_double
-    use MYMODULE, only : MYSUBROUTINE
     implicit none
 
     integer i, j !! Iterators
@@ -38,15 +38,15 @@ program Interface_test
             Ar(i,j) = A(i,j) - A0(i,j)
         end do
     end do
+    
+    call MaponiA3(A0, A0_inv, dim, n_updates, Ar, Ar_index)
 
-    ! do i=1,dim
-    !     do j=1,dim
-    !         write(*,"(I)", advance="no") Ar_index(i)
-    !     end do
-    !     write(*,*)
-    ! end do
-  
-    call MYSUBROUTINE(A0, A0_inv, dim, n_updates, Ar, Ar_index)
+    do i=1,dim
+        do j=1,dim
+            write(*,"(F3.0,3X)", advance="no") A0_inv(i,j)
+        end do
+        write(*,*)
+    end do
 
     deallocate(Ar_index, A, A0, Ar, A0_inv)
 end program
