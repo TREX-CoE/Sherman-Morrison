@@ -1,5 +1,5 @@
 // main.cpp
-#include "SM-MaponiA3.hpp"
+#include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
 #include <cstdlib>
 #include <ctime>

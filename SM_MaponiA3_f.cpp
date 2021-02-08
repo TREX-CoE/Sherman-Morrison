@@ -1,10 +1,36 @@
-// SM-MaponiA3.cpp
+// SM-MaponiA3_f.cpp
 // Algorithm 3 from P. Maponi,
 // p. 283, doi:10.1016/j.laa.2006.07.007
-#include "SM-MaponiA3.hpp"
+#include "SM_MaponiA3_f.hpp"
 #include "Helpers.hpp"
 
-void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, unsigned int *N_updates, int **Updates, unsigned int *Updates_index) {
+void MaponiA3(int **linSlater0, double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates, int **linUpdates, unsigned int *Updates_index) {
+
+    // Define new 2D arrays and copy the elements of the 
+    // linear passed Fortran arrays. This block needs to
+    // be replaced with a suitable casting mechanism to
+    // avoid copying of memory.
+    int **Slater0 = new int*[*Dim];
+    int **Updates = new int*[*Dim];
+    double **Slater_inv = new double*[*Dim];
+    for (int i = 0; i < *Dim; i++) {
+        Slater0[i] = new int[*Dim];
+        Updates[i] = new int[*Dim];
+        Slater_inv[i] = new double[*Dim];
+    }
+    for (unsigned int i = 0; i < *Dim; i++) {
+        for (unsigned int j = 0; j < *Dim; j++) {
+            Slater0[i][j] = linSlater0[0][i+*Dim*j];
+            Slater_inv[i][j] = linSlater_inv[0][i+*Dim*j];
+            Updates[i][j] = linUpdates[0][i+*Dim*j];
+        }
+    }
+    // Possible casting candidates
+    // int (*Slater0)[*Dim] = (int(*)[*Dim])linSlater0[0];
+    // double (*Slater_inv)[*Dim] = (double(*)[*Dim])linSlater_inv[0];
+    // int (*Updates)[*Dim] = (int(*)[*Dim])linUpdates[0];
+    ////////////////////////////////////////////////////////////////////////
+
     unsigned int k, l, lbar, i, j, tmp, M = *Dim;
     unsigned int *p = new unsigned int[M+1];
     unsigned int **Id = new unsigned int*[M];
@@ -76,12 +102,12 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
         }
     }
 
-    // Construct A-inverse from A0-inverse and the ylk
     // Keep the memory location of the passed array 'Slater_inv' before 'Slater_inv'
     // gets reassigned by 'matMul(...)' in the next line, by creating a new
     // pointer 'copy' that points to whereever 'Slater_inv' points to now.
-    double **copy = Slater_inv;
+    // double **copy  = Slater_inv;
 
+    // Construct A-inverse from A0-inverse and the ylk
     for (l = 0; l < M; l++) {
         k = l+1;
         U = outProd(ylk[l][p[k]], Id[p[k]-1], M);
@@ -94,10 +120,17 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
         Slater_inv = matMul(Al, Slater_inv, M);
     }
 
-    // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
+    // Overwrite the old values in 'copy' with the new ones in Slater_inv
+    // for (i = 0; i < M; i++) {
+    //     for (j = 0; j < M; j++) {
+    //         copy[i][j] = Slater_inv[i][j];
+    //     }
+    // }
+
+    // Overwrite the old values in 'linSlater_inv' with the new values in Slater_inv
     for (i = 0; i < M; i++) {
         for (j = 0; j < M; j++) {
-            copy[i][j] = Slater_inv[i][j];
+            linSlater_inv[0][i+*Dim*j] = Slater_inv[i][j];
         }
     }
 

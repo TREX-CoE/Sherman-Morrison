@@ -75,6 +75,23 @@ T **matMul(T **A, T **B, unsigned int size) {
     return C;
 }
 
+template<typename T>
+T **matMul2(T **A, T (*B)[], unsigned int size) {
+    T **C = new T*[size];
+    for (unsigned int i = 0; i < size; i++) {
+        C[i] = new T[size];
+    }
+    for (unsigned int i = 0; i < size; i++) {
+        for (unsigned int j = 0; j < size; j++) {
+            for (unsigned int k = 0; k < size; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    return C;
+}
+
+
 template<typename T1, typename T2>
 T1 **outProd(T1 *vec1, T2 *vec2, unsigned int size) {
     T1 **C = new T1*[size];
