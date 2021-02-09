@@ -41,9 +41,6 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
       breakdown[j] = abs(1 + ylk[l - 1][p[j]][p[j]]);
     }
     lbar = getMaxIndex(breakdown, M + 1);
-    for (i = 0; i < M; i++) {
-      breakdown[i] = 0;
-    }
     tmp = p[l];
     p[l] = p[lbar];
     p[lbar] = tmp;
