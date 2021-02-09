@@ -8,7 +8,6 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M, unsigned int 
 
     unsigned int k, l, lbar, i, j, tmp = M;
     unsigned int *p = new unsigned int[M+1];
-    double *Id = new double[M*M];
     double alpha, beta;
     double *breakdown = new double[M+1];
     double *Al = new double[M*M];
@@ -23,14 +22,6 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M, unsigned int 
         ylk[l] = new double*[M+1];
         for (k = 0; k < M+1; k++) {
             ylk[l][k] = new double[M+1];
-        }
-    }
-
-    // Initialize identity matrix
-    for (i = 0; i < M; i++) {
-        for (j = 0; j < M; j++) {
-            if (i != j) Id[i*M+j] = 0;
-            else Id[i*M+j] = 1;
         }
     }
 
@@ -80,14 +71,21 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M, unsigned int 
     // pointer 'copy' that points to whereever 'Slater_inv' points to now.
     double *copy  = Slater_inv;
 
+    double *U = new double[M*M];
     // Construct A-inverse from A0-inverse and the ylk
     for (l = 0; l < M; l++) {
         k = l+1;
-        double * U = outProd(ylk[l][p[k]], (Id + (p[k]-1)*M), M);
+        for (unsigned int i = 0; i < M; i++) {
+          for (unsigned int j = 0; j < M; j++) {
+            U[i*M+j] = ylk[l][p[k]][i+1] * ((p[k]-1) == j);
+          }
+        }
+
+
         beta = 1 + ylk[l][p[k]][p[k]];
         for (i = 0; i < M; i++) {
             for (j = 0; j < M; j++) {
-                Al[i*M+j] = Id[i*M+j] - U[i*M+j] / beta;
+                Al[i*M+j] = (i == j) - U[i*M+j] / beta;
             }
         }
         Slater_inv = matMul(Al, Slater_inv, M);
@@ -106,7 +104,7 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M, unsigned int 
         }
         delete [] ylk[l];
     }
-    delete [] Id, Al;
+    delete [] Al, U;
     delete [] p, breakdown;
 }
 
