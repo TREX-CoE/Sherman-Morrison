@@ -74,20 +74,13 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
   // a new pointer 'copy' that points to whereever 'Slater_inv' points to now.
   double *copy = Slater_inv;
 
-  double *U = new double[M * M];
   // Construct A-inverse from A0-inverse and the ylk
   for (l = 0; l < M; l++) {
     k = l + 1;
-    for (unsigned int i = 0; i < M; i++) {
-      for (unsigned int j = 0; j < M; j++) {
-        U[i * M + j] = ylk[l][p[k]][i + 1] * ((p[k] - 1) == j);
-      }
-    }
-
     beta = 1 + ylk[l][p[k]][p[k]];
     for (i = 0; i < M; i++) {
       for (j = 0; j < M; j++) {
-        Al[i * M + j] = (i == j) - U[i * M + j] / beta;
+        Al[i * M + j] = (i == j) - (j == p[k]-1) * ylk[l][p[k]][i + 1] / beta;
       }
     }
     Slater_inv = matMul(Al, Slater_inv, M);
@@ -106,7 +99,7 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
     }
     delete[] ylk[l];
   }
-  delete[] Al, U;
+  delete[] Al;
   delete[] p, breakdown;
 }
 
