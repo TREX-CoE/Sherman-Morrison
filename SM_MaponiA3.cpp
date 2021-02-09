@@ -23,16 +23,7 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
   for (l = 0; l < M; l++) {
     ylk[l] = new double *[M + 1];
     for (k = 0; k < M + 1; k++) {
-      ylk[l][k] = new double[M + 1];
-    }
-  }
-
-  // Initialize ylk with zeros
-  for (l = 0; l < M; l++) {
-    for (k = 0; k < M + 1; k++) {
-      for (i = 0; i < M + 1; i++) {
-        ylk[l][k][i] = 0;
-      }
+      ylk[l][k] = new double[M + 1] {0};
     }
   }
 
