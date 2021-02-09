@@ -7,8 +7,8 @@ using namespace std;
 
 template<typename T>
 unsigned int getMaxIndex(T *vector, unsigned int size) {
-    unsigned int i;     
-    unsigned int max = vector[0]; 
+    unsigned int i;
+    unsigned int max = vector[0];
     unsigned int maxi = 0;
     for (i = 1; i < size; i++) {
         if (vector[i] > max) {
@@ -16,7 +16,7 @@ unsigned int getMaxIndex(T *vector, unsigned int size) {
             maxi = i;
         }
     }
-    return maxi; 
+    return maxi;
 }
 
 template<typename T>
@@ -34,12 +34,12 @@ void showVector(T *vector, unsigned int size, string name) {
 }
 
 template<typename T>
-void showMatrix(T **matrix, unsigned int size, string name) {
+void showMatrix(T *matrix, unsigned int M, string name) {
     cout << name << " = " << endl;
-    for (unsigned int i = 0; i < size; i++) {
+    for (unsigned int i = 0; i < M; i++) {
         cout << "[ ";
-        for (unsigned int j = 0; j < size; j++) {
-            cout << matrix[i][j] << " ";
+        for (unsigned int j = 0; j < M; j++) {
+            cout << matrix[i*M+j] << " ";
         }
         cout << " ]" << endl;
     }
@@ -60,31 +60,12 @@ void showMatrixT(T **matrix, unsigned int size, string name) {
 }
 
 template<typename T>
-T **matMul(T **A, T **B, unsigned int size) {
-    T **C = new T*[size];
-    for (unsigned int i = 0; i < size; i++) {
-        C[i] = new T[size];
-    }
-    for (unsigned int i = 0; i < size; i++) {
-        for (unsigned int j = 0; j < size; j++) {
-            for (unsigned int k = 0; k < size; k++) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-    return C;
-}
-
-template<typename T>
-T **matMul2(T **A, T (*B)[], unsigned int size) {
-    T **C = new T*[size];
-    for (unsigned int i = 0; i < size; i++) {
-        C[i] = new T[size];
-    }
-    for (unsigned int i = 0; i < size; i++) {
-        for (unsigned int j = 0; j < size; j++) {
-            for (unsigned int k = 0; k < size; k++) {
-                C[i][j] += A[i][k] * B[k][j];
+T *matMul(T *A, T *B, unsigned int M) {
+    T *C = new T[M*M];
+    for (unsigned int i = 0; i < M; i++) {
+        for (unsigned int j = 0; j < M; j++) {
+            for (unsigned int k = 0; k < M; k++) {
+                C[i*M+j] += A[i*M+k] * B[k*M+j];
             }
         }
     }
@@ -93,14 +74,11 @@ T **matMul2(T **A, T (*B)[], unsigned int size) {
 
 
 template<typename T1, typename T2>
-T1 **outProd(T1 *vec1, T2 *vec2, unsigned int size) {
-    T1 **C = new T1*[size];
-    for (unsigned int i = 0; i < size; i++) {
-        C[i] = new T1[size];
-    }
-    for (unsigned int i = 0; i < size; i++) {
-        for (unsigned int j = 0; j < size; j++) {
-            C[i][j] = vec1[i+1] * vec2[j];
+T1 *outProd(T1 *vec1, T2 *vec2, unsigned int M) {
+    T1 *C = new T1[M*M];
+    for (unsigned int i = 0; i < M; i++) {
+        for (unsigned int j = 0; j < M; j++) {
+            C[i*M+j] = vec1[i+1] * vec2[j];
         }
     }
     return C;

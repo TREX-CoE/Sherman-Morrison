@@ -1,21 +1,20 @@
-// SM-MaponiA3.cpp
+// SM-MaponiA3_f.cpp
 // Algorithm 3 from P. Maponi,
 // p. 283, doi:10.1016/j.laa.2006.07.007
 #include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
 
-void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, unsigned int *N_updates, int **Updates, unsigned int *Updates_index) {
-    unsigned int k, l, lbar, i, j, tmp, M = *Dim;
+void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M, unsigned int N_updates, double *Updates, unsigned int *Updates_index) {
+
+    unsigned int k, l, lbar, i, j, tmp = M;
     unsigned int *p = new unsigned int[M+1];
-    unsigned int **Id = new unsigned int*[M];
+    double *Id = new double[M*M];
     double alpha, beta;
-    double **U, *breakdown = new double[M+1];
-    double **Al = new double*[M];
+    double *breakdown = new double[M+1];
+    double *Al = new double[M*M];
     p[0] = 0;
     for (i = 0; i < M; i++) {
         p[i+1] = i + 1;
-        Id[i] = new unsigned int[M];
-        Al[i] = new double[M];
     }
 
     // Declare auxiliary solution matrix ylk
@@ -30,11 +29,11 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
     // Initialize identity matrix
     for (i = 0; i < M; i++) {
         for (j = 0; j < M; j++) {
-            if (i != j) Id[i][j] = 0;
-            else Id[i][j] = 1;
+            if (i != j) Id[i*M+j] = 0;
+            else Id[i*M+j] = 1;
         }
     }
-    
+
     // Initialize ylk with zeros
     for (l = 0; l < M; l++) {
         for (k = 0; k < M+1; k++) {
@@ -47,7 +46,7 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
     // Calculate all the y0k in M^2 multiplications instead of M^3
     for (k = 1; k < M+1; k++) {
         for (i = 1; i < M+1; i++) {
-            ylk[0][k][i] = Slater_inv[i-1][i-1] * Updates[i-1][k-1];
+            ylk[0][k][i] = Slater_inv[(i-1)*M+(i-1)] * Updates[(i-1)*M+(k-1)];
         }
     }
 
@@ -76,19 +75,19 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
         }
     }
 
-    // Construct A-inverse from A0-inverse and the ylk
     // Keep the memory location of the passed array 'Slater_inv' before 'Slater_inv'
     // gets reassigned by 'matMul(...)' in the next line, by creating a new
     // pointer 'copy' that points to whereever 'Slater_inv' points to now.
-    double **copy = Slater_inv;
+    double *copy  = Slater_inv;
 
+    // Construct A-inverse from A0-inverse and the ylk
     for (l = 0; l < M; l++) {
         k = l+1;
-        U = outProd(ylk[l][p[k]], Id[p[k]-1], M);
+        double * U = outProd(ylk[l][p[k]], (Id + (p[k]-1)*M), M);
         beta = 1 + ylk[l][p[k]][p[k]];
         for (i = 0; i < M; i++) {
             for (j = 0; j < M; j++) {
-                Al[i][j] = Id[i][j] - U[i][j] / beta;
+                Al[i*M+j] = Id[i*M+j] - U[i*M+j] / beta;
             }
         }
         Slater_inv = matMul(Al, Slater_inv, M);
@@ -96,16 +95,24 @@ void Sherman_Morrison(int **Slater0, double **Slater_inv, unsigned int *Dim, uns
 
     // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
     for (i = 0; i < M; i++) {
-        for (j = 0; j < M; j++) {
-            copy[i][j] = Slater_inv[i][j];
-        }
+      for (j = 0; j < M; j++) {
+        copy[i*M+j] = Slater_inv[i*M+j];
+      }
     }
 
     for (l = 0; l < M; l++) {
         for (k = 0; k < M+1; k++) {
             delete [] ylk[l][k];
         }
-        delete [] ylk[l], Id[l], U[l], Al[l], Slater_inv[l];
+        delete [] ylk[l];
     }
+    delete [] Id, Al;
     delete [] p, breakdown;
+}
+
+extern "C" {
+  void MaponiA3_f(double **linSlater0, double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates, double **linUpdates, unsigned int **Updates_index)
+  {
+    MaponiA3(*linSlater0, *linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+  }
 }
