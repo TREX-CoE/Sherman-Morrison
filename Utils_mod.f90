@@ -1,15 +1,21 @@
 module Utils
     implicit none
-
     contains
-        subroutine Read_dataset(filename, cycle_id, dim, n_updates &
+        subroutine Read_dataset(filename, cycle_id, dim, n_updates, &
                     S, S_inv, Updates_index, Updates)
+            use, intrinsic :: iso_c_binding, only : c_int, c_double
+            implicit none
             
-            character (len = 64), intent(in) :: filename
-            
-            
+            character (len = *), intent(in) :: filename
+            integer, intent(inout) :: cycle_id, dim, n_updates
+            integer(c_int), allocatable, intent(inout) :: Updates_index(:)
+            real(c_double), allocatable, intent(inout) :: S(:,:), S_inv(:,:)
+            real(c_double), allocatable, intent(inout) :: Updates(:,:)
+            integer :: i, j
+            character (len = 32) :: ignore
+
             !! Start of reading the dataset from file
-            open(unit = 1000, file = "test.dataset.dat")
+            open(unit = 1000, file = filename)
             read(1000,*)
             read(1000,*) ignore, cycle_id
             read(1000,*) ignore, dim
@@ -38,7 +44,4 @@ module Utils
             close(1000)
             !! End of reading the dataset from file
         end subroutine Read_dataset
-    end module Utils
-
-
-end module Sherman_Morrison
+end module Utils

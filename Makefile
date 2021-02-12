@@ -17,8 +17,8 @@ fMaponiA3_testOBJ = SM_MaponiA3.o SM_MaponiA3_mod.o fMaponiA3_test.o
 fMaponiA3_testLIB = -lstdc++
 
 ## Deps & objs for Fortran QMCChem_dataset_test
-QMCChem_dataset_testDEP = QMCChem_dataset_test.f90 SM_MaponiA3_mod.f90
-QMCChem_dataset_testOBJ = SM_MaponiA3.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
+QMCChem_dataset_testDEP = QMCChem_dataset_test.f90 SM_MaponiA3_mod.f90 Utils_mod.f90
+QMCChem_dataset_testOBJ = SM_MaponiA3.o Utils_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
 QMCChem_dataset_testLIB = -lstdc++
 
 ## Compile recipes for C++ cMaponiA3_test
