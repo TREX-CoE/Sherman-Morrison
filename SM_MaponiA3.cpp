@@ -92,10 +92,11 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
 }
 
 extern "C" {
-void MaponiA3_f(double **linSlater0, double **linSlater_inv, unsigned int *Dim,
-                unsigned int *N_updates, double **linUpdates,
-                unsigned int **Updates_index) {
-  MaponiA3(*linSlater0, *linSlater_inv, *Dim, *N_updates, *linUpdates,
-           *Updates_index);
-}
+  void MaponiA3_f(double **linSlater0, double **linSlater_inv, unsigned int *Dim,
+                  unsigned int *N_updates, double **linUpdates,
+                  unsigned int **Updates_index) {
+                    MaponiA3(*linSlater0, *linSlater_inv, *Dim, 
+                             *N_updates, *linUpdates,
+                             *Updates_index);
+  }
 }

@@ -1,5 +1,7 @@
 *.o
 *.mod
-cppSherman-Morrison
-fSherman-Morrison
 .vscode
+cMaponiA3_test
+fMaponiA3_test
+QMCChem_dataset_test
+
