@@ -1,8 +1,9 @@
 # ARCH = -xCORE-AVX2
 
 ## Used compilers
-CXX = icpc
-FC = ifort
+H5CXX = h5c++
+CXX = clang++
+FC = flang
 
 ## Compiler flags & common obs & libs
 CXXFLAGS = -O0 -debug full -traceback

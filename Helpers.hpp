@@ -134,3 +134,15 @@ T matDet(T **A, unsigned int M) {
     }
     delete [] temp;
 }
+
+
+template<typename T>
+bool is_identity(T *A, unsigned int M, double tolerance) {
+   for (unsigned int i = 0; i < M; i++) {
+        for (unsigned int j = 0; j < M; j++) {
+          if (i==j && fabs(A[i*M+j]-1) > tolerance) return false;
+          if (i!=j && fabs(A[i*M+j]) > tolerance) return false;
+        }
+   }
+   return true;
+}
