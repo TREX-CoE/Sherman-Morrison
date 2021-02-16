@@ -10,7 +10,7 @@ program Interface_test
     real(c_double), dimension(:,:), allocatable :: A0_inv
 
     dim = 3
-    N_updates = dim
+    N_updates = 3
     allocate(Ar_index(dim), A(dim,dim), A0(dim,dim), Ar(dim,dim), A0_inv(dim,dim))
 
     !! Initialize A with M=3 and fill acc. to Eq. (17) from paper

@@ -28,7 +28,7 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
   }
 
   // Calculate all the y0k in M^2 multiplications instead of M^3
-  for (k = 1; k < M + 1; k++) {
+  for (k = 1; k < N_updates + 1; k++) {
     for (i = 1; i < M + 1; i++) {
       ylk[0][k][i] =
           Slater_inv[(i - 1) * M + (i - 1)] * Updates[(i - 1) * M + (k - 1)];
@@ -92,10 +92,11 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
 }
 
 extern "C" {
-void MaponiA3_f(double **linSlater0, double **linSlater_inv, unsigned int *Dim,
-                unsigned int *N_updates, double **linUpdates,
-                unsigned int **Updates_index) {
-  MaponiA3(*linSlater0, *linSlater_inv, *Dim, *N_updates, *linUpdates,
-           *Updates_index);
-}
+  void MaponiA3_f(double **linSlater0, double **linSlater_inv, unsigned int *Dim,
+                  unsigned int *N_updates, double **linUpdates,
+                  unsigned int **Updates_index) {
+                    MaponiA3(*linSlater0, *linSlater_inv, *Dim, 
+                             *N_updates, *linUpdates,
+                             *Updates_index);
+  }
 }
