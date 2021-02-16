@@ -1,11 +1,11 @@
 ## Used compilers
-CXX = icpc
-FC = ifort
+H5CXX = h5c++
+CXX = clang++
+FC = flang
 
 ## Compiler flags
-CXXFLAGS = -O0 #-debug full -traceback
-FFLAGS = -O0 #-debug full -traceback
-# ARCH = -xCORE-AVX2
+CXXFLAGS = -O0
+FFLAGS = -O0
 
 ## Deps & objs for C++ cMaponiA3_test
 cMaponiA3_testDEP = cMaponiA3_test.cpp SM_MaponiA3.cpp SM_MaponiA3.hpp Helpers.hpp
@@ -32,7 +32,7 @@ QMCChem_dataset_testLIB = -lstdc++
 ## Build tagets
 .PHONY: all clean distclean
 
-all: cMaponiA3_test fMaponiA3_test QMCChem_dataset_test
+all: cMaponiA3_test fMaponiA3_test QMCChem_dataset_test tests/test
 
 clean:
 	@rm -vf *.o *.mod
@@ -51,3 +51,6 @@ fMaponiA3_test: $(fMaponiA3_testOBJ)
 ## Linking Fortran example program calling the C++ function 'Sherman_Morrison()'
 QMCChem_dataset_test: $(QMCChem_dataset_testOBJ)
 	$(FC) $(ARCH) $(FFLAGS) $(QMCChem_dataset_testLIB) -o $@ $^
+
+tests/test: tests/test.cpp SM_MaponiA3.o
+	$(H5CXX) $(ARCH) $(CXXFLAGS) -o $@ $^
