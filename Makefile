@@ -38,7 +38,7 @@ clean:
 	@rm -vf *.o *.mod
 
 distclean: clean
-	@rm -vf cMaponiA3_test fMaponiA3_test QMCChem_dataset_test
+	@rm -vf cMaponiA3_test fMaponiA3_test QMCChem_dataset_test Slater_* Updates.dat
 
 ## Linking the C++ example program
 cMaponiA3_test: $(cMaponiA3_testOBJ)

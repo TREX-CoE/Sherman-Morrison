@@ -48,7 +48,7 @@ int main() {
     // Define pointers dim and n_updates to use in Sherman-Morrison(...) function call
     unsigned int dim = M;
     unsigned int n_updates = M;
-    MaponiA3(A0, A0_inv, dim, n_updates, Ar, Ar_index);
+    MaponiA3(A0_inv, dim, n_updates, Ar, Ar_index);
     showMatrix(A0_inv, M, "A0_inv");
 
     // Deallocate all vectors and matrices

@@ -2,12 +2,12 @@
 ## p. 283, doi:10.1016/j.laa.2006.07.007
 clc ## Clear the screen
 
-## Define the matrix to be inverted. This is example 8 from the paper
-## In the future this matrix needs to be read from the function call arguments
-A=[1,1,-1; ...
-   1,1,0; ...
-  -1,0,-1];
-A0=diag(diag(A));  ## The diagonal part of A
+### Define the matrix to be inverted. This is example 8 from the paper
+### In the future this matrix needs to be read from the function call arguments
+#A=[1,1,-1; ...
+#   1,1,0; ...
+#  -1,0,-1];
+#A0=diag(diag(A));  ## The diagonal part of A
 
 ### The modified example that gives all singular updates at some point  
 #A=[1,1,1; ...
@@ -17,9 +17,17 @@ A0=diag(diag(A));  ## The diagonal part of A
 
 ### A square uniform distributed random integer matrix with entries in [-1,1]  
 #do
-#  A=randi([-1,1],3,3);
+#  A=randi([-1,1],4,4);
 #  A0=diag(diag(A));  ## The diagonal part of A
 #until (det(A)!=0 && det(A0)!=0) ## We need both matrices to be simultaniously non-singular
+
+## Define the matrix to be inverted. This is example 8 from the paper
+## In the future this matrix needs to be read from the function call arguments
+A=[1,0, 1,-1; ...
+   0,-1, 1, -1; ...
+  -1,0,-1, 0; ...
+   1,1, 1, 1];
+A0=diag(diag(A));  ## The diagonal part of A
 
 ### A square uniform distributed random float matrix with entries in (0,1)  
 #do
@@ -35,6 +43,7 @@ Ainv=zeros(nCols,nCols);
 ylk=zeros(nCols,nCols,nCols);
 p=zeros(nCols,1);
 breakdown=zeros(nCols,1);
+cutOff=10e-6
 
 A,A0
 printf("Determinant of A  is: %d\n",det(A))

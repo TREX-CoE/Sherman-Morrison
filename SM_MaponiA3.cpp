@@ -4,54 +4,75 @@
 #include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
 
-void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
-              unsigned int N_updates, double *Updates,
-              unsigned int *Updates_index) {
+void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
+              double *Updates, unsigned int *Updates_index) {
 
-  unsigned int k, l, lbar, i, j, tmp = M;
-  unsigned int *p = new unsigned int[M + 1];
+  unsigned int k, l, lbar, i, j, tmp, component;
+  unsigned int *p = new unsigned int[N_updates + 1];
   double alpha, beta;
-  double *breakdown = new double[M + 1];
-  double *Al = new double[M * M];
+  double *breakdown = new double[N_updates + 1];
+  double *Al = new double[Dim * Dim];
   p[0] = 0;
-  for (i = 0; i < M; i++) {
+  for (i = 0; i < N_updates; i++) {
     p[i + 1] = i + 1;
   }
 
   // Declare auxiliary solution matrix ylk
-  double ***ylk = new double **[M];
-  for (l = 0; l < M; l++) {
-    ylk[l] = new double *[M + 1];
-    for (k = 0; k < M + 1; k++) {
-      ylk[l][k] = new double[M + 1] {0};
+  double ***ylk = new double **[N_updates];
+  for (l = 0; l < N_updates; l++) {
+    ylk[l] = new double *[N_updates + 1];
+    for (k = 0; k < N_updates + 1; k++) {
+      ylk[l][k] = new double[Dim + 1] {0};
     }
   }
-
-  // Calculate all the y0k in M^2 multiplications instead of M^3
+  
+  cout << endl;
+  // Calculate all the y0k in Dim^2 multiplications instead of Dim^3
   for (k = 1; k < N_updates + 1; k++) {
-    for (i = 1; i < M + 1; i++) {
+    for (i = 1; i < Dim + 1; i++) {
+      cout << k << "," << i << endl;
       ylk[0][k][i] =
-          Slater_inv[(i - 1) * M + (i - 1)] * Updates[(i - 1) * M + (k - 1)];
+          Slater_inv[(i - 1) * Dim + (i - 1)] * Updates[(i - 1) * Dim + (k - 1)];
     }
   }
 
+  cout <<  "y0k = " << endl;
+  for (k = 1; k < N_updates + 1; k++) {
+      cout << "[ ";
+      for (i = 1; i < Dim + 1; i++) {
+          cout << ylk[0][k][i] << " ";
+      }
+      cout << " ]" << endl;
+  }
+  cout << endl;
+
+  showVector(p, N_updates + 1, "p");
+  showVector(Updates_index, N_updates, "Updates_index");
+ 
   // Calculate all the ylk from the y0k
-  for (l = 1; l < M; l++) {
-    for (j = l; j < M + 1; j++) {
-      breakdown[j] = abs(1 + ylk[l - 1][p[j]][p[j]]);
+  for (l = 1; l < N_updates; l++) {
+    for (j = l; j < N_updates + 1; j++) {
+      component = Updates_index[p[j] - 1];
+      cout << component << endl;
+      breakdown[j] = abs(1 + ylk[l - 1][p[j]][component]);
     }
-    lbar = getMaxIndex(breakdown, M + 1);
+    lbar = getMaxIndex(breakdown, N_updates + 1);
+    // Reset breakdown back to 0 for next round to avoid case where its first element is always the largest
+    for (i = 0; i < N_updates + 1; i++) {
+      breakdown[i] = 0;
+    }
     tmp = p[l];
     p[l] = p[lbar];
     p[lbar] = tmp;
-    for (k = l + 1; k < M + 1; k++) {
-      beta = 1 + ylk[l - 1][p[l]][p[l]];
-      if (beta == 0) {
-        cout << "Break-down condition occured. Exiting..." << endl;
-        exit;
-      }
-      for (i = 1; i < M + 1; i++) {
-        alpha = ylk[l - 1][p[k]][p[l]] / beta;
+    component = Updates_index[p[l] - 1];
+    beta = 1 + ylk[l - 1][p[l]][component];
+    if (beta == 0) {
+      cout << "Break-down occured. Exiting..." << endl;
+      exit;
+    }
+    for (k = l + 1; k < N_updates + 1; k++) {
+      alpha = ylk[l - 1][p[k]][component] / beta;
+      for (i = 1; i < Dim + 1; i++) {
         ylk[l][p[k]][i] = ylk[l - 1][p[k]][i] - alpha * ylk[l - 1][p[l]][i];
       }
     }
@@ -63,26 +84,27 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
   double *copy = Slater_inv;
 
   // Construct A-inverse from A0-inverse and the ylk
-  for (l = 0; l < M; l++) {
+  for (l = 0; l < N_updates; l++) {
     k = l + 1;
-    beta = 1 + ylk[l][p[k]][p[k]];
-    for (i = 0; i < M; i++) {
-      for (j = 0; j < M; j++) {
-        Al[i * M + j] = (i == j) - (j == p[k]-1) * ylk[l][p[k]][i + 1] / beta;
+    component = Updates_index[p[k] - 1];
+    beta = 1 + ylk[l][p[k]][component];
+    for (i = 0; i < Dim; i++) {
+      for (j = 0; j < Dim; j++) {
+        Al[i * Dim + j] = (i == j) - (j == p[k]-1) * ylk[l][p[k]][i + 1] / beta;
       }
     }
-    Slater_inv = matMul(Al, Slater_inv, M);
+    Slater_inv = matMul(Al, Slater_inv, Dim);
   }
 
   // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
-  for (i = 0; i < M; i++) {
-    for (j = 0; j < M; j++) {
-      copy[i * M + j] = Slater_inv[i * M + j];
+  for (i = 0; i < Dim; i++) {
+    for (j = 0; j < Dim; j++) {
+      copy[i * Dim + j] = Slater_inv[i * Dim + j];
     }
   }
 
-  for (l = 0; l < M; l++) {
-    for (k = 0; k < M + 1; k++) {
+  for (l = 0; l < N_updates; l++) {
+    for (k = 0; k < N_updates + 1; k++) {
       delete[] ylk[l][k];
     }
     delete[] ylk[l];
@@ -92,11 +114,11 @@ void MaponiA3(double *Slater0, double *Slater_inv, unsigned int M,
 }
 
 extern "C" {
-  void MaponiA3_f(double **linSlater0, double **linSlater_inv, unsigned int *Dim,
+  void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
                   unsigned int *N_updates, double **linUpdates,
                   unsigned int **Updates_index) {
-                    MaponiA3(*linSlater0, *linSlater_inv, *Dim, 
-                             *N_updates, *linUpdates,
-                             *Updates_index);
+    MaponiA3(*linSlater_inv, *Dim, 
+             *N_updates, *linUpdates,
+             *Updates_index);
   }
 }
