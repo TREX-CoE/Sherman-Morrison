@@ -1,6 +1,6 @@
 ## Used compilers
-CXX = icpc
-FC = ifort
+CXX = /usr/local/bin/g++-10
+FC = /usr/local/bin/gfortran-10
 
 ## Compiler flags
 CXXFLAGS = -O0 #-debug full -traceback
@@ -38,7 +38,7 @@ clean:
 	@rm -vf *.o *.mod
 
 distclean: clean
-	@rm -vf cMaponiA3_test fMaponiA3_test QMCChem_dataset_test
+	@rm -vf cMaponiA3_test fMaponiA3_test QMCChem_dataset_test Slater_* Updates.dat
 
 ## Linking the C++ example program
 cMaponiA3_test: $(cMaponiA3_testOBJ)

@@ -3,50 +3,181 @@ program Interface_test
     use, intrinsic :: iso_c_binding, only : c_int, c_double
     implicit none
 
-    integer i, j !! Iterators
-    integer(c_int) :: dim, N_updates
-    integer(c_int), dimension(:), allocatable :: Ar_index
-    real(c_double), dimension(:,:), allocatable :: A, A0, Ar
-    real(c_double), dimension(:,:), allocatable :: A0_inv
+    integer i, j, col !! Iterators
+    integer(c_int) :: Dim, N_updates
+    integer(c_int), dimension(:), allocatable :: Updates_index
+    real(c_double), dimension(:,:), allocatable :: S, A, Updates
+    real(c_double), dimension(:,:), allocatable :: S_inv, A_inv
 
-    dim = 3
-    N_updates = 3
-    allocate(Ar_index(dim), A(dim,dim), A0(dim,dim), Ar(dim,dim), A0_inv(dim,dim))
+    Dim = 4
+    N_updates = 2
+    allocate( S(Dim,Dim), S_inv(Dim,Dim), A(Dim,Dim), A_inv(Dim,Dim), &
+              Updates(Dim,N_updates), Updates_index(N_updates))
 
-    !! Initialize A with M=3 and fill acc. to Eq. (17) from paper
+    !! Initialize S, S_inv, A and A_inv
+    S(1,1) = 1.0d0
+    S(1,2) = 0.0d0
+    S(1,3) = 1.0d0
+    S(1,4) = -1.0d0
+    S(2,1) = 0.0d0
+    S(2,2) = 1.0d0
+    S(2,3) = 1.0d0
+    S(2,4) = 0.0d0
+    S(3,1) = -1.0d0
+    S(3,2) = 0.0d0
+    S(3,3) = -1.0d0
+    S(3,4) = 0.0d0
+    S(4,1) = 1.0d0
+    S(4,2) = 1.0d0
+    S(4,3) = 1.0d0
+    S(4,4) = 1.0d0
+
+    S_inv(1,1) = 1.0d0
+    S_inv(1,2) = -1.0d0
+    S_inv(1,3) = 1.0d0
+    S_inv(1,4) = 1.0d0
+    S_inv(2,1) = 1.0d0
+    S_inv(2,2) = 0.0d0
+    S_inv(2,3) = 2.0d0
+    S_inv(2,4) = 1.0d0
+    S_inv(3,1) = -1.0d0
+    S_inv(3,2) = 1.0d0
+    S_inv(3,3) = -2.0d0
+    S_inv(3,4) = -1.0d0
+    S_inv(4,1) = -1.0d0
+    S_inv(4,2) = 0.0d0
+    S_inv(4,3) = -1.0d0
+    S_inv(4,4) = 0.0d0
+
     A(1,1) = 1.0d0
-    A(1,2) = 1.0d0
-    A(1,3) = -1.0d0
-    A(2,1) = 1.0d0
-    A(2,2) = 1.0d0
-    A(2,3) = 0.0d0
+    A(1,2) = 0.0d0
+    A(1,3) = 1.0d0
+    A(1,4) = -1.0d0
+    A(2,1) = 0.0d0
+    A(2,2) = -1.0d0
+    A(2,3) = 1.0d0
+    A(2,4) = -1.0d0
     A(3,1) = -1.0d0
     A(3,2) = 0.0d0
     A(3,3) = -1.0d0
+    A(3,4) = 0.0d0
+    A(4,1) = 1.0d0
+    A(4,2) = 1.0d0
+    A(4,3) = 1.0d0
+    A(4,4) = 1.0d0
 
-    !! Prepare the diagonal matrix A0 and the update matrix Ar
-    do i=1,dim
-        Ar_index(i) = i
-        do j=1,dim
-            if (i == j) then
-                A0(i,j) = A(i,j)
-                A0_inv(i,j) = 1.0d0 / A0(i,j)
-            else
-                A0(i,j) = 0.0d0
-                A0_inv(i,j) = 0.0d0
-            end if
-            Ar(i,j) = A(i,j) - A0(i,j)
-        end do
-    end do
+    A_inv(1,1) = 0.0d0
+    A_inv(1,2) = -1.0d0
+    A_inv(1,3) = -2.0d0
+    A_inv(1,4) = -1.0d0
+    A_inv(2,1) = 1.0d0
+    A_inv(2,2) = 0.0d0
+    A_inv(2,3) = 2.0d0
+    A_inv(2,4) = 1.0d0
+    A_inv(3,1) = 0.0d0
+    A_inv(3,2) = 1.0d0
+    A_inv(3,3) = 1.0d0
+    A_inv(3,4) = 1.0d0
+    A_inv(4,1) = -1.0d0
+    A_inv(4,2) = 0.0d0
+    A_inv(4,3) = -1.0d0
+    A_inv(4,4) = 0.0d0
 
-    call MaponiA3(A0, A0_inv, dim, n_updates, Ar, Ar_index)
+    !! Prepare Updates and Updates_index
+    Updates(1,1) = 0
+    Updates(1,2) = 0
+    Updates(2,1) = -2
+    Updates(2,2) = -1
+    Updates(3,1) = 0
+    Updates(3,2) = 0
+    Updates(4,1) = 0
+    Updates(4,2) = 0
 
-    do i=1,dim
-        do j=1,dim
-            write(*,"(F3.0,3X)", advance="no") A0_inv(i,j)
+    Updates_index(1) = 2
+    Updates_index(2) = 4
+
+    write(*,*)
+    write(*,*) "Old S = "
+    do i=1,Dim
+        do j=1,Dim
+            write(*,"(F3.0,3X)", advance="no") S(i,j)
         end do
         write(*,*)
     end do
 
-    deallocate(Ar_index, A, A0, Ar, A0_inv)
+    write(*,*)
+    write(*,*) "Old S_inv = "
+    do i=1,Dim
+        do j=1,Dim
+            write(*,"(F3.0,3X)", advance="no") S_inv(i,j)
+        end do
+        write(*,*)
+    end do
+
+    write(*,*)
+    write(*,*) "Updates = "
+    do i=1,Dim
+        do j=1,N_updates
+            write(*,"(F3.0,3X)", advance="no") Updates(i,j)
+        end do
+        write(*,*)
+    end do
+
+    write(*,*)
+    write(*,*) "Updates_index = "
+    do i=1,N_updates
+            write(*,"(I1,3X)", advance="no") Updates_index(i)
+    end do
+    write(*,*)
+
+    !! Update S
+    do i=1,N_updates
+        do j=1,Dim
+            col = Updates_index(i)
+            S(j,col) = S(j,col) + Updates(j,i)
+        end do
+    end do
+            
+    !! Update S_inv
+    call MaponiA3(S_inv, Dim, N_updates, Updates, Updates_index)
+
+    write(*,*)
+    write(*,*)
+    write(*,*) "New computed S = "
+    do i=1,Dim
+        do j=1,Dim
+            write(*,"(F3.0,3X)", advance="no") S(i,j)
+        end do
+        write(*,*)
+    end do
+
+    write(*,*)
+    write(*,*) "New actual S = "
+    do i=1,Dim
+        do j=1,Dim
+            write(*,"(F3.0,3X)", advance="no") A(i,j)
+        end do
+        write(*,*)
+    end do
+
+    write(*,*)
+    write(*,*)
+    write(*,*) "New computed S_inv = "
+    do i=1,Dim
+        do j=1,Dim
+            write(*,"(F3.0,3X)", advance="no") S_inv(i,j)
+        end do
+        write(*,*)
+    end do
+    
+    write(*,*)
+    write(*,*) "New actual S_inv = "
+    do i=1,Dim
+        do j=1,Dim
+            write(*,"(F3.0,3X)", advance="no") A_inv(i,j)
+        end do
+        write(*,*)
+    end do
+
+    deallocate(Updates_index, A, A_inv, S, Updates, S_inv)
 end program
