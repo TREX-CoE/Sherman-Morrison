@@ -1,6 +1,6 @@
 ## Used compilers
-CXX = /usr/local/bin/g++-10
-FC = /usr/local/bin/gfortran-10
+CXX = icpc
+FC = ifort
 
 ## Compiler flags
 CXXFLAGS = -O0 #-debug full -traceback
