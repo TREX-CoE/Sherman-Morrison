@@ -24,7 +24,7 @@ clc ## Clear the screen
 ## Define the matrix to be inverted. This is example 8 from the paper
 ## In the future this matrix needs to be read from the function call arguments
 A=[1,0, 1,-1; ...
-   0,-1, 1, -1; ...
+   0, 1, 1, 0; ...
   -1,0,-1, 0; ...
    1,1, 1, 1];
 A0=diag(diag(A));  ## The diagonal part of A
@@ -43,7 +43,7 @@ Ainv=zeros(nCols,nCols);
 ylk=zeros(nCols,nCols,nCols);
 p=zeros(nCols,1);
 breakdown=zeros(nCols,1);
-cutOff=10e-6
+cutOff=1e-10
 
 A,A0
 printf("Determinant of A  is: %d\n",det(A))
