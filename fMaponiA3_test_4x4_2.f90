@@ -96,39 +96,19 @@ program Interface_test
     Updates_index(1) = 2
     Updates_index(2) = 4
 
-    write(*,*)
-    write(*,*) "Old S = "
-    do i=1,Dim
-        do j=1,Dim
-            write(*,"(F3.0,3X)", advance="no") S(i,j)
+    !! Write current S and S_inv to file for check in Octave
+    open(unit = 2000, file = "Slater_old.dat")
+    open(unit = 3000, file = "Slater_old_inv.dat")
+    do i=1,dim
+        do j=1,dim
+            write(2000,"(E23.15, 1X)", advance="no") S(i,j)
+            write(3000,"(E23.15, 1X)", advance="no") S_inv(i,j)
         end do
-        write(*,*)
+        write(2000,*)
+        write(3000,*)
     end do
-
-    write(*,*)
-    write(*,*) "Old S_inv = "
-    do i=1,Dim
-        do j=1,Dim
-            write(*,"(F3.0,3X)", advance="no") S_inv(i,j)
-        end do
-        write(*,*)
-    end do
-
-    write(*,*)
-    write(*,*) "Updates = "
-    do i=1,Dim
-        do j=1,N_updates
-            write(*,"(F3.0,3X)", advance="no") Updates(i,j)
-        end do
-        write(*,*)
-    end do
-
-    write(*,*)
-    write(*,*) "Updates_index = "
-    do i=1,N_updates
-            write(*,"(I1,3X)", advance="no") Updates_index(i)
-    end do
-    write(*,*)
+    close(2000)
+    close(3000)
 
     !! Update S
     do i=1,N_updates
@@ -141,43 +121,19 @@ program Interface_test
     !! Update S_inv
     call MaponiA3(S_inv, Dim, N_updates, Updates, Updates_index)
 
-    write(*,*)
-    write(*,*)
-    write(*,*) "New computed S = "
-    do i=1,Dim
-        do j=1,Dim
-            write(*,"(F3.0,3X)", advance="no") S(i,j)
+    !! Write new S and S_inv to file for check in Octave
+    open(unit = 4000, file = "Slater.dat")
+    open(unit = 5000, file = "Slater_inv.dat")
+    do i=1,dim
+        do j=1,dim
+            write(4000,"(E23.15, 1X)", advance="no") S(i,j)
+            write(5000,"(E23.15, 1X)", advance="no") S_inv(i,j)
         end do
-        write(*,*)
+        write(4000,*)
+        write(5000,*)
     end do
-
-    write(*,*)
-    write(*,*) "New actual S = "
-    do i=1,Dim
-        do j=1,Dim
-            write(*,"(F3.0,3X)", advance="no") A(i,j)
-        end do
-        write(*,*)
-    end do
-
-    write(*,*)
-    write(*,*)
-    write(*,*) "New computed S_inv = "
-    do i=1,Dim
-        do j=1,Dim
-            write(*,"(F3.0,3X)", advance="no") S_inv(i,j)
-        end do
-        write(*,*)
-    end do
-    
-    write(*,*)
-    write(*,*) "New actual S_inv = "
-    do i=1,Dim
-        do j=1,Dim
-            write(*,"(F3.0,3X)", advance="no") A_inv(i,j)
-        end do
-        write(*,*)
-    end do
+    close(4000)
+    close(5000)
 
     deallocate(Updates_index, A, A_inv, S, Updates, S_inv)
 end program

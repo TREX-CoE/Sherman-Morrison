@@ -1,53 +1,63 @@
+# ARCH = -xCORE-AVX2
+
 ## Used compilers
 CXX = icpc
 FC = ifort
 
-## Compiler flags
-CXXFLAGS = -O0 #-debug full -traceback
-FFLAGS = -O0 #-debug full -traceback
-# ARCH = -xCORE-AVX2
+## Compiler flags & common obs & libs
+CXXFLAGS = -O0 -debug full -traceback
+FFLAGS = -O0 -debug full -traceback
+FLIBS = -lstdc++
+OBJS = SM_MaponiA3.o
 
-## Deps & objs for C++ cMaponiA3_test
-cMaponiA3_testDEP = cMaponiA3_test.cpp SM_MaponiA3.cpp SM_MaponiA3.hpp Helpers.hpp
-cMaponiA3_testOBJ = cMaponiA3_test.o SM_MaponiA3.o
 
-## Deps & objs for Fortran fMaponiA3_test
-fMaponiA3_testDEP = fMaponiA3_test.f90 SM_MaponiA3_mod.f90
-fMaponiA3_testOBJ = SM_MaponiA3.o SM_MaponiA3_mod.o fMaponiA3_test.o
-fMaponiA3_testLIB = -lstdc++
-
+## Deps & objs for C++ cMaponiA3_test_3x3_3
+cMaponiA3_test_3x3_3OBJ = cMaponiA3_test_3x3_3.o
+## Deps & objs for Fortran fMaponiA3_test_3x3_3
+fMaponiA3_test_3x3_3OBJ = SM_MaponiA3_mod.o fMaponiA3_test_3x3_3.o
+## Deps & objs for Fortran fMaponiA3_test_4x4_2
+fMaponiA3_test_4x4_2OBJ = SM_MaponiA3_mod.o fMaponiA3_test_4x4_2.o
 ## Deps & objs for Fortran QMCChem_dataset_test
-QMCChem_dataset_testDEP = QMCChem_dataset_test.f90 SM_MaponiA3_mod.f90 Utils_mod.f90
-QMCChem_dataset_testOBJ = SM_MaponiA3.o Utils_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
-QMCChem_dataset_testLIB = -lstdc++
+QMCChem_dataset_testOBJ = Utils_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
 
-## Compile recipes for C++ cMaponiA3_test
-%.o: %.cpp $(cMaponiA3_testDEP)
+
+## Default build target: build everything
+all: cMaponiA3_test_3x3_3 fMaponiA3_test_3x3_3 fMaponiA3_test_4x4_2 QMCChem_dataset_test
+
+
+## Compile recipes for C++
+%.o: %.cpp
 	$(CXX) $(ARCH) $(CXXFLAGS) -c -o $@ $<
 
-## Compile recepies for Fortran fMaponiA3_test
-%.o: %.f90 $(fMaponiA3_testDEP)
+## Compile recepies for Fortran
+%.o: %.f90
 	$(FC) $(ARCH) $(FFLAGS) -c -o $@ $<
+
+## Explicit recipe to trigger rebuild and relinking when headerfile is changed
+SM_MaponiA3.o: SM_MaponiA3.cpp Helpers.hpp
+	$(CXX) $(ARCH) $(CXXFLAGS) -c -o $@ $<
+
 
 ## Build tagets
 .PHONY: all clean distclean
-
-all: cMaponiA3_test fMaponiA3_test QMCChem_dataset_test
 
 clean:
 	@rm -vf *.o *.mod
 
 distclean: clean
-	@rm -vf cMaponiA3_test fMaponiA3_test QMCChem_dataset_test Slater_* Updates.dat
+	@rm -vf cMaponiA3_test_3x3_3 fMaponiA3_test_3x3_3 QMCChem_dataset_test Slater_* Updates.dat
+
 
 ## Linking the C++ example program
-cMaponiA3_test: $(cMaponiA3_testOBJ)
+cMaponiA3_test_3x3_3: $(cMaponiA3_test_3x3_3OBJ) $(OBJS)
 	$(CXX) $(ARCH) $(CXXFLAGS) -o $@ $^
 
-## Linking Fortran example program calling the C++ function 'Sherman_Morrison()'
-fMaponiA3_test: $(fMaponiA3_testOBJ)
-	$(FC) $(ARCH) $(FFLAGS) $(fMaponiA3_testLIB) -o $@ $^
+## Linking Fortran example program calling the C++ function
+fMaponiA3_test_3x3_3: $(fMaponiA3_test_3x3_3OBJ) $(OBJS)
+	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^
 
-## Linking Fortran example program calling the C++ function 'Sherman_Morrison()'
-QMCChem_dataset_test: $(QMCChem_dataset_testOBJ)
-	$(FC) $(ARCH) $(FFLAGS) $(QMCChem_dataset_testLIB) -o $@ $^
+fMaponiA3_test_4x4_2: $(fMaponiA3_test_4x4_2OBJ) $(OBJS)
+	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^
+
+QMCChem_dataset_test: $(QMCChem_dataset_testOBJ) $(OBJS)
+	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^

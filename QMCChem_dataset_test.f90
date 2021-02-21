@@ -7,7 +7,7 @@ program QMCChem_dataset_test
     integer :: i, j, col !! Iterators
     integer :: cycle_id, dim, n_updates
     integer(c_int), dimension(:), allocatable :: Updates_index
-    real(c_double), dimension(:,:), allocatable :: S, S_inv, Updates
+    real(c_double), dimension(:,:), allocatable :: S, S_inv, S_inv_trans, Updates
 
     call Read_dataset("test.dataset.dat", &
                        cycle_id, &
@@ -17,6 +17,13 @@ program QMCChem_dataset_test
                        S_inv, &
                        Updates_index, &
                        Updates)
+    
+    allocate(S_inv_trans(dim,dim))
+    do i=1,dim
+        do j=1,dim
+            S_inv_trans(i,j) = S_inv(j,i)
+        end do
+    end do
 
     !! Write current S and S_inv to file for check in Octave
     open(unit = 2000, file = "Slater_old.dat")
@@ -24,7 +31,7 @@ program QMCChem_dataset_test
     do i=1,dim
         do j=1,dim
             write(2000,"(E23.15, 1X)", advance="no") S(i,j)
-            write(3000,"(E23.15, 1X)", advance="no") S_inv(i,j)
+            write(3000,"(E23.15, 1X)", advance="no") S_inv_trans(i,j)
         end do
         write(2000,*)
         write(3000,*)
@@ -51,7 +58,7 @@ program QMCChem_dataset_test
     end do
 
     !! Send S_inv and Updates to MaponiA3 algo
-    call MaponiA3(S_inv, dim, n_updates, Updates, Updates_index)
+    call MaponiA3(S_inv_trans, dim, n_updates, Updates, Updates_index)
 
     !! Write new S and S_inv to file for check in Octave
     open(unit = 4000, file = "Slater.dat")
@@ -64,7 +71,6 @@ program QMCChem_dataset_test
         write(4000,*)
         write(5000,*)
     end do
-
     close(4000)
     close(5000)
 
