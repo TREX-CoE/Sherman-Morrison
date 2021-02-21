@@ -30,52 +30,28 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   for (k = 1; k < N_updates + 1; k++) {
     for (i = 1; i < Dim + 1; i++) {
       for (j = 1; j < Dim + 1; j++) {
-        ylk[0][k][i] += Slater_inv[(i-1)+(j-1)*Dim]
-                      * Updates[(k-1)*Dim+(j-1)];
+        ylk[0][k][i] += Slater_inv[(i-1) + (j-1)*Dim]
+                      * Updates[(k-1)*Dim + (j-1)];
       }
     }
   }
-
-  cout << endl;
-  cout <<  "y0k = " << endl;
-  for (k = 1; k < N_updates + 1; k++) {
-    cout << "[ ";
-    for (i = 1; i < Dim + 1; i++) {
-      cout << ylk[0][k][i] << " ";
-    }
-    cout << " ]" << endl;
-  }
-  cout << endl;
-
-  cout << endl;
-  cout << "EVERYTHING LOOKS CORRECT UPTO THIS POINT" << endl;
-  cout << "NEXT STEP: COMP. YLKs FROM Y0Ks" << endl << endl;
-
-  showVector(p, N_updates + 1, "p");
-  showVector(Updates_index, N_updates, "Updates_index");
 
   // Calculate all the ylk from the y0k
   for (l = 1; l < N_updates; l++) {
     for (j = l; j < N_updates + 1; j++) {
       component = Updates_index[p[j] - 1];
-      cout << component << endl;
       breakdown[j] = abs(1 + ylk[l - 1][p[j]][component]);
     }
-    showVector(breakdown, N_updates+1, "breakdown");
     lbar = getMaxIndex(breakdown, N_updates + 1);
-    cout << "lbar = " << lbar << endl;
-    // Reset breakdown back to 0 for next round to avoid case where its first element is always the largest
+    // Reset breakdown back to 0 for next round to avoid case where its
+    // first element is always the largest
     for (i = 0; i < N_updates + 1; i++) {
       breakdown[i] = 0;
     }
-    cout << "l = " << l << endl;
-    cout << "p[l] = " << p[l] << endl;
-    cout << "p[lbar] = " << p[lbar] << endl;
     tmp = p[l];
     p[l] = p[lbar];
     p[lbar] = tmp;
     component = Updates_index[p[l] - 1];
-    cout << "component = " << component << endl; 
     beta = 1 + ylk[l - 1][p[l]][component];
     if (beta == 0) {
       cout << "Break-down occured. Exiting..." << endl;
@@ -83,7 +59,6 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     }
     for (k = l + 1; k < N_updates + 1; k++) {
       alpha = ylk[l - 1][p[k]][component] / beta;
-      cout << "alpha = " << alpha << endl;
       for (i = 1; i < Dim + 1; i++) {
         ylk[l][p[k]][i] = ylk[l - 1][p[k]][i] - alpha * ylk[l - 1][p[l]][i];
       }
@@ -95,18 +70,22 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   // a new pointer 'copy' that points to whereever 'Slater_inv' points to now.
   double *copy = Slater_inv;
 
+  Slater_inv = transpose(Slater_inv, Dim);
+
   // Construct A-inverse from A0-inverse and the ylk
-  for (l = 0; l < N_updates; l++) {
-    k = l + 1;
-    component = Updates_index[p[k] - 1];
+  for (l = 0; l < N_updates; l++) {       // l    = 0, 1
+    k = l + 1;                            // k    = 1, 2
+    component = Updates_index[p[k] - 1];  // comp = 2, 4
     beta = 1 + ylk[l][p[k]][component];
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
-        Al[i * Dim + j] = (i == j) - (j == p[k]-1) * ylk[l][p[k]][i + 1] / beta;
+        Al[i * Dim + j] = (i == j) - (j == component - 1) * ylk[l][p[k]][i + 1] / beta;
       }
     }
     Slater_inv = matMul(Al, Slater_inv, Dim);
   }
+
+  Slater_inv = transpose(Slater_inv, Dim);
 
   // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
   for (i = 0; i < Dim; i++) {

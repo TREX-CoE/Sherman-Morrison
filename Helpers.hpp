@@ -37,9 +37,14 @@ template<typename T>
 void showMatrix(T *matrix, unsigned int M, string name) {
     cout << name << " = " << endl;
     for (unsigned int i = 0; i < M; i++) {
-        cout << "[ ";
+        cout << "[";
         for (unsigned int j = 0; j < M; j++) {
-            cout << matrix[i*M+j] << " ";
+            if (matrix[i*M+j] >= 0) {
+                cout << "  " << matrix[i*M+j];
+            }
+            else {
+                cout << " " << matrix[i*M+j];
+            }
         }
         cout << " ]" << endl;
     }
@@ -60,6 +65,17 @@ void showMatrixT(T **matrix, unsigned int size, string name) {
 }
 
 template<typename T>
+T *transpose(T *A, unsigned int M) {
+    T *B = new T[M*M];
+    for (unsigned int i = 0; i < M; i++) {
+        for (unsigned int j = 0; j < M; j++) {
+            B[i*M + j] = A[i + j*M];
+        }
+    }
+    return B;
+}
+
+template<typename T>
 T *matMul(T *A, T *B, unsigned int M) {
     T *C = new T[M*M];
     for (unsigned int i = 0; i < M; i++) {
@@ -71,7 +87,6 @@ T *matMul(T *A, T *B, unsigned int M) {
     }
     return C;
 }
-
 
 template<typename T1, typename T2>
 T1 *outProd(T1 *vec1, T2 *vec2, unsigned int M) {
