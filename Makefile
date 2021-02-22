@@ -45,7 +45,10 @@ clean:
 	@rm -vf *.o *.mod
 
 distclean: clean
-	@rm -vf cMaponiA3_test_3x3_3 fMaponiA3_test_3x3_3 QMCChem_dataset_test Slater_* Updates.dat
+	@rm -vf cMaponiA3_test_3x3_3 \
+	fMaponiA3_test_3x3_3 fMaponiA3_test_4x4_2 \
+	QMCChem_dataset_test \
+	Slater* Updates.dat
 
 
 ## Linking the C++ example program
