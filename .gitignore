@@ -1,8 +1,8 @@
 *.o
 *.mod
 .vscode
-cMaponiA3_test
-fMaponiA3_test
+cMaponiA3_test*
+fMaponiA3_test*
 QMCChem_dataset_test
 Slater*
 Updates*
