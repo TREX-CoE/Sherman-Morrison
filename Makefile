@@ -6,8 +6,8 @@ CXX = clang++
 FC = flang
 
 ## Compiler flags & common obs & libs
-CXXFLAGS = -O0 -debug full -traceback
-FFLAGS = -O0 -debug full -traceback
+CXXFLAGS = -O0 #-debug full -traceback
+FFLAGS = -O0 #-debug full -traceback
 FLIBS = -lstdc++
 OBJS = SM_MaponiA3.o
 
@@ -23,7 +23,7 @@ QMCChem_dataset_testOBJ = Utils_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
 
 
 ## Default build target: build everything
-all: cMaponiA3_test_3x3_3 fMaponiA3_test_3x3_3 fMaponiA3_test_4x4_2 QMCChem_dataset_test
+all: cMaponiA3_test_3x3_3 fMaponiA3_test_3x3_3 fMaponiA3_test_4x4_2 QMCChem_dataset_test tests/test
 
 
 ## Compile recipes for C++
@@ -65,3 +65,6 @@ fMaponiA3_test_4x4_2: $(fMaponiA3_test_4x4_2OBJ) $(OBJS)
 
 QMCChem_dataset_test: $(QMCChem_dataset_testOBJ) $(OBJS)
 	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^
+
+tests/test: tests/test.cpp SM_MaponiA3.o
+	$(H5CXX) $(ARCH) $(CXXFLAGS) -o $@ $^
