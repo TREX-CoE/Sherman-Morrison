@@ -51,7 +51,7 @@ int test_cycle(H5File file, int cycle) {
   showMatrix(slater_matrix, dim, "Slater");
 #endif
 
-  MaponiA3(slater_matrix, slater_inverse, dim, nupdates, updates, col_update_index);
+  MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
 
 #ifdef DEBUG
   showMatrix(slater_inverse, dim, "Inverse");
@@ -71,7 +71,7 @@ int test_cycle(H5File file, int cycle) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cerr << "usage: ./test_dataset <cycle>" << std::endl;
+    std::cerr << "usage: ./test <cycle>" << std::endl;
     return 1;
   }
   int cycle = std::stoi(argv[1]);

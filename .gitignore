@@ -6,3 +6,5 @@ fMaponiA3_test*
 QMCChem_dataset_test
 Slater*
 Updates*
+tests/test
+datasets.hdf5
