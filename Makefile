@@ -11,14 +11,10 @@ FFLAGS = -O0 #-debug full -traceback
 FLIBS = -lstdc++
 OBJS = SM_MaponiA3.o
 
-
 ## Deps & objs for C++ cMaponiA3_test_3x3_3
 cMaponiA3_test_3x3_3OBJ = cMaponiA3_test_3x3_3.o
-## Deps & objs for Fortran fMaponiA3_test_3x3_3
 fMaponiA3_test_3x3_3OBJ = SM_MaponiA3_mod.o fMaponiA3_test_3x3_3.o
-## Deps & objs for Fortran fMaponiA3_test_4x4_2
 fMaponiA3_test_4x4_2OBJ = SM_MaponiA3_mod.o fMaponiA3_test_4x4_2.o
-## Deps & objs for Fortran QMCChem_dataset_test
 QMCChem_dataset_testOBJ = Utils_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
 
 
