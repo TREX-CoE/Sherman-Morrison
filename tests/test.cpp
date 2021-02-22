@@ -23,7 +23,6 @@ void read_double(H5File file, std::string key, double * data) {
   ds.close();
 }
 
-
 int test_cycle(H5File file, int cycle) {
 
   /* Read the data */
@@ -77,7 +76,7 @@ int main(int argc, char **argv) {
   int cycle = std::stoi(argv[1]);
   H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
-  bool ok = test_cycle(file, 21);
+  bool ok = test_cycle(file, cycle);
 
   if (ok) {
     std::cerr << "ok -- cycle " << std::to_string(cycle) << std::endl;
