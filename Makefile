@@ -2,12 +2,12 @@
 
 ## Used compilers
 H5CXX = h5c++
-CXX = clang++
-FC = flang
+CXX = icpc
+FC = ifort
 
 ## Compiler flags & common obs & libs
-CXXFLAGS = -O0 #-debug full -traceback
-FFLAGS = -O0 #-debug full -traceback
+CXXFLAGS = -O0 -debug full -traceback
+FFLAGS = -O0 -debug full -traceback
 FLIBS = -lstdc++
 OBJS = SM_MaponiA3.o
 
@@ -15,7 +15,7 @@ OBJS = SM_MaponiA3.o
 cMaponiA3_test_3x3_3OBJ = cMaponiA3_test_3x3_3.o
 fMaponiA3_test_3x3_3OBJ = SM_MaponiA3_mod.o fMaponiA3_test_3x3_3.o
 fMaponiA3_test_4x4_2OBJ = SM_MaponiA3_mod.o fMaponiA3_test_4x4_2.o
-QMCChem_dataset_testOBJ = Utils_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
+QMCChem_dataset_testOBJ = Helpers_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
 
 
 ## Default build target: build everything

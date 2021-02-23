@@ -30,7 +30,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   for (k = 1; k < N_updates + 1; k++) {
     for (i = 1; i < Dim + 1; i++) {
       for (j = 1; j < Dim + 1; j++) {
-        ylk[0][k][i] += Slater_inv[(i-1) + (j-1)*Dim]
+        ylk[0][k][i] += Slater_inv[(i-1)*Dim + (j-1)]
                       * Updates[(k-1)*Dim + (j-1)];
       }
     }
@@ -70,7 +70,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   // a new pointer 'copy' that points to whereever 'Slater_inv' points to now.
   double *copy = Slater_inv;
 
-  Slater_inv = transpose(Slater_inv, Dim);
+  // Slater_inv = transpose(Slater_inv, Dim);
 
   // Construct A-inverse from A0-inverse and the ylk
   for (l = 0; l < N_updates; l++) {       // l    = 0, 1
@@ -85,7 +85,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     Slater_inv = matMul(Al, Slater_inv, Dim);
   }
 
-  Slater_inv = transpose(Slater_inv, Dim);
+  // Slater_inv = transpose(Slater_inv, Dim);
 
   // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
   for (i = 0; i < Dim; i++) {

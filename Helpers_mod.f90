@@ -1,4 +1,4 @@
-module Utils
+module Helpers
     implicit none
     contains
         subroutine Read_dataset(filename, &
@@ -53,4 +53,19 @@ module Utils
             !! End of reading the dataset from file
            close(1000)
         end subroutine Read_dataset
-end module Utils
+
+        subroutine Transpose(S_inv, S_inv_transpose, dim)
+            use, intrinsic :: iso_c_binding, only : c_int, c_double
+            implicit none
+            
+            integer, intent(in) :: dim
+            real(c_double), allocatable, intent(in) :: S_inv(:,:)
+            real(c_double), allocatable, intent(inout) :: S_inv_transpose(:,:)
+            integer :: i, j
+            do i=1,dim
+                do j=1,dim
+                    S_inv_transpose(i,j) = S_inv(j,i)
+                end do
+            end do
+        end subroutine Transpose
+    end module Helpers

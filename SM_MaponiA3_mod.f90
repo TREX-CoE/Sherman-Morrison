@@ -1,4 +1,5 @@
 module Sherman_Morrison
+    use, intrinsic :: iso_c_binding, only : c_int, c_double
     interface
         subroutine MaponiA3(Slater_inv, dim, n_updates, Updates, Updates_index) bind(C, name="MaponiA3_f")
             use, intrinsic :: iso_c_binding, only : c_int, c_double
