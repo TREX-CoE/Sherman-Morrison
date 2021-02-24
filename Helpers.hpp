@@ -39,25 +39,12 @@ void showMatrix(T *matrix, unsigned int M, string name) {
     for (unsigned int i = 0; i < M; i++) {
         cout << "[";
         for (unsigned int j = 0; j < M; j++) {
-            if (matrix[i*M+j] >= 0) {
-                cout << "  " << matrix[i*M+j];
+            if (matrix[i*M + j] >= 0) {
+                cout << "  " << matrix[i*M + j];
             }
             else {
-                cout << " " << matrix[i*M+j];
+                cout << " " << matrix[i*M + j];
             }
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-
-template<typename T>
-void showMatrixT(T **matrix, unsigned int size, string name) {
-    cout << name << " = " << endl;
-    for (unsigned int i = 0; i < size; i++) {
-        cout << "[ ";
-        for (unsigned int j = 0; j < size; j++) {
-            cout << matrix[j][i] << " ";
         }
         cout << " ]" << endl;
     }
@@ -85,6 +72,20 @@ T *matMul(T *A, T *B, unsigned int M) {
             }
         }
     }
+    return C;
+}
+
+template<typename T>
+T *matMul2(T *A, T *B, unsigned int M) {
+    T *C = new T[M*M];
+    for (unsigned int i = 0; i < M; i++) {
+        for (unsigned int j = 0; j < M; j++) {
+            for (unsigned int k = 0; k < M; k++) {
+                C[i*M+j] += A[i*M+k] * B[k*M+j];
+            }
+        }
+    }
+    showMatrix(C,M,"C");
     return C;
 }
 
@@ -134,7 +135,6 @@ T matDet(T **A, unsigned int M) {
     }
     delete [] temp;
 }
-
 
 template<typename T>
 bool is_identity(T *A, unsigned int M, double tolerance) {

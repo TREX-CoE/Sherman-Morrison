@@ -9,7 +9,7 @@ program QMCChem_dataset_test
     real(c_double), dimension(:,:), allocatable :: Updates
     real(c_double), dimension(:,:), allocatable :: S, S_inv, S_inv_t
 
-    call Read_dataset("datasets/update_cycle_13.dat", &
+    call Read_dataset("datasets/update_cycle_8169.dat", &
                        cycle_id, &
                        dim, &
                        n_updates, &
@@ -18,7 +18,6 @@ program QMCChem_dataset_test
                        Updates_index, &
                        Updates)
     allocate(S_inv_t(dim,dim))
-    call Transpose(S_inv, S_inv_t, dim)
 
     !! Write current S and S_inv to file for check in Octave
     open(unit = 2000, file = "Slater_old.dat")
@@ -53,7 +52,12 @@ program QMCChem_dataset_test
     end do
 
     !! Update S_inv
+    !! S_inv needs to be transposed first before it
+    !! goes to MaponiA3
+    call Transpose(S_inv, S_inv_t, dim)
     call MaponiA3(S_inv_t, dim, n_updates, Updates, Updates_index)
+    !! S_inv_t needs to be transposed back before we
+    !! can multiply it with S to test unity
     call Transpose(S_inv_t, S_inv, dim)
 
     !! Write new S and S_inv to file for check in Octave

@@ -7,7 +7,7 @@ def rl(rf):
 
 
 with h5py.File('datasets.hdf5', 'w') as f:
-    with open('datasets.dat', 'r') as rf:
+    with open('datasets.short.dat', 'r') as rf:
         while(1):
             line = rl(rf)
             if not line or not line.startswith('#START_PACKET'):

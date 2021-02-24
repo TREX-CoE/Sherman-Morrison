@@ -9,7 +9,7 @@
 using namespace H5;
 #define DEBUG 1
 
-const H5std_string FILE_NAME( "datasets.hdf5" );
+const H5std_string FILE_NAME( "datasets.small.hdf5" );
 
 void read_int(H5File file, std::string key, unsigned int * data) {
   DataSet ds = file.openDataSet(key);
@@ -29,7 +29,7 @@ int test_cycle(H5File file, int cycle) {
 
   std::string group = "cycle_" + std::to_string(cycle);
 
-  unsigned int dim, nupdates;
+  unsigned int dim, nupdates, col, i, j;
   read_int(file, group + "/slater_matrix_dim", &dim);
   read_int(file, group + "/nupdates", &nupdates);
 
@@ -38,6 +38,7 @@ int test_cycle(H5File file, int cycle) {
 
   double * slater_inverse = new double[dim*dim];
   read_double(file, group + "/slater_inverse", slater_inverse);
+  slater_inverse = transpose(slater_inverse, dim);
 
   unsigned int * col_update_index = new unsigned int[nupdates];
   read_int(file, group + "/col_update_index", col_update_index);
@@ -50,13 +51,28 @@ int test_cycle(H5File file, int cycle) {
   showMatrix(slater_matrix, dim, "Slater");
 #endif
 
+#ifdef DEBUG
+  showMatrix(slater_inverse, dim, "Inverse");
+#endif
+
+  for (j = 0; j < nupdates; j++) {
+    for (i = 0; i < dim; i++) {
+      col = col_update_index[j];
+      slater_matrix[i*dim + (col - 1)] += updates[i + j*dim];
+    }
+  }
+
   MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
+
+#ifdef DEBUG
+  showMatrix(slater_matrix, dim, "Slater");
+#endif
 
 #ifdef DEBUG
   showMatrix(slater_inverse, dim, "Inverse");
 #endif
 
-  double * res = matMul(slater_matrix, slater_inverse, dim);
+  double * res = matMul2(slater_matrix, slater_inverse, dim);
   bool ok = is_identity(res, dim, 1.0e-8);
 
 #ifdef DEBUG
@@ -80,7 +96,8 @@ int main(int argc, char **argv) {
 
   if (ok) {
     std::cerr << "ok -- cycle " << std::to_string(cycle) << std::endl;
-  } else {
+  }
+  else {
     std::cerr << "failed -- cycle " << std::to_string(cycle) << std::endl;
   }
   return ok;
