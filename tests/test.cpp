@@ -48,11 +48,11 @@ int test_cycle(H5File file, int cycle) {
 
   /* Test */
 #ifdef DEBUG
-  showMatrix(slater_matrix, dim, "Slater");
+  showMatrix(slater_matrix, dim, "OLD Slater");
 #endif
 
 #ifdef DEBUG
-  showMatrix(slater_inverse, dim, "Inverse");
+  showMatrix(slater_inverse, dim, "OLD Inverse");
 #endif
 
   for (j = 0; j < nupdates; j++) {
@@ -65,21 +65,22 @@ int test_cycle(H5File file, int cycle) {
   MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
 
 #ifdef DEBUG
-  showMatrix(slater_matrix, dim, "Slater");
+  showMatrix(slater_matrix, dim, "NEW Slater");
 #endif
 
 #ifdef DEBUG
-  showMatrix(slater_inverse, dim, "Inverse");
+  showMatrix(slater_inverse, dim, "NEW Inverse");
 #endif
 
-  double * res = matMul2(slater_matrix, slater_inverse, dim);
-  bool ok = is_identity(res, dim, 1.0e-8);
+  double * res = matMul(slater_matrix, slater_inverse, dim);
+  bool ok = is_identity(res, dim, 0.5e-4);
 
 #ifdef DEBUG
   showMatrix(res, dim, "Result");
 #endif
 
-  delete [] res, updates, col_update_index, slater_matrix, slater_inverse;
+  delete [] res, updates, col_update_index,
+            slater_matrix, slater_inverse;
 
   return ok;
 }
@@ -95,10 +96,12 @@ int main(int argc, char **argv) {
   bool ok = test_cycle(file, cycle);
 
   if (ok) {
-    std::cerr << "ok -- cycle " << std::to_string(cycle) << std::endl;
+    std::cerr << "ok -- cycle " << std::to_string(cycle)
+              << std::endl;
   }
   else {
-    std::cerr << "failed -- cycle " << std::to_string(cycle) << std::endl;
+    std::cerr << "failed -- cycle " << std::to_string(cycle)
+              << std::endl;
   }
   return ok;
 }

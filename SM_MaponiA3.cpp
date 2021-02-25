@@ -4,15 +4,17 @@
 #include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
 
-void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-              double *Updates, unsigned int *Updates_index) {
+void MaponiA3(double *Slater_inv, unsigned int Dim,
+              unsigned int N_updates, double *Updates, 
+              unsigned int *Updates_index) {
 
   unsigned int k, l, lbar, i, j, tmp, component;
-  unsigned int *p = new unsigned int[N_updates + 1];
+  unsigned int *p = new unsigned int[N_updates + 1] {0};
   double alpha, beta;
-  double *breakdown = new double[N_updates + 1];
+  double *breakdown = new double[N_updates + 1] {0};
   double *Al = new double[Dim * Dim];
-  p[0] = 0;
+
+  // Populate update-order vector
   for (i = 0; i < N_updates; i++) {
     p[i + 1] = i + 1;
   }
@@ -43,8 +45,8 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
       breakdown[j] = abs(1 + ylk[l - 1][p[j]][component]);
     }
     lbar = getMaxIndex(breakdown, N_updates + 1);
-    // Reset breakdown back to 0 for next round to avoid case where its
-    // first element is always the largest
+    // Reset breakdown back to 0 for next round to avoid case where
+    // its first element is always the largest
     for (i = 0; i < N_updates + 1; i++) {
       breakdown[i] = 0;
     }
@@ -60,14 +62,16 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     for (k = l + 1; k < N_updates + 1; k++) {
       alpha = ylk[l - 1][p[k]][component] / beta;
       for (i = 1; i < Dim + 1; i++) {
-        ylk[l][p[k]][i] = ylk[l - 1][p[k]][i] - alpha * ylk[l - 1][p[l]][i];
+        ylk[l][p[k]][i] = ylk[l - 1][p[k]][i]
+                        - alpha * ylk[l - 1][p[l]][i];
       }
     }
   }
 
   // Keep the memory location of the passed array 'Slater_inv' before
-  // 'Slater_inv' gets reassigned by 'matMul(...)' in the next line, by creating
-  // a new pointer 'copy' that points to whereever 'Slater_inv' points to now.
+  // 'Slater_inv' gets reassigned by 'matMul(...)' in the next line,
+  // by creating a new pointer 'copy' that points to whereever
+  // 'Slater_inv' points to now.
   double *copy = Slater_inv;
 
   // Construct A-inverse from A0-inverse and the ylk
@@ -77,13 +81,15 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     beta = 1 + ylk[l][p[k]][component];
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
-        Al[i * Dim + j] = (i == j) - (j == component - 1) * ylk[l][p[k]][i + 1] / beta;
+        Al[i*Dim + j] = (i == j) - (j == component-1)
+                      * ylk[l][p[k]][i + 1] / beta;
       }
     }
     Slater_inv = matMul(Al, Slater_inv, Dim);
   }
 
-  // Assign the new values of 'Slater_inv' to the old values in 'copy[][]'
+  // Assign the new values of 'Slater_inv' to the old values
+  // in 'copy[][]'
   for (i = 0; i < Dim; i++) {
     for (j = 0; j < Dim; j++) {
       copy[i * Dim + j] = Slater_inv[i * Dim + j];
