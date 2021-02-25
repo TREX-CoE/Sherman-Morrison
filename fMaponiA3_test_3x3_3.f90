@@ -1,6 +1,5 @@
 program Interface_test
-    use Sherman_Morrison, only : MaponiA3
-    use, intrinsic :: iso_c_binding, only : c_int, c_double
+    use Sherman_Morrison
     implicit none
 
     integer i, j !! Iterators
@@ -23,6 +22,14 @@ program Interface_test
     A(3,1) = -1.0d0
     A(3,2) = 0.0d0
     A(3,3) = -1.0d0
+
+    do i=1,Dim
+        do j=1,Dim
+            write(*,"(F3.0,3X)", advance="no") A(i,j)
+        end do
+        write(*,*)
+    end do
+    write(*,*)
 
     !! Prepare the diagonal matrix S and the update matrix Updates
     do i=1,Dim

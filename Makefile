@@ -2,20 +2,21 @@
 
 ## Used compilers
 H5CXX = h5c++
-CXX = clang++
-FC = flang
+CXX = icpc
+FC = ifort
 
 ## Compiler flags & common obs & libs
-CXXFLAGS = -O0 #-debug full -traceback
-FFLAGS = -O0 #-debug full -traceback
+H5CXXFLAGS = -O0 -g
+CXXFLAGS = -O0 -g -traceback
+FFLAGS = -O0 -g -traceback
 FLIBS = -lstdc++
 OBJS = SM_MaponiA3.o
 
 ## Deps & objs for C++ cMaponiA3_test_3x3_3
 cMaponiA3_test_3x3_3OBJ = cMaponiA3_test_3x3_3.o
 fMaponiA3_test_3x3_3OBJ = SM_MaponiA3_mod.o fMaponiA3_test_3x3_3.o
-fMaponiA3_test_4x4_2OBJ = SM_MaponiA3_mod.o fMaponiA3_test_4x4_2.o
-QMCChem_dataset_testOBJ = Utils_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
+fMaponiA3_test_4x4_2OBJ = Helpers_mod.o SM_MaponiA3_mod.o fMaponiA3_test_4x4_2.o
+QMCChem_dataset_testOBJ = Helpers_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
 
 
 ## Default build target: build everything
@@ -32,7 +33,7 @@ all: cMaponiA3_test_3x3_3 fMaponiA3_test_3x3_3 fMaponiA3_test_4x4_2 QMCChem_data
 
 ## Explicit recipe to trigger rebuild and relinking when headerfile is changed
 SM_MaponiA3.o: SM_MaponiA3.cpp Helpers.hpp
-	$(CXX) $(ARCH) $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(ARCH) $(CXXFLAGS) -fPIC -c -o $@ $<
 
 
 ## Build tagets
@@ -64,4 +65,4 @@ QMCChem_dataset_test: $(QMCChem_dataset_testOBJ) $(OBJS)
 	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^
 
 tests/test: tests/test.cpp SM_MaponiA3.o
-	$(H5CXX) $(ARCH) $(CXXFLAGS) -o $@ $^
+	$(H5CXX) $(ARCH) $(H5CXXFLAGS) -o $@ $^

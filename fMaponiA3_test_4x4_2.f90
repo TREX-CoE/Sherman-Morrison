@@ -1,17 +1,17 @@
 program Interface_test
-    use Sherman_Morrison, only : MaponiA3
-    use, intrinsic :: iso_c_binding, only : c_int, c_double
+    use Sherman_Morrison
+    use Helpers
     implicit none
 
     integer i, j, col !! Iterators
     integer(c_int) :: Dim, N_updates
     integer(c_int), dimension(:), allocatable :: Updates_index
     real(c_double), dimension(:,:), allocatable :: S, A, Updates
-    real(c_double), dimension(:,:), allocatable :: S_inv, A_inv
+    real(c_double), dimension(:,:), allocatable :: S_inv, S_inv_t, A_inv
 
     Dim = 4
     N_updates = 2
-    allocate( S(Dim,Dim), S_inv(Dim,Dim), A(Dim,Dim), A_inv(Dim,Dim), &
+    allocate( S(Dim,Dim), S_inv(Dim,Dim), S_inv_t(Dim,Dim), A(Dim,Dim), A_inv(Dim,Dim), &
               Updates(Dim,N_updates), Updates_index(N_updates))
 
     !! Initialize S, S_inv, A and A_inv
@@ -110,6 +110,16 @@ program Interface_test
     close(2000)
     close(3000)
 
+    !! Write Updates to file to check
+    open(unit = 2000, file = "Updates.dat")
+    do i=1,dim
+        do j=1,n_updates
+            write(2000,"(E23.15, 1X)", advance="no") Updates(i,j)
+        end do
+        write(2000,*)
+    end do
+    close(2000)
+
     !! Update S
     do i=1,N_updates
         do j=1,Dim
@@ -119,7 +129,9 @@ program Interface_test
     end do
             
     !! Update S_inv
-    call MaponiA3(S_inv, Dim, N_updates, Updates, Updates_index)
+    call Transpose(S_inv, S_inv_t, Dim)
+    call MaponiA3(S_inv_t, Dim, N_updates, Updates, Updates_index)
+    call Transpose(S_inv_t, S_inv, Dim)
 
     !! Write new S and S_inv to file for check in Octave
     open(unit = 4000, file = "Slater.dat")

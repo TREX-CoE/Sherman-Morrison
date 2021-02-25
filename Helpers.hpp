@@ -7,9 +7,9 @@ using namespace std;
 
 template<typename T>
 unsigned int getMaxIndex(T *vector, unsigned int size) {
-    unsigned int i;
-    unsigned int max = vector[0];
-    unsigned int maxi = 0;
+    unsigned int i = 0;
+    unsigned int maxi = i;
+    unsigned int max = vector[maxi];
     for (i = 1; i < size; i++) {
         if (vector[i] > max) {
             max = vector[i];
@@ -39,25 +39,12 @@ void showMatrix(T *matrix, unsigned int M, string name) {
     for (unsigned int i = 0; i < M; i++) {
         cout << "[";
         for (unsigned int j = 0; j < M; j++) {
-            if (matrix[i*M+j] >= 0) {
-                cout << "  " << matrix[i*M+j];
+            if (matrix[i*M + j] >= 0) {
+                cout << "  " << matrix[i*M + j];
             }
             else {
-                cout << " " << matrix[i*M+j];
+                cout << " " << matrix[i*M + j];
             }
-        }
-        cout << " ]" << endl;
-    }
-    cout << endl;
-}
-
-template<typename T>
-void showMatrixT(T **matrix, unsigned int size, string name) {
-    cout << name << " = " << endl;
-    for (unsigned int i = 0; i < size; i++) {
-        cout << "[ ";
-        for (unsigned int j = 0; j < size; j++) {
-            cout << matrix[j][i] << " ";
         }
         cout << " ]" << endl;
     }
@@ -77,7 +64,7 @@ T *transpose(T *A, unsigned int M) {
 
 template<typename T>
 T *matMul(T *A, T *B, unsigned int M) {
-    T *C = new T[M*M];
+    T *C = new T[M*M] {0};
     for (unsigned int i = 0; i < M; i++) {
         for (unsigned int j = 0; j < M; j++) {
             for (unsigned int k = 0; k < M; k++) {
@@ -134,7 +121,6 @@ T matDet(T **A, unsigned int M) {
     }
     delete [] temp;
 }
-
 
 template<typename T>
 bool is_identity(T *A, unsigned int M, double tolerance) {

@@ -1,16 +1,15 @@
 program QMCChem_dataset_test
-    use Sherman_Morrison, only : MaponiA3
-    use Utils, only : Read_dataset
-    use, intrinsic :: iso_c_binding, only : c_int, c_double
+    use Sherman_Morrison
+    use Helpers
     implicit none
 
     integer :: i, j, col !! Iterators
     integer :: cycle_id, dim, n_updates
     integer(c_int), dimension(:), allocatable :: Updates_index
     real(c_double), dimension(:,:), allocatable :: Updates
-    real(c_double), dimension(:,:), allocatable :: S, S_inv, S_inv_trans
+    real(c_double), dimension(:,:), allocatable :: S, S_inv, S_inv_t
 
-    call Read_dataset("dataset.dat", &
+    call Read_dataset("datasets/update_cycle_13.dat", &
                        cycle_id, &
                        dim, &
                        n_updates, &
@@ -18,7 +17,8 @@ program QMCChem_dataset_test
                        S_inv, &
                        Updates_index, &
                        Updates)
-    
+    allocate(S_inv_t(dim,dim))
+
     !! Write current S and S_inv to file for check in Octave
     open(unit = 2000, file = "Slater_old.dat")
     open(unit = 3000, file = "Slater_old_inv.dat")
@@ -52,7 +52,13 @@ program QMCChem_dataset_test
     end do
 
     !! Update S_inv
-    call MaponiA3(S_inv, dim, n_updates, Updates, Updates_index)
+    !! S_inv needs to be transposed first before it
+    !! goes to MaponiA3
+    call Transpose(S_inv, S_inv_t, dim)
+    call MaponiA3(S_inv_t, dim, n_updates, Updates, Updates_index)
+    !! S_inv_t needs to be transposed back before we
+    !! can multiply it with S to test unity
+    call Transpose(S_inv_t, S_inv, dim)
 
     !! Write new S and S_inv to file for check in Octave
     open(unit = 4000, file = "Slater.dat")
@@ -68,5 +74,5 @@ program QMCChem_dataset_test
     close(4000)
     close(5000)
 
-    deallocate(S, S_inv, Updates, Updates_index)
+    deallocate(S, S_inv, S_inv_t, Updates, Updates_index)
 end program

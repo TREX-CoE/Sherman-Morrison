@@ -9,7 +9,7 @@
 using namespace H5;
 #define DEBUG 1
 
-const H5std_string FILE_NAME( "datasets.hdf5" );
+const H5std_string FILE_NAME( "datasets.small.hdf5" );
 
 void read_int(H5File file, std::string key, unsigned int * data) {
   DataSet ds = file.openDataSet(key);
@@ -23,14 +23,13 @@ void read_double(H5File file, std::string key, double * data) {
   ds.close();
 }
 
-
 int test_cycle(H5File file, int cycle) {
 
   /* Read the data */
 
   std::string group = "cycle_" + std::to_string(cycle);
 
-  unsigned int dim, nupdates;
+  unsigned int dim, nupdates, col, i, j;
   read_int(file, group + "/slater_matrix_dim", &dim);
   read_int(file, group + "/nupdates", &nupdates);
 
@@ -39,6 +38,7 @@ int test_cycle(H5File file, int cycle) {
 
   double * slater_inverse = new double[dim*dim];
   read_double(file, group + "/slater_inverse", slater_inverse);
+  slater_inverse = transpose(slater_inverse, dim);
 
   unsigned int * col_update_index = new unsigned int[nupdates];
   read_int(file, group + "/col_update_index", col_update_index);
@@ -48,23 +48,39 @@ int test_cycle(H5File file, int cycle) {
 
   /* Test */
 #ifdef DEBUG
-  showMatrix(slater_matrix, dim, "Slater");
+  showMatrix(slater_matrix, dim, "OLD Slater");
 #endif
+
+#ifdef DEBUG
+  showMatrix(slater_inverse, dim, "OLD Inverse");
+#endif
+
+  for (j = 0; j < nupdates; j++) {
+    for (i = 0; i < dim; i++) {
+      col = col_update_index[j];
+      slater_matrix[i*dim + (col - 1)] += updates[i + j*dim];
+    }
+  }
 
   MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
 
 #ifdef DEBUG
-  showMatrix(slater_inverse, dim, "Inverse");
+  showMatrix(slater_matrix, dim, "NEW Slater");
+#endif
+
+#ifdef DEBUG
+  showMatrix(slater_inverse, dim, "NEW Inverse");
 #endif
 
   double * res = matMul(slater_matrix, slater_inverse, dim);
-  bool ok = is_identity(res, dim, 1.0e-8);
+  bool ok = is_identity(res, dim, 0.5e-4);
 
 #ifdef DEBUG
   showMatrix(res, dim, "Result");
 #endif
 
-  delete [] res, updates, col_update_index, slater_matrix, slater_inverse;
+  delete [] res, updates, col_update_index,
+            slater_matrix, slater_inverse;
 
   return ok;
 }
@@ -77,12 +93,15 @@ int main(int argc, char **argv) {
   int cycle = std::stoi(argv[1]);
   H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
-  bool ok = test_cycle(file, 21);
+  bool ok = test_cycle(file, cycle);
 
   if (ok) {
-    std::cerr << "ok -- cycle " << std::to_string(cycle) << std::endl;
-  } else {
-    std::cerr << "failed -- cycle " << std::to_string(cycle) << std::endl;
+    std::cerr << "ok -- cycle " << std::to_string(cycle)
+              << std::endl;
+  }
+  else {
+    std::cerr << "failed -- cycle " << std::to_string(cycle)
+              << std::endl;
   }
   return ok;
 }

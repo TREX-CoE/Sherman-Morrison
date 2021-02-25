@@ -7,4 +7,5 @@ QMCChem_dataset_test
 Slater*
 Updates*
 tests/test
-datasets.hdf5
+datasets/datasets.*
+
