@@ -3,8 +3,8 @@
 #include "hdf5/serial/hdf5.h"
 #include "H5Cpp.h"
 
-#include "../SM_MaponiA3.hpp"
-#include "../Helpers.hpp"
+#include "SM_MaponiA3.hpp"
+#include "Helpers.hpp"
 
 using namespace H5;
 //#define DEBUG 0
