@@ -3,13 +3,13 @@
 #include "hdf5/serial/hdf5.h"
 #include "H5Cpp.h"
 
-#include "../SM_MaponiA3.hpp"
-#include "../Helpers.hpp"
+#include "SM_MaponiA3.hpp"
+#include "Helpers.hpp"
 
 using namespace H5;
-#define DEBUG 1
+//#define DEBUG 0
 
-const H5std_string FILE_NAME( "datasets.small.hdf5" );
+const H5std_string FILE_NAME( "datasets.hdf5" );
 
 void read_int(H5File file, std::string key, unsigned int * data) {
   DataSet ds = file.openDataSet(key);

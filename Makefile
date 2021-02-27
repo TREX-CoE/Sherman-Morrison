@@ -1,68 +1,84 @@
-# ARCH = -xCORE-AVX2
-
-## Used compilers
+## Compilers
+ARCH = -xCORE-AVX2
 H5CXX = h5c++
 CXX = icpc
 FC = ifort
 
-## Compiler flags & common obs & libs
+## Compiler flags
 H5CXXFLAGS = -O0 -g
 CXXFLAGS = -O0 -g -traceback
 FFLAGS = -O0 -g -traceback
+
+INCLUDE = -I $(INC_DIR)/
+DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o
+DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
 FLIBS = -lstdc++
-OBJS = SM_MaponiA3.o
 
-## Deps & objs for C++ cMaponiA3_test_3x3_3
-cMaponiA3_test_3x3_3OBJ = cMaponiA3_test_3x3_3.o
-fMaponiA3_test_3x3_3OBJ = SM_MaponiA3_mod.o fMaponiA3_test_3x3_3.o
-fMaponiA3_test_4x4_2OBJ = Helpers_mod.o SM_MaponiA3_mod.o fMaponiA3_test_4x4_2.o
-QMCChem_dataset_testOBJ = Helpers_mod.o SM_MaponiA3_mod.o QMCChem_dataset_test.o
+SRC_DIR := src
+TST_DIR := tests
+INC_DIR := include
+OBJ_DIR := build
+BIN_DIR := bin
 
-
-## Default build target: build everything
-all: cMaponiA3_test_3x3_3 fMaponiA3_test_3x3_3 fMaponiA3_test_4x4_2 QMCChem_dataset_test tests/test
-
-
-## Compile recipes for C++
-%.o: %.cpp
-	$(CXX) $(ARCH) $(CXXFLAGS) -c -o $@ $<
-
-## Compile recepies for Fortran
-%.o: %.f90
-	$(FC) $(ARCH) $(FFLAGS) -c -o $@ $<
-
-## Explicit recipe to trigger rebuild and relinking when headerfile is changed
-SM_MaponiA3.o: SM_MaponiA3.cpp Helpers.hpp
-	$(CXX) $(ARCH) $(CXXFLAGS) -fPIC -c -o $@ $<
-
+EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
+		$(BIN_DIR)/test_h5 \
+		$(BIN_DIR)/fMaponiA3_test_3x3_3 \
+		$(BIN_DIR)/fMaponiA3_test_4x4_2 \
+		$(BIN_DIR)/QMCChem_dataset_test
 
 ## Build tagets
 .PHONY: all clean distclean
 
+all: $(EXEC)
+
 clean:
-	@rm -vf *.o *.mod
+	@rm -vrf $(OBJ_DIR)
 
 distclean: clean
-	@rm -vf cMaponiA3_test_3x3_3 \
-	fMaponiA3_test_3x3_3 fMaponiA3_test_4x4_2 \
-	QMCChem_dataset_test \
-	Slater* Updates.dat \
-	tests/test
+	@rm -vrf $(BIN_DIR) \
+	Slater* Updates.dat
 
 
-## Linking the C++ example program
-cMaponiA3_test_3x3_3: $(cMaponiA3_test_3x3_3OBJ) $(OBJS)
-	$(CXX) $(ARCH) $(CXXFLAGS) -o $@ $^
+#### COMPILING
+$(BIN_DIR) $(OBJ_DIR):
+	mkdir -p $@
 
-## Linking Fortran example program calling the C++ function
-fMaponiA3_test_3x3_3: $(fMaponiA3_test_3x3_3OBJ) $(OBJS)
-	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^
+### IMPLICIT BUILD RULES
+## C++ objects
+$(OBJ_DIR)/%.o: $(TST_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) $(ARCH) $(INCLUDE) -c -o $@ $<
 
-fMaponiA3_test_4x4_2: $(fMaponiA3_test_4x4_2OBJ) $(OBJS)
-	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^
+## HDF5/C++ objects
+$(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
+	$(H5CXX) $(H5CXXFLAGS) $(INCLUDE) -c -o $@ $<
 
-QMCChem_dataset_test: $(QMCChem_dataset_testOBJ) $(OBJS)
-	$(FC) $(ARCH) $(FFLAGS) $(FLIBS) -o $@ $^
+## Fortran modules
+$(OBJ_DIR)/%_mod.o: $(SRC_DIR)/%_mod.f90 | $(OBJ_DIR)
+	$(FC) $(FFLAGS) $(ARCH) -module $(OBJ_DIR)/ -c -o $@ $<
 
-tests/test: tests/test.cpp SM_MaponiA3.o
-	$(H5CXX) $(ARCH) $(H5CXXFLAGS) -o $@ $^
+## Fortran objects
+$(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
+	$(FC) $(FFLAGS) $(ARCH) -I $(OBJ_DIR)/ -c -o $@ $<
+
+### EXPLICIT BUILD RULES
+## special compiler flag -fPIC otherwise h5c++ builds fail
+$(OBJ_DIR)/SM_MaponiA3.o: $(SRC_DIR)/SM_MaponiA3.cpp $(INC_DIR)/* | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -fPIC $(ARCH) $(INCLUDE) -c -o $@ $<
+
+
+
+#### LINKING
+$(BIN_DIR)/cMaponiA3_test_3x3_3: $(OBJ_DIR)/cMaponiA3_test_3x3_3.o $(DEPS_CXX) | $(BIN_DIR)
+	$(CXX) -o $@ $^
+
+$(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
+	$(H5CXX) -o $@ $^
+
+$(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
+	$(FC) $(FLIBS) -o $@ $^
+
+$(BIN_DIR)/fMaponiA3_test_4x4_2: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_4x4_2.o  | $(BIN_DIR)
+	$(FC) $(FLIBS) -o $@ $^
+
+$(BIN_DIR)/QMCChem_dataset_test: $(DEPS_F) $(OBJ_DIR)/QMCChem_dataset_test.o  | $(BIN_DIR)
+	$(FC) $(FLIBS) -o $@ $^
