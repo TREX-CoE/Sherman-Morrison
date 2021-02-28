@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include "hdf5/serial/hdf5.h"
-#include "H5Cpp.h"
+#include "hdf5/serial/H5Cpp.h"
 
 #include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
@@ -87,7 +87,8 @@ int test_cycle(H5File file, int cycle) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cerr << "usage: ./test <cycle>" << std::endl;
+    std::cerr << "Execute from within 'datasets/'" << std::endl;
+    std::cerr << "usage: test_external_h5 <cycle>" << std::endl;
     return 1;
   }
   int cycle = std::stoi(argv[1]);
