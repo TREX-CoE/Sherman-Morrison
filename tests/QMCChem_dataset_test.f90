@@ -9,7 +9,7 @@ program QMCChem_dataset_test
     real(c_double), dimension(:,:), allocatable :: Updates
     real(c_double), dimension(:,:), allocatable :: S, S_inv, S_inv_t
 
-    call Read_dataset("datasets/update_cycle_13.dat", &
+    call Read_dataset("datasets/update_cycle_8169.dat", &
                        cycle_id, &
                        dim, &
                        n_updates, &

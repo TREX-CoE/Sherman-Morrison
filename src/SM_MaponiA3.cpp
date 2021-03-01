@@ -68,16 +68,13 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     }
   }
 
-  // Keep the memory location of the passed array 'Slater_inv' before
-  // 'Slater_inv' gets reassigned by 'matMul(...)' in the next line,
-  // by creating a new pointer 'copy' that points to whereever
-  // 'Slater_inv' points to now.
-  double *copy = Slater_inv;
-
+  double *next = new double[Dim*Dim] {0};
+  double *last;
+  last =  Slater_inv;
   // Construct A-inverse from A0-inverse and the ylk
-  for (l = 0; l < N_updates; l++) {       // l    = 0, 1
-    k = l + 1;                            // k    = 1, 2
-    component = Updates_index[p[k] - 1];  // comp = 2, 4
+  for (l = 0; l < N_updates; l++) {
+    k = l + 1;
+    component = Updates_index[p[k] - 1];
     beta = 1 + ylk[l][p[k]][component];
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
@@ -85,24 +82,21 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
                       * ylk[l][p[k]][i + 1] / beta;
       }
     }
-    Slater_inv = matMul(Al, Slater_inv, Dim);
-  }
 
-  // Assign the new values of 'Slater_inv' to the old values
-  // in 'copy[][]'
-  for (i = 0; i < Dim; i++) {
-    for (j = 0; j < Dim; j++) {
-      copy[i * Dim + j] = Slater_inv[i * Dim + j];
-    }
+    matMul2(Al, last, next, Dim);
+    double *tmp = next;
+    next = last;
+    last = tmp;
   }
-
+  memcpy(Slater_inv, last, Dim*Dim*sizeof(double));
+ 
   for (l = 0; l < N_updates; l++) {
     for (k = 0; k < N_updates + 1; k++) {
       delete[] ylk[l][k];
     }
     delete[] ylk[l];
   }
-  delete[] Al;
+  delete[] Al, next;
   delete[] p, breakdown;
 }
 

@@ -1,8 +1,8 @@
 ## Compilers
 ARCH =
-H5CXX = h5c++
-CXX = clang++
-FC = flang
+H5CXX = h5c++ -std=gnu++11
+CXX = g++
+FC = gfortran
 
 ## Compiler flags
 H5CXXFLAGS = -O0 -g
@@ -55,7 +55,7 @@ $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
 
 ## Fortran modules
 $(OBJ_DIR)/%_mod.o: $(SRC_DIR)/%_mod.f90 | $(OBJ_DIR)
-	$(FC) $(FFLAGS) $(ARCH) -module $(OBJ_DIR)/ -c -o $@ $<
+	$(FC) $(FFLAGS) $(ARCH) -J$(OBJ_DIR)/ -c -o $@ $<
 
 ## Fortran objects
 $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
