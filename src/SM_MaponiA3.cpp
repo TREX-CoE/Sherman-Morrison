@@ -61,11 +61,14 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     }
     for (k = l + 1; k < N_updates + 1; k++) {
       alpha = ylk[l - 1][p[k]][component] / beta;
+      cout << "( l, k, p[k], component ) = (" << l << ", " << k << ", " << p[k] << ", " << component << ")" << endl;
       for (i = 1; i < Dim + 1; i++) {
+        cout << "ylk[" << l << "][p[" << k << "]][" << i << "] = ylk[" << l - 1 << "][p[" << k << "]][" << i << "] - alpha * ylk[" << l - 1 << "][p[" << l << "]][" << i << "]" << endl;
         ylk[l][p[k]][i] = ylk[l - 1][p[k]][i]
                         - alpha * ylk[l - 1][p[l]][i];
       }
     }
+
   }
   
   // Construct A-inverse from A0-inverse and the ylk
@@ -75,6 +78,8 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     k = l + 1;
     component = Updates_index[p[k] - 1];
     beta = 1 + ylk[l][p[k]][component];
+    cout << "( l, k, p[k], component ) = (" << l << ", " << k << ", " << p[k] << ", " << component << ")" << endl;
+    cout << "ylk[" << l << "][" << p[k] << "][i + 1]" << endl;
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
         Al[i*Dim + j] = (i == j) - (j == component-1)
@@ -88,6 +93,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   }
   memcpy(Slater_inv, last, Dim*Dim*sizeof(double));
  
+  // Free memory
   for (l = 0; l < N_updates; l++) {
     for (k = 0; k < N_updates + 1; k++) {
       delete[] ylk[l][k];
