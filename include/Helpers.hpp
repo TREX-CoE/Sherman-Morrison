@@ -79,7 +79,7 @@ T *matMul(T *A, T *B, unsigned int M) {
 
 template<typename T>
 void matMul2(T *A, T *B, T *C, unsigned int M) {
-    memset(C,0,M*M*sizeof(T));
+    memset(C, 0, M*M*sizeof(T));
     for (unsigned int i = 0; i < M; i++) {
         for (unsigned int j = 0; j < M; j++) {
             for (unsigned int k = 0; k < M; k++) {

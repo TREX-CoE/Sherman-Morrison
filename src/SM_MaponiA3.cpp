@@ -67,11 +67,10 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
       }
     }
   }
-
-  double *next = new double[Dim*Dim] {0};
-  double *last;
-  last =  Slater_inv;
+  
   // Construct A-inverse from A0-inverse and the ylk
+  double *last = Slater_inv;
+  double *next = new double[Dim*Dim] {0};
   for (l = 0; l < N_updates; l++) {
     k = l + 1;
     component = Updates_index[p[k] - 1];
@@ -82,7 +81,6 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
                       * ylk[l][p[k]][i + 1] / beta;
       }
     }
-
     matMul2(Al, last, next, Dim);
     double *tmp = next;
     next = last;
