@@ -8,12 +8,15 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
               unsigned int N_updates, double *Updates,
               unsigned int *Updates_index) {
 
-  unsigned int k, l, lbar, i, j, tmp, component;
+  /*
+  DECLARE AND INITIALISE ARRAYS
+  */
+
+  unsigned int k, l, lbar, i, j, tmp, component, max, breakdown;
   unsigned int *p = new unsigned int[N_updates + 1] {0};
   double alpha, beta;
-  double *breakdown = new double[N_updates + 1] {0};
   double *Al = new double[Dim * Dim];
-
+ 
   // Populate update-order vector
   for (i = 0; i < N_updates; i++) {
     p[i + 1] = i + 1;
@@ -27,6 +30,10 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
       ylk[l][k] = new double[Dim + 1] {0};
     }
   }
+  
+  /*
+  START THE ALGORITHM
+  */
 
   // Calculate the y0k
   for (k = 1; k < N_updates + 1; k++) {
@@ -38,21 +45,36 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     }
   }
 
+  // // Compute A_1_inv and A_1_inv * Slater_inv
+  // double *lastIntermRes = Slater_inv;
+  // double *Res = new double[Dim*Dim]{0};
+  // component = Updates_index[0];
+  // beta = 1 + ylk[0][1][component];
+  // for (i = 0; i < Dim; i++) {
+  //   for (j = 0; j < Dim; j++) {
+  //     Al[i*Dim + j] = (i == j) - (j   == component-1) * ylk[0][1][i + 1] / beta;
+  //   }
+  // }
+  // matMul2(Al, Slater_inv, Res, Dim);
+  // Slater_inv = Res;
+  // Res = lastIntermRes;
+  // lastIntermRes = Slater_inv;
+  // showMatrix(Slater_inv, Dim, "Slater_inv");
+
   // Calculate all the ylk from the y0k
   for (l = 1; l < N_updates; l++) {
+
+    // Select update with largest break-down val
+    lbar = l; max = 0;
     for (j = l; j < N_updates + 1; j++) {
       component = Updates_index[p[j] - 1];
-      breakdown[j] = abs(1 + ylk[l - 1][p[j]][component]);
-    }
-    lbar = getMaxIndex(breakdown, N_updates + 1);
-    // Reset breakdown back to 0 for next round to avoid case where
-    // its first element is always the largest
-    for (i = 0; i < N_updates + 1; i++) {
-      breakdown[i] = 0;
-    }
-    tmp = p[l];
-    p[l] = p[lbar];
-    p[lbar] = tmp;
+      breakdown = abs(1 + ylk[l - 1][p[j]][component]);
+      if (breakdown > max) {
+          max = breakdown;
+          lbar = j;
+        }
+    } tmp = p[l]; p[l] = p[lbar]; p[lbar] = tmp;
+
     component = Updates_index[p[l] - 1];
     beta = 1 + ylk[l - 1][p[l]][component];
     if (fabs(beta) < 1e-6) {
@@ -68,7 +90,6 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
                         - alpha * ylk[l - 1][p[l]][i];
       }
     }
-
   }
   
   // Construct A-inverse from A0-inverse and the ylk
@@ -93,15 +114,17 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   }
   memcpy(Slater_inv, last, Dim*Dim*sizeof(double));
  
-  // Free memory
+  /*
+  CLEANUP MEMORY
+  */
+  
   for (l = 0; l < N_updates; l++) {
     for (k = 0; k < N_updates + 1; k++) {
       delete[] ylk[l][k];
     }
     delete[] ylk[l];
   }
-  delete[] Al, next;
-  delete[] p, breakdown;
+  delete[] Al, next, p;
 }
 
 extern "C" {

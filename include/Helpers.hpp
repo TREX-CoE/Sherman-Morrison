@@ -7,20 +7,6 @@
 using namespace std;
 
 template<typename T>
-unsigned int getMaxIndex(T *vector, unsigned int size) {
-    unsigned int i = 0;
-    unsigned int maxi = i;
-    unsigned int max = vector[maxi];
-    for (i = 1; i < size; i++) {
-        if (vector[i] > max) {
-            max = vector[i];
-            maxi = i;
-        }
-    }
-    return maxi;
-}
-
-template<typename T>
 void showScalar(T scalar, string name) {
     cout << name << " = " << scalar << endl << endl;
 }
