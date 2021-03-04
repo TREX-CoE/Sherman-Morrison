@@ -62,32 +62,32 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   // showMatrix(Slater_inv, Dim, "Slater_inv");
 
   // Calculate all the ylk from the y0k
-  for (l = 1; l < N_updates; l++) {
+  for (l = 0; l < N_updates; l++) {
 
     // Select update with largest break-down val
-    lbar = l; max = 0;
-    for (j = l; j < N_updates + 1; j++) {
+    lbar = l+1; max = 0;
+    for (j = l+1; j < N_updates + 1; j++) {
       component = Updates_index[p[j] - 1];
-      breakdown = abs(1 + ylk[l - 1][p[j]][component]);
+      breakdown = abs(1 + ylk[l+1 - 1][p[j]][component]);
       if (breakdown > max) {
           max = breakdown;
           lbar = j;
         }
-    } tmp = p[l]; p[l] = p[lbar]; p[lbar] = tmp;
+    } tmp = p[l+1]; p[l+1] = p[lbar]; p[lbar] = tmp;
 
-    component = Updates_index[p[l] - 1];
-    beta = 1 + ylk[l - 1][p[l]][component];
-    if (fabs(beta) < 1e-6) {
+    component = Updates_index[p[l+1] - 1];
+    beta = 1 + ylk[l+1 - 1][p[l+1]][component];
+    if (beta == 0) {
       cout << "Break-down occured. Exiting..." << endl;
       exit(1);
     }
-    for (k = l + 1; k < N_updates + 1; k++) {
-      alpha = ylk[l - 1][p[k]][component] / beta;
+    for (k = l+1 + 1; k < N_updates + 1; k++) {
+      alpha = ylk[l+1 - 1][p[k]][component] / beta;
       cout << "( l, k, p[k], component ) = (" << l << ", " << k << ", " << p[k] << ", " << component << ")" << endl;
       for (i = 1; i < Dim + 1; i++) {
         cout << "ylk[" << l << "][p[" << k << "]][" << i << "] = ylk[" << l - 1 << "][p[" << k << "]][" << i << "] - alpha * ylk[" << l - 1 << "][p[" << l << "]][" << i << "]" << endl;
-        ylk[l][p[k]][i] = ylk[l - 1][p[k]][i]
-                        - alpha * ylk[l - 1][p[l]][i];
+        ylk[l+1][p[k]][i] = ylk[l+1 - 1][p[k]][i]
+                        - alpha * ylk[l+1 - 1][p[l+1]][i];
       }
     }
   }
