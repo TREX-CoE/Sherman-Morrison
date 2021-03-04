@@ -76,18 +76,18 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     } tmp = p[l+1]; p[l+1] = p[lbar]; p[lbar] = tmp;
 
     component = Updates_index[p[l+1] - 1];
-    beta = 1 + ylk[l+1 - 1][p[l+1]][component];
+    beta = 1 + ylk[l][p[l+1]][component];
     if (beta == 0) {
       cout << "Break-down occured. Exiting..." << endl;
       exit(1);
     }
-    for (k = l+1 + 1; k < N_updates + 1; k++) {
-      alpha = ylk[l+1 - 1][p[k]][component] / beta;
+    for (k = l+2; k < N_updates + 1; k++) {
+      alpha = ylk[l][p[k]][component] / beta;
       cout << "( l, k, p[k], component ) = (" << l << ", " << k << ", " << p[k] << ", " << component << ")" << endl;
       for (i = 1; i < Dim + 1; i++) {
         cout << "ylk[" << l << "][p[" << k << "]][" << i << "] = ylk[" << l - 1 << "][p[" << k << "]][" << i << "] - alpha * ylk[" << l - 1 << "][p[" << l << "]][" << i << "]" << endl;
-        ylk[l+1][p[k]][i] = ylk[l+1 - 1][p[k]][i]
-                        - alpha * ylk[l+1 - 1][p[l+1]][i];
+        ylk[l+1][p[k]][i] = ylk[l][p[k]][i]
+                        - alpha * ylk[l][p[l+1]][i];
       }
     }
   }
