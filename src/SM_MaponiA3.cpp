@@ -5,7 +5,7 @@
 #include "Helpers.hpp"
 
 void MaponiA3(double *Slater_inv, unsigned int Dim,
-              unsigned int N_updates, double *Updates, 
+              unsigned int N_updates, double *Updates,
               unsigned int *Updates_index) {
 
   unsigned int k, l, lbar, i, j, tmp, component;
@@ -27,7 +27,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
       ylk[l][k] = new double[Dim + 1] {0};
     }
   }
-  
+
   // Calculate the y0k
   for (k = 1; k < N_updates + 1; k++) {
     for (i = 1; i < Dim + 1; i++) {
@@ -55,9 +55,9 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     p[lbar] = tmp;
     component = Updates_index[p[l] - 1];
     beta = 1 + ylk[l - 1][p[l]][component];
-    if (beta == 0) {
+    if (fabs(beta) < 1e-6) {
       cout << "Break-down occured. Exiting..." << endl;
-      exit;
+      exit(1);
     }
     for (k = l + 1; k < N_updates + 1; k++) {
       alpha = ylk[l - 1][p[k]][component] / beta;
@@ -110,7 +110,7 @@ extern "C" {
   void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
                   unsigned int *N_updates, double **linUpdates,
                   unsigned int **Updates_index) {
-    MaponiA3(*linSlater_inv, *Dim, 
+    MaponiA3(*linSlater_inv, *Dim,
              *N_updates, *linUpdates,
              *Updates_index);
   }

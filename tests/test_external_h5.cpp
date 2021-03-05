@@ -4,10 +4,11 @@
 #include "hdf5/serial/H5Cpp.h"
 
 #include "SM_MaponiA3.hpp"
+#include "SM_Standard.hpp"
 #include "Helpers.hpp"
 
 using namespace H5;
-//#define DEBUG 0
+//#define DEBUG
 
 const H5std_string FILE_NAME( "datasets.hdf5" );
 
@@ -62,7 +63,8 @@ int test_cycle(H5File file, int cycle) {
     }
   }
 
-  MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
+  //MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
+  SM(slater_inverse, dim, nupdates, updates, col_update_index);
 
 #ifdef DEBUG
   showMatrix(slater_matrix, dim, "NEW Slater");
