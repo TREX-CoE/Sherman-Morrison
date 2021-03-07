@@ -35,20 +35,21 @@ void showVector(T *vector, unsigned int size, string name) {
 
 template<typename T>
 void showMatrix(T *matrix, unsigned int M, string name) {
-    cout << name << " = " << endl;
+    cout.precision(17);
+    cout << name << " = [" << endl;
     for (unsigned int i = 0; i < M; i++) {
         cout << "[";
         for (unsigned int j = 0; j < M; j++) {
             if (matrix[i*M + j] >= 0) {
-                cout << "  " << matrix[i*M + j];
+                cout << "  " << matrix[i*M + j] << ",";
             }
             else {
-                cout << " " << matrix[i*M + j];
+                cout << " " << matrix[i*M + j] << "," ;
             }
         }
-        cout << " ]" << endl;
+        cout << " ]," << endl;
     }
-    cout << endl;
+    cout << "]" << endl;
 }
 
 template<typename T>

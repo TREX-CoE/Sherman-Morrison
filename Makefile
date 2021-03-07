@@ -1,16 +1,16 @@
 ## Compilers
-ARCH = -xCORE-AVX2
+ARCH =
 H5CXX = h5c++
-CXX = icpc
-FC = ifort
+CXX = clang++
+FC = flang
 
 ## Compiler flags
 H5CXXFLAGS = -O0 -g
-CXXFLAGS = -O0 -g -traceback
-FFLAGS = -O0 -g -traceback
+CXXFLAGS = -O0 -g
+FFLAGS = -O0 -g
 
 INCLUDE = -I $(INC_DIR)/
-DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o
+DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o
 DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
 FLIBS = -lstdc++
 
@@ -66,6 +66,8 @@ $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
 $(OBJ_DIR)/SM_MaponiA3.o: $(SRC_DIR)/SM_MaponiA3.cpp $(INC_DIR)/* | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -fPIC $(ARCH) $(INCLUDE) -c -o $@ $<
 
+$(OBJ_DIR)/SM_Standard.o: $(SRC_DIR)/SM_Standard.cpp $(INC_DIR)/* | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -fPIC $(ARCH) $(INCLUDE) -c -o $@ $<
 
 
 #### LINKING
