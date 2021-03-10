@@ -4,6 +4,34 @@
 #include "SM_MaponiA3.hpp"
 #include "Helpers.hpp"
 
+void selectBestUpdate(unsigned int l, unsigned int N_updates, 
+                      unsigned int *Updates_index, unsigned int *p, 
+                      double ***ylk) {
+  unsigned int lbar = l+1;
+  unsigned int max = 0;
+  unsigned int component = 0;
+  unsigned int index = 0;
+  unsigned int tmp = 0;
+  double breakdown = 0;
+  for (unsigned int j = lbar; j < N_updates + 1; j++) {
+    index = p[j];
+    component = Updates_index[index - 1];
+    breakdown = abs(1 + ylk[l][index][component]);
+#ifdef DEBUG
+    cout << "Inside selectBestUpdate()" << endl;
+    cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "][" << component << "])" << endl;
+    cout << endl;
+#endif
+    if (breakdown > max) {
+      max = breakdown;
+      lbar = j;
+    }
+  }
+  tmp = p[l+1];
+  p[l+1] = p[lbar];
+  p[lbar] = tmp; 
+}
+
 void MaponiA3(double *Slater_inv, unsigned int Dim,
               unsigned int N_updates, double *Updates,
               unsigned int *Updates_index) {
@@ -12,7 +40,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   DECLARE AND INITIALISE ARRAYS
   */
 
-  unsigned int k, l, lbar, i, j, tmp, component, max, breakdown;
+  unsigned int k, l, i, j, component;
   unsigned int *p = new unsigned int[N_updates + 1] {0};
   double alpha, beta;
   double *Al = new double[Dim * Dim];
@@ -45,47 +73,29 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     }
   }
 
-  // // Compute A_1_inv and A_1_inv * Slater_inv
-  // double *lastIntermRes = Slater_inv;
-  // double *Res = new double[Dim*Dim]{0};
-  // component = Updates_index[0];
-  // beta = 1 + ylk[0][1][component];
-  // for (i = 0; i < Dim; i++) {
-  //   for (j = 0; j < Dim; j++) {
-  //     Al[i*Dim + j] = (i == j) - (j   == component-1) * ylk[0][1][i + 1] / beta;
-  //   }
-  // }
-  // matMul2(Al, Slater_inv, Res, Dim);
-  // Slater_inv = Res;
-  // Res = lastIntermRes;
-  // lastIntermRes = Slater_inv;
-  // showMatrix(Slater_inv, Dim, "Slater_inv");
-
   // Calculate all the ylk from the y0k
   for (l = 0; l < N_updates; l++) {
 
-    // Select update with largest break-down val
-    lbar = l+1; max = 0;
-    for (j = l+1; j < N_updates + 1; j++) {
-      component = Updates_index[p[j] - 1];
-      breakdown = abs(1 + ylk[l+1 - 1][p[j]][component]);
-      if (breakdown > max) {
-          max = breakdown;
-          lbar = j;
-        }
-    } tmp = p[l+1]; p[l+1] = p[lbar]; p[lbar] = tmp;
+    // Select lk-update with largest break-down val
+    selectBestUpdate(l, N_updates, Updates_index, p, ylk);
 
+    // Select component and comp. bd-condition.
     component = Updates_index[p[l+1] - 1];
     beta = 1 + ylk[l][p[l+1]][component];
-    if (beta == 0) {
+#ifdef DEBUG
+    cout << "In outer compute-ylk-loop:" << endl; 
+    cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "]" << endl;
+    cout << endl;
+#endif
+    if (fabs(beta) < 1e-6) {
       cout << "Break-down occured. Exiting..." << endl;
       exit(1);
     }
-    for (k = l+2; k < N_updates + 1; k++) {
+
+    // Compute ylk
+    for (k = l+2; k < N_updates+1; k++) {
       alpha = ylk[l][p[k]][component] / beta;
-      cout << "( l, k, p[k], component ) = (" << l << ", " << k << ", " << p[k] << ", " << component << ")" << endl;
       for (i = 1; i < Dim + 1; i++) {
-        cout << "ylk[" << l << "][p[" << k << "]][" << i << "] = ylk[" << l - 1 << "][p[" << k << "]][" << i << "] - alpha * ylk[" << l - 1 << "][p[" << l << "]][" << i << "]" << endl;
         ylk[l+1][p[k]][i] = ylk[l][p[k]][i]
                         - alpha * ylk[l][p[l+1]][i];
       }
@@ -99,8 +109,13 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     k = l + 1;
     component = Updates_index[p[k] - 1];
     beta = 1 + ylk[l][p[k]][component];
-    cout << "( l, k, p[k], component ) = (" << l << ", " << k << ", " << p[k] << ", " << component << ")" << endl;
+#ifdef DEBUG
+    cout << "Compute inverse. Inside l-loop: l = " << l << endl;
+    cout << "component = Updates_index[p[" << k << "] - 1] = Updates_index[" << p[k] - 1 << "] = " << Updates_index[p[k] - 1] << endl;
+    cout << "beta = 1 + ylk[" << l << "][" << p[k] << "][" << component << "]" << endl;
     cout << "ylk[" << l << "][" << p[k] << "][i + 1]" << endl;
+    cout << endl;
+#endif  
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
         Al[i*Dim + j] = (i == j) - (j == component-1)

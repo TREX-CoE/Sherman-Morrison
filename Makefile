@@ -6,7 +6,7 @@ FC = gfortran
 
 ## Compiler flags
 H5CXXFLAGS = -O0 -g
-CXXFLAGS = -O0 -g
+CXXFLAGS = -O0 -g -DDEBUG
 FFLAGS = -O0 -g
 
 INCLUDE = -I $(INC_DIR)/
