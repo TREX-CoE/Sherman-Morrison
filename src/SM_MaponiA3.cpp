@@ -95,6 +95,11 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     // Compute ylk
     for (k = l+2; k < N_updates+1; k++) {
       alpha = ylk[l][p[k]][component] / beta;
+#ifdef DEBUG
+      cout << "Inside k-loop of ylk-loop:" << endl;
+      cout << "ylk[" << l+1 << "][" << p[k] << "][:]" << endl;
+      cout << endl;
+#endif
       for (i = 1; i < Dim + 1; i++) {
         ylk[l+1][p[k]][i] = ylk[l][p[k]][i]
                         - alpha * ylk[l][p[l+1]][i];
@@ -113,7 +118,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     cout << "Compute inverse. Inside l-loop: l = " << l << endl;
     cout << "component = Updates_index[p[" << k << "] - 1] = Updates_index[" << p[k] - 1 << "] = " << Updates_index[p[k] - 1] << endl;
     cout << "beta = 1 + ylk[" << l << "][" << p[k] << "][" << component << "]" << endl;
-    cout << "ylk[" << l << "][" << p[k] << "][i + 1]" << endl;
+    cout << "ylk[" << l << "][" << p[k] << "][:]" << endl;
     cout << endl;
 #endif  
     for (i = 0; i < Dim; i++) {
