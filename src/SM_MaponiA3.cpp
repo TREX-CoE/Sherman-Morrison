@@ -17,11 +17,11 @@ void selectBestUpdate(unsigned int l, unsigned int N_updates,
     index = p[j];
     component = Updates_index[index - 1];
     breakdown = abs(1 + ylk[l][index][component]);
-#ifdef DEBUG
+    #ifdef DEBUG
     cout << "Inside selectBestUpdate()" << endl;
     cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "][" << component << "])" << endl;
     cout << endl;
-#endif
+    #endif
     if (breakdown > max) {
       max = breakdown;
       lbar = j;
@@ -65,6 +65,11 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
 
   // Calculate the y0k
   for (k = 1; k < N_updates + 1; k++) {
+    #ifdef DEBUG
+    cout << "Compute y0k: " << endl;
+    cout << "ylk[0][" << k << "][:]" << endl;
+    cout << endl;
+    #endif
     for (i = 1; i < Dim + 1; i++) {
       for (j = 1; j < Dim + 1; j++) {
         ylk[0][k][i] += Slater_inv[(i-1)*Dim + (j-1)]
@@ -82,11 +87,11 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     // Select component and comp. bd-condition.
     component = Updates_index[p[l+1] - 1];
     beta = 1 + ylk[l][p[l+1]][component];
-#ifdef DEBUG
+    #ifdef DEBUG
     cout << "In outer compute-ylk-loop:" << endl; 
     cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "]" << endl;
     cout << endl;
-#endif
+    #endif
     if (fabs(beta) < 1e-6) {
       cout << "Break-down occured. Exiting..." << endl;
       exit(1);
@@ -95,11 +100,11 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     // Compute ylk
     for (k = l+2; k < N_updates+1; k++) {
       alpha = ylk[l][p[k]][component] / beta;
-#ifdef DEBUG
+      #ifdef DEBUG
       cout << "Inside k-loop of ylk-loop:" << endl;
       cout << "ylk[" << l+1 << "][" << p[k] << "][:]" << endl;
       cout << endl;
-#endif
+      #endif
       for (i = 1; i < Dim + 1; i++) {
         ylk[l+1][p[k]][i] = ylk[l][p[k]][i]
                         - alpha * ylk[l][p[l+1]][i];
@@ -114,13 +119,13 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     k = l + 1;
     component = Updates_index[p[k] - 1];
     beta = 1 + ylk[l][p[k]][component];
-#ifdef DEBUG
+    #ifdef DEBUG
     cout << "Compute inverse. Inside l-loop: l = " << l << endl;
     cout << "component = Updates_index[p[" << k << "] - 1] = Updates_index[" << p[k] - 1 << "] = " << Updates_index[p[k] - 1] << endl;
     cout << "beta = 1 + ylk[" << l << "][" << p[k] << "][" << component << "]" << endl;
-    cout << "ylk[" << l << "][" << p[k] << "][:]" << endl;
+    cout << "ylk[l][p[k]][:] = ylk[" << l << "][" << p[k] << "][:]" << endl;
     cout << endl;
-#endif  
+    #endif  
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
         Al[i*Dim + j] = (i == j) - (j == component-1)
