@@ -7,10 +7,8 @@
 void selectBestUpdate(unsigned int l, unsigned int N_updates, 
                       unsigned int *Updates_index, unsigned int *p, 
                       double ***ylk) {
-  unsigned int lbar = l+1;
-  unsigned int max = 0;
-  unsigned int component = 0;
-  unsigned int index = 0;
+  unsigned int lbar = l+1, max =0;
+  unsigned int index = 0, component = 0;
   unsigned int tmp = 0;
   double breakdown = 0;
   for (unsigned int j = lbar; j < N_updates + 1; j++) {
@@ -44,13 +42,15 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   unsigned int *p = new unsigned int[N_updates + 1] {0};
   double alpha, beta;
   double *Al = new double[Dim * Dim];
- 
+  double *next = new double[Dim*Dim] {0};
+  double *last = Slater_inv, *tmp;
+
   // Populate update-order vector
   for (i = 0; i < N_updates; i++) {
     p[i + 1] = i + 1;
   }
 
-  // Declare auxiliary solution matrix ylk
+  // Declare auxiliary solution matrix ylk[N_updates][N_updates+1][Dim]
   double ***ylk = new double **[N_updates];
   for (l = 0; l < N_updates; l++) {
     ylk[l] = new double *[N_updates + 1];
@@ -58,12 +58,14 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
       ylk[l][k] = new double[Dim + 1] {0};
     }
   }
-  
+
+
+
   /*
-  START THE ALGORITHM
+  START ALGORITHM
   */
 
-  // Calculate the y0k
+  // Calculate the {y_{0,k}}
   for (k = 1; k < N_updates + 1; k++) {
     #ifdef DEBUG
     cout << "Compute y0k: " << endl;
@@ -78,17 +80,22 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     }
   }
 
-  // Calculate all the ylk from the y0k
+  // Calculate the {y_{l,k}} from the {y_{0,k}}
   for (l = 0; l < N_updates; l++) {
+    #ifdef DEBUG
+    cout << "In outer compute-ylk-loop: l = " << l << endl;
+    cout << endl;
+    #endif
 
-    // Select lk-update with largest break-down val
+    // For given l select intermediate update with largest break-down val
     selectBestUpdate(l, N_updates, Updates_index, p, ylk);
 
     // Select component and comp. bd-condition.
     component = Updates_index[p[l+1] - 1];
     beta = 1 + ylk[l][p[l+1]][component];
     #ifdef DEBUG
-    cout << "In outer compute-ylk-loop:" << endl; 
+    cout << "p[l+1] = " << p[l+1] << endl;
+    cout << "component = " << component << endl;
     cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "]" << endl;
     cout << endl;
     #endif
@@ -97,11 +104,33 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
       exit(1);
     }
 
-    // Compute ylk
+    // Compute intermediate update to Slater_inv
+    #ifdef DEBUG
+    cout << "Compute intermediate update to Slater_inv" << endl;
+    cout << "component = " << component << endl;
+    cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "]" << endl;
+    cout << "ylk[l][p[k]][:] = ylk[" << l << "][" << p[l+1] << "][:]" << endl;
+    cout << endl;
+    #endif
+    for (i = 0; i < Dim; i++) {
+      for (j = 0; j < Dim; j++) {
+        Al[i*Dim + j] = (i == j) - (j == component-1)
+                      * ylk[l][p[l+1]][i + 1] / beta;
+      }
+    }
+    matMul(Al, last, next, Dim);
+    tmp = next;
+    next = last;
+    last = tmp;
+    #ifdef DEBUG
+    showMatrix(last, Dim, "last");
+    #endif
+
+    // For given l != 0 compute the next {y_{l,k}}
     for (k = l+2; k < N_updates+1; k++) {
       alpha = ylk[l][p[k]][component] / beta;
       #ifdef DEBUG
-      cout << "Inside k-loop of ylk-loop:" << endl;
+      cout << "Inside k-loop: k = " << k << endl;
       cout << "ylk[" << l+1 << "][" << p[k] << "][:]" << endl;
       cout << endl;
       #endif
@@ -111,34 +140,10 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
       }
     }
   }
-  
-  // Construct A-inverse from A0-inverse and the ylk
-  double *last = Slater_inv;
-  double *next = new double[Dim*Dim] {0};
-  for (l = 0; l < N_updates; l++) {
-    k = l + 1;
-    component = Updates_index[p[k] - 1];
-    beta = 1 + ylk[l][p[k]][component];
-    #ifdef DEBUG
-    cout << "Compute inverse. Inside l-loop: l = " << l << endl;
-    cout << "component = Updates_index[p[" << k << "] - 1] = Updates_index[" << p[k] - 1 << "] = " << Updates_index[p[k] - 1] << endl;
-    cout << "beta = 1 + ylk[" << l << "][" << p[k] << "][" << component << "]" << endl;
-    cout << "ylk[l][p[k]][:] = ylk[" << l << "][" << p[k] << "][:]" << endl;
-    cout << endl;
-    #endif  
-    for (i = 0; i < Dim; i++) {
-      for (j = 0; j < Dim; j++) {
-        Al[i*Dim + j] = (i == j) - (j == component-1)
-                      * ylk[l][p[k]][i + 1] / beta;
-      }
-    }
-    matMul(Al, last, next, Dim);
-    double *tmp = next;
-    next = last;
-    last = tmp;
-  }
   memcpy(Slater_inv, last, Dim*Dim*sizeof(double));
- 
+
+
+
   /*
   CLEANUP MEMORY
   */
