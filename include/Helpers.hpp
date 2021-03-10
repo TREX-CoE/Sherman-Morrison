@@ -3,21 +3,8 @@
 #include <iostream>
 #include <cmath>
 #include <string>
+#include <cstring>
 using namespace std;
-
-template<typename T>
-unsigned int getMaxIndex(T *vector, unsigned int size) {
-    unsigned int i = 0;
-    unsigned int maxi = i;
-    unsigned int max = vector[maxi];
-    for (i = 1; i < size; i++) {
-        if (vector[i] > max) {
-            max = vector[i];
-            maxi = i;
-        }
-    }
-    return maxi;
-}
 
 template<typename T>
 void showScalar(T scalar, string name) {
@@ -50,6 +37,7 @@ void showMatrix(T *matrix, unsigned int M, string name) {
         cout << " ]," << endl;
     }
     cout << "]" << endl;
+    cout << endl;
 }
 
 template<typename T>
@@ -64,8 +52,8 @@ T *transpose(T *A, unsigned int M) {
 }
 
 template<typename T>
-T *matMul(T *A, T *B, unsigned int M) {
-    T *C = new T[M*M] {0};
+void matMul(T *A, T *B, T *C, unsigned int M) {
+    memset(C, 0, M*M*sizeof(T));
     for (unsigned int i = 0; i < M; i++) {
         for (unsigned int j = 0; j < M; j++) {
             for (unsigned int k = 0; k < M; k++) {
@@ -73,7 +61,6 @@ T *matMul(T *A, T *B, unsigned int M) {
             }
         }
     }
-    return C;
 }
 
 template<typename T1, typename T2>
