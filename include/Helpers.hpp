@@ -37,6 +37,7 @@ void showMatrix(T *matrix, unsigned int M, string name) {
         cout << " ]," << endl;
     }
     cout << "]" << endl;
+    cout << endl;
 }
 
 template<typename T>
@@ -51,20 +52,7 @@ T *transpose(T *A, unsigned int M) {
 }
 
 template<typename T>
-T *matMul(T *A, T *B, unsigned int M) {
-    T *C = new T[M*M] {0};
-    for (unsigned int i = 0; i < M; i++) {
-        for (unsigned int j = 0; j < M; j++) {
-            for (unsigned int k = 0; k < M; k++) {
-                C[i*M+j] += A[i*M+k] * B[k*M+j];
-            }
-        }
-    }
-    return C;
-}
-
-template<typename T>
-void matMul2(T *A, T *B, T *C, unsigned int M) {
+void matMul(T *A, T *B, T *C, unsigned int M) {
     memset(C, 0, M*M*sizeof(T));
     for (unsigned int i = 0; i < M; i++) {
         for (unsigned int j = 0; j < M; j++) {

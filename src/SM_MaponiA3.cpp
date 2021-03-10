@@ -132,7 +132,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
                       * ylk[l][p[k]][i + 1] / beta;
       }
     }
-    matMul2(Al, last, next, Dim);
+    matMul(Al, last, next, Dim);
     double *tmp = next;
     next = last;
     last = tmp;
