@@ -74,7 +74,8 @@ int test_cycle(H5File file, int cycle) {
   showMatrix(slater_inverse, dim, "NEW Inverse");
 #endif
 
-  double * res = matMul(slater_matrix, slater_inverse, dim);
+  double * res = new double[dim*dim] {0};
+  matMul(slater_matrix, slater_inverse, res, dim);
   bool ok = is_identity(res, dim, 0.5e-4);
 
 #ifdef DEBUG
