@@ -77,5 +77,5 @@ program QMCChem_dataset_test
     close(4000)
     close(5000)
 
-    deallocate(S, S_inv, S_inv_t, Updates, Updates_index)
+    deallocate(S, S_inv, S_inv_t, Updates, U, Updates_index)
 end program

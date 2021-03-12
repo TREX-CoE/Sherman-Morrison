@@ -47,6 +47,9 @@ int test_cycle(H5File file, int cycle) {
   double * updates = new double[nupdates*dim];
   read_double(file, group + "/updates", updates);
 
+  double * u = new double[nupdates*dim];
+
+
   /* Test */
 #ifdef DEBUG
   showMatrix(slater_matrix, dim, "OLD Slater");
@@ -59,12 +62,13 @@ int test_cycle(H5File file, int cycle) {
   for (j = 0; j < nupdates; j++) {
     for (i = 0; i < dim; i++) {
       col = col_update_index[j];
-      slater_matrix[i*dim + (col - 1)] += updates[i + j*dim];
+      u[i + j*dim] = updates[i + j*dim] - slater_matrix[i*dim + (col - 1)];
+      slater_matrix[i*dim + (col - 1)] = updates[i + j*dim];
     }
   }
 
   //MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
-  SM(slater_inverse, dim, nupdates, updates, col_update_index);
+  SM(slater_inverse, dim, nupdates, u, col_update_index);
 
 #ifdef DEBUG
   showMatrix(slater_matrix, dim, "NEW Slater");
@@ -82,7 +86,7 @@ int test_cycle(H5File file, int cycle) {
   showMatrix(res, dim, "Result");
 #endif
 
-  delete [] res, updates, col_update_index,
+  delete [] res, updates, u, col_update_index,
             slater_matrix, slater_inverse;
 
   return ok;
