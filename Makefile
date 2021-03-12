@@ -1,18 +1,18 @@
 ## Compilers
-ARCH =
-H5CXX = h5c++ -std=gnu++11
-CXX = g++
-FC = gfortran
+ARCH = 
+CXX = icpc
+FC = ifort
+H5CXX = h5c++
 
 ## Compiler flags
-H5CXXFLAGS = -O0 -g
-CXXFLAGS = -O0 -g
-FFLAGS = -O0 -g
+CXXFLAGS = -O0 -debug full -traceback
+FFLAGS = $(CXXFLAGS)
+H5CXXFLAGS = $(CXXFLAGS) -fPIC
+FLIBS = -lstdc++
 
 INCLUDE = -I $(INC_DIR)/
 DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o
 DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
-FLIBS = -lstdc++
 
 SRC_DIR := src
 TST_DIR := tests

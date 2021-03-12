@@ -970,7 +970,7 @@ subroutine det_update_general(n,LDS,m,l,S,S_inv,d)
   !DIR$ ASSUME (MOD(LDS,$IRP_ALIGN/8) == 0)
   !DIR$ ASSUME (n>150)
 
-  integer                        :: i,j,n4
+  integer          :: i,j,n4
   double precision :: zl
 
   !DIR$ NOPREFETCH
@@ -1309,9 +1309,6 @@ END_PROVIDER
   write(501,10007)
   write(502,10007)
   cycle_id = cycle_id + 1
-  !close(501) !! Close file
-  !close(502) !! Close file
-  !stop
   
   else
 

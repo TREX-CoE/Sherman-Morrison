@@ -17,7 +17,7 @@ void selectBestUpdate(unsigned int l, unsigned int N_updates,
     breakdown = abs(1 + ylk[l][index][component]);
     #ifdef DEBUG
     cout << "Inside selectBestUpdate()" << endl;
-    cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "][" << component << "])" << endl;
+    cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "][" << component << "]) = " << breakdown << endl;
     cout << endl;
     #endif
     if (breakdown > max) {
@@ -69,7 +69,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   for (k = 1; k < N_updates + 1; k++) {
     #ifdef DEBUG
     cout << "Compute y0k: " << endl;
-    cout << "ylk[0][" << k << "][:]" << endl;
+    cout << "ylk[0][" << k << "][:]";
     cout << endl;
     #endif
     for (i = 1; i < Dim + 1; i++) {
@@ -78,6 +78,9 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
                       * Updates[(k-1)*Dim + (j-1)];
       }
     }
+    #ifdef DEBUG
+    showVector(ylk[0][k], Dim, "");
+    #endif
   }
 
   // Calculate the {y_{l,k}} from the {y_{0,k}}
@@ -96,7 +99,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     #ifdef DEBUG
     cout << "p[l+1] = " << p[l+1] << endl;
     cout << "component = " << component << endl;
-    cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "]" << endl;
+    cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "] = " << beta << endl;
     cout << endl;
     #endif
     if (fabs(beta) < 1e-6) {
