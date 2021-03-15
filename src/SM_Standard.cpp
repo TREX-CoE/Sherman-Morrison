@@ -166,10 +166,3 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     SM3(Slater_inv, Dim, later, later_updates, later_index);
   }
 }
-
-
-
-void SM(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-        double *Updates, unsigned int *Updates_index) {
-  SM2(Slater_inv, Dim, N_updates, Updates, Updates_index);
-}
