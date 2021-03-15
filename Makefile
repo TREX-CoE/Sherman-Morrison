@@ -22,7 +22,6 @@ BIN_DIR := bin
 
 EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/test_internal_h5 \
-		$(BIN_DIR)/test_external_h5 \
 		$(BIN_DIR)/fMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/fMaponiA3_test_4x4_2 \
 		$(BIN_DIR)/QMCChem_dataset_test
@@ -75,8 +74,6 @@ $(BIN_DIR)/cMaponiA3_test_3x3_3: $(OBJ_DIR)/cMaponiA3_test_3x3_3.o $(DEPS_CXX) |
 	$(CXX) -o $@ $^
 
 $(BIN_DIR)/test_internal_h5: $(OBJ_DIR)/test_internal_h5.o $(DEPS_CXX) | $(BIN_DIR)
-	$(H5CXX) -o $@ $^
-$(BIN_DIR)/test_external_h5: $(OBJ_DIR)/test_external_h5.o $(DEPS_CXX) | $(BIN_DIR)
 	$(H5CXX) -o $@ $^
 
 $(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
