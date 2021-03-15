@@ -12,6 +12,18 @@ using namespace H5;
 
 const H5std_string FILE_NAME( "datasets.hdf5" );
 
+
+double residual2(double * A, unsigned int Dim) {
+  double res = 0.0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      double delta = (A[i * Dim + j] - (i == j));
+      res += delta*delta;
+    }
+  }
+  return res;
+}
+
 void read_int(H5File file, std::string key, unsigned int * data) {
   DataSet ds = file.openDataSet(key);
   ds.read(data, PredType::STD_U32LE);
@@ -66,8 +78,8 @@ int test_cycle(H5File file, int cycle) {
     }
   }
 
-  MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
-  //SM(slater_inverse, dim, nupdates, updates, col_update_index);
+  //MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
+  SM(slater_inverse, dim, nupdates, u, col_update_index);
 
 #ifdef DEBUG
   showMatrix(slater_matrix, dim, "NEW Slater");
@@ -79,7 +91,10 @@ int test_cycle(H5File file, int cycle) {
 
   double * res = new double[dim*dim] {0};
   matMul(slater_matrix, slater_inverse, res, dim);
-  bool ok = is_identity(res, dim, 0.5e-4);
+  bool ok = is_identity(res, dim, 1e-4);
+
+  double res2 = residual2(res, dim);
+  std::cerr << "Residual = " << res2 << std::endl;
 
 #ifdef DEBUG
   showMatrix(res, dim, "Result");
