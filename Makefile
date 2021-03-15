@@ -1,11 +1,11 @@
 ## Compilers
-ARCH = 
-CXX = icpc
-FC = ifort
+ARCH =
+CXX = clang++
+FC = flang-7
 H5CXX = h5c++
 
 ## Compiler flags
-CXXFLAGS = -O0 -debug full -traceback
+CXXFLAGS = -O0 
 FFLAGS = $(CXXFLAGS)
 H5CXXFLAGS = $(CXXFLAGS) -fPIC
 FLIBS = -lstdc++
