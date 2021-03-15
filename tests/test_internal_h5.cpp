@@ -36,7 +36,7 @@ void read_double(H5File file, std::string key, double * data) {
   ds.close();
 }
 
-int test_cycle(H5File file, int cycle) {
+int test_cycle(H5File file, int cycle, std::string version) {
 
   /* Read the data */
 
@@ -78,8 +78,19 @@ int test_cycle(H5File file, int cycle) {
     }
   }
 
-  //MaponiA3(slater_inverse, dim, nupdates, updates, col_update_index);
-  SM(slater_inverse, dim, nupdates, u, col_update_index);
+  if (version == "maponia3") {
+    MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "sm1") {
+    SM1(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "sm2") {
+    SM2(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "sm3") {
+    SM3(slater_inverse, dim, nupdates, u, col_update_index);
+  } else {
+    std::cerr << "Unknown version " << version << std::endl;
+    exit(1);
+  }
+
 
 #ifdef DEBUG
   showMatrix(slater_matrix, dim, "NEW Slater");
@@ -91,10 +102,10 @@ int test_cycle(H5File file, int cycle) {
 
   double * res = new double[dim*dim] {0};
   matMul(slater_matrix, slater_inverse, res, dim);
-  bool ok = is_identity(res, dim, 1e-4);
+  bool ok = is_identity(res, dim, 1e-3);
 
   double res2 = residual2(res, dim);
-  std::cerr << "Residual = " << res2 << std::endl;
+  std::cout << "Residual = " << version << " " << cycle << " " << res2 << std::endl;
 
 #ifdef DEBUG
   showMatrix(res, dim, "Result");
@@ -107,18 +118,19 @@ int test_cycle(H5File file, int cycle) {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 3) {
+  if (argc != 4) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
-    std::cerr << "usage: test_internal_h5 <start cycle> <stop cycle>" << std::endl;
+    std::cerr << "usage: test_internal_h5 <version> <start cycle> <stop cycle>" << std::endl;
     return 1;
   }
-  int start_cycle = std::stoi(argv[1]);
-  int stop_cycle = std::stoi(argv[2]);
+  std::string version(argv[1]);
+  int start_cycle = std::stoi(argv[2]);
+  int stop_cycle = std::stoi(argv[3]);
   H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
   bool ok;
   for (int cycle = start_cycle; cycle < stop_cycle+1; cycle++) {
-    ok = test_cycle(file, cycle);
+    ok = test_cycle(file, cycle, version);
     if (ok) {
       std::cerr << "ok -- cycle " << std::to_string(cycle)
       << std::endl;
