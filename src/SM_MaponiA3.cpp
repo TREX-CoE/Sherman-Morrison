@@ -103,8 +103,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     cout << endl;
     #endif
     if (fabs(beta) < 1e-6) {
-      cout << "Break-down occured. Exiting..." << endl;
-      exit(1);
+      cerr << "Break-down occured." << endl;
     }
 
     // Compute intermediate update to Slater_inv

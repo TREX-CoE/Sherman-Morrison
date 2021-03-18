@@ -10,8 +10,18 @@
 using namespace H5;
 // #define DEBUG
 
-const H5std_string FILE_NAME( "datasets.hdf5" );
+const H5std_string FILE_NAME( "dataset.hdf5" );
 
+double residual_max(double * A, unsigned int Dim) {
+  double max= 0.0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      double delta = (A[i * Dim + j] - (i == j));
+      if (delta > max) max = delta;
+    }
+  }
+  return max;
+}
 
 double residual2(double * A, unsigned int Dim) {
   double res = 0.0;
@@ -51,7 +61,7 @@ int test_cycle(H5File file, int cycle, std::string version) {
 
   double * slater_inverse = new double[dim*dim];
   read_double(file, group + "/slater_inverse", slater_inverse);
-  slater_inverse = transpose(slater_inverse, dim);
+  //slater_inverse = transpose(slater_inverse, dim);
 
   unsigned int * col_update_index = new unsigned int[nupdates];
   read_int(file, group + "/col_update_index", col_update_index);
@@ -91,7 +101,6 @@ int test_cycle(H5File file, int cycle, std::string version) {
     exit(1);
   }
 
-
 #ifdef DEBUG
   showMatrix(slater_matrix, dim, "NEW Slater");
 #endif
@@ -104,8 +113,9 @@ int test_cycle(H5File file, int cycle, std::string version) {
   matMul(slater_matrix, slater_inverse, res, dim);
   bool ok = is_identity(res, dim, 1e-3);
 
+  double res_max = residual_max(res, dim);
   double res2 = residual2(res, dim);
-  std::cout << "Residual = " << version << " " << cycle << " " << res2 << std::endl;
+  std::cout << "Residual = " << version << " " << cycle << " " << res_max << " " << res2 << std::endl;
 
 #ifdef DEBUG
   showMatrix(res, dim, "Result");

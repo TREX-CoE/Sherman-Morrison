@@ -1,6 +1,6 @@
 ## Compilers
 ARCH =
-CXX = clang++
+CXX = clang++-7
 FC = flang-7
 H5CXX = h5c++
 

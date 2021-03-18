@@ -113,7 +113,7 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
         double *Updates, unsigned int *Updates_index) {
 
-  std::cerr << "Called SM2 with updates " << N_updates << std::endl;
+  std::cerr << "Called SM3 with updates " << N_updates << std::endl;
   double C[Dim];
   double D[Dim];
 
