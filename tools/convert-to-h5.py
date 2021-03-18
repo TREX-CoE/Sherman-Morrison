@@ -6,8 +6,8 @@ def rl(rf):
     return " ".join(rf.readline().split())
 
 
-with h5py.File('datasets.hdf5', 'w') as f:
-    with open('datasets.dat', 'r') as rf:
+with h5py.File('dataset.hdf5', 'w') as f:
+    with open('dataset.dat', 'r') as rf:
         while(1):
             line = rl(rf)
             if not line or not line.startswith('#START_PACKET'):
@@ -23,7 +23,7 @@ with h5py.File('datasets.hdf5', 'w') as f:
             for i in range(slater_matrix_dim*slater_matrix_dim):
                 res = parse('({i:d},{j:d}) {sla:e} {inv:e}', rl(rf))
                 slater_matrix[res['i']-1, res['j']-1] = res['sla']
-                slater_inverse[res['i']-1, res['j']-1] = res['inv']
+                slater_inverse[res['j']-1, res['i']-1] = res['inv']
 
             # Read updates
             col_update_index = np.zeros(nupdates, dtype='i')
