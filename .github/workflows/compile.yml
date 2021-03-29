@@ -28,5 +28,5 @@ jobs:
       # Runs a single command using the runners shell
       - name: Test compilation
         run: |
-          sudo apt install libhdf5-dev flang-7
+          sudo apt install libhdf5-dev flang-7 clang-7
           make
