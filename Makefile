@@ -1,19 +1,37 @@
-## Compilers
-ARCH =
-CXX = clang++-7
-FC = flang-7
-H5CXX = h5c++
-
-## Compiler flags
-CXXFLAGS = -O0 
+## Compilers, compiler flags & external libs
+ifeq ($(ENV),INTEL)
+	CXX = icpc
+	FC = ifort
+	ARCH = -xCORE-AVX2
+	OPT = -O0
+	DEBUG = -debug full
+else ifeq ($(ENV),LLVM)
+	CXX = clang++
+	FC = flang
+	ARCH =
+	OPT = -O0
+	DEBUG = -g
+else ifeq ($(ENV),GNU)
+	CXX = g++
+	FC = gfortran
+	ARCH = -mavx
+	OPT = -O0
+	DEBUG = -g
+else
+    $(error No valid compiler environment set in $$ENV. First run: $$ source smvars.sh {intel | llvm | gnu})
+endif
+CXXFLAGS = $(OPT) $(ARCH) $(DEBUG)
 FFLAGS = $(CXXFLAGS)
+H5CXX = h5c++
 H5CXXFLAGS = $(CXXFLAGS) -fPIC
 FLIBS = -lstdc++
 
+## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/
 DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o
 DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
 
+## Directory structure
 SRC_DIR := src
 TST_DIR := tests
 INC_DIR := include
@@ -32,7 +50,7 @@ EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
 all: $(EXEC)
 
 clean:
-	@rm -vrf $(OBJ_DIR)
+	@rm -vrf $(OBJ_DIR) *.dbg
 
 distclean: clean
 	@rm -vrf $(BIN_DIR) \
@@ -46,7 +64,7 @@ $(BIN_DIR) $(OBJ_DIR):
 ### IMPLICIT BUILD RULES
 ## C++ objects
 $(OBJ_DIR)/%.o: $(TST_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) $(ARCH) $(INCLUDE) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
 
 ## HDF5/C++ objects
 $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
@@ -54,19 +72,23 @@ $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
 
 ## Fortran modules
 $(OBJ_DIR)/%_mod.o: $(SRC_DIR)/%_mod.f90 | $(OBJ_DIR)
-	$(FC) $(FFLAGS) $(ARCH) -J$(OBJ_DIR)/ -c -o $@ $<
+ifeq ($(ENV),$(filter $(ENV),LLVM GNU))
+	$(FC) $(FFLAGS) -J $(OBJ_DIR)/ -c -o $@ $<
+else
+	$(FC) $(FFLAGS) -module $(OBJ_DIR)/ -c -o $@ $<
+endif
 
 ## Fortran objects
 $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
-	$(FC) $(FFLAGS) $(ARCH) -I $(OBJ_DIR)/ -c -o $@ $<
+	$(FC) $(FFLAGS) -I $(OBJ_DIR)/ -c -o $@ $<
 
 ### EXPLICIT BUILD RULES
 ## special compiler flag -fPIC otherwise h5c++ builds fail
 $(OBJ_DIR)/SM_MaponiA3.o: $(SRC_DIR)/SM_MaponiA3.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIC $(ARCH) $(INCLUDE) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -fPIC $(INCLUDE) -c -o $@ $<
 
 $(OBJ_DIR)/SM_Standard.o: $(SRC_DIR)/SM_Standard.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIC $(ARCH) $(INCLUDE) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -fPIC $(INCLUDE) -c -o $@ $<
 
 
 #### LINKING
