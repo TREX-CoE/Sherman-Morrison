@@ -1,20 +1,10 @@
 ## Compilers
-#ARCH = -xCORE-AVX2
 H5CXX = h5c++
-#CXX = icpc
-#FC = ifort
-
-#CXX =  ~/intel/compilers_and_libraries_2020.3.275/linux/bin/icpx
-#FC =  ~/intel/compilers_and_libraries_2020.3.275/linux/bin/intel64/ifort
-
-H5FLAGS = "-I/usr/include/hdf5/serial -L/usr/lib/x86_64-linux-gnu/hdf5/serial /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl_cpp.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_cpp.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5.a -lpthread -lsz -lz -ldl -lm -Wl,-rpath -Wl,/usr/lib/x86_64-linux-gnu/hdf5/serial"
 CXX = verificarlo-c++
 FC = verificarlo-f
 
-
-
 ## Compiler flags
-#H5CXXFLAGS = -O0 -g
+H5FLAGS = "-I/usr/include/hdf5/serial -L/usr/lib/x86_64-linux-gnu/hdf5/serial /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl_cpp.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_cpp.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5.a -lpthread -lsz -lz -ldl -lm -Wl,-rpath -Wl,/usr/lib/x86_64-linux-gnu/hdf5/serial"
 CXXFLAGS = -O0 -g $(H5FLAGS)
 FFLAGS = -O0 -g $(H5FLAGS)
 
@@ -30,7 +20,7 @@ OBJ_DIR := build
 BIN_DIR := bin
 
 EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
-		$(BIN_DIR)/test_internal_h5 \
+		$(BIN_DIR)/test_h5 \
 		$(BIN_DIR)/fMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/fMaponiA3_test_4x4_2 \
 		$(BIN_DIR)/QMCChem_dataset_test
@@ -85,7 +75,7 @@ $(BIN_DIR)/cMaponiA3_test_3x3_3: $(OBJ_DIR)/cMaponiA3_test_3x3_3.o $(DEPS_CXX) |
 	$(CXX) -o $@ $^
 
 #begin H5
-$(BIN_DIR)/test_internal_h5: $(OBJ_DIR)/test_internal_h5.o $(DEPS_CXX) | $(BIN_DIR)
+$(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
 	$(CXX) -o $@ $^ $(H5FLAGS)
 #$(BIN_DIR)/test_external_h5: $(OBJ_DIR)/test_external_h5.o $(DEPS_CXX) | $(BIN_DIR)
 #	$(CXX) -o $@ $^ $(H5FLAGS)

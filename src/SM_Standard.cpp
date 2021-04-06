@@ -27,7 +27,7 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (fabs(den) < 1e-6) {
-      std::cerr << "Breakdown condition triggered at " << l << std::endl;
+      std::cerr << "Breakdown condition triggered at " << Updates_index[l]  << std::endl;
     }
     double iden = 1 / den;
 
@@ -75,7 +75,7 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (fabs(den) < 1e-6) {
-      std::cerr << "Breakdown condition triggered at " << l << std::endl;
+      std::cerr << "Breakdown condition triggered at " << Updates_index[l]  << std::endl;
 
       // U_l = U_l / 2 (do the split)
       for (unsigned int j = 0; j < Dim; j++) {
@@ -135,7 +135,7 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (fabs(den) < 1e-6) {
-      std::cerr << "Breakdown condition triggered at " << l << std::endl;
+      std::cerr << "Breakdown condition triggered at " << Updates_index[l]  << std::endl;
 
       for (unsigned int j = 0; j < Dim; j++) {
         later_updates[later*Dim+j] = Updates[l*Dim+j];

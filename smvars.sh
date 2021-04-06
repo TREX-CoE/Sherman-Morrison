@@ -6,7 +6,14 @@ PWD=$(pwd)
 SRCDIR=$(dirname $BASH_SOURCE)
 case $SRCDIR in
 	/*) SMROOT=$SRCDIR ;; ## sourced from absolute path
-	*) SMROOT=$PWD/$SRCDIR ;; ## sourced from relative path
+	*) ## sourced from absolute path
+		if [[ $SRCDIR = . ]] ## check if already in root
+		then
+			SMROOT=$PWD
+		else
+			SMROOT=$PWD/$SRCDIR
+		fi
+		;;
 esac
 export SMROOT
 
@@ -33,7 +40,7 @@ case $ENV in
 	;;
 esac
 
-if [ -z "$SMVARS" ]
+if [[ -z $SMVARS ]]
 then
 	export PATH=$SMROOT/bin:$PATH
 	export SMVARS=true
