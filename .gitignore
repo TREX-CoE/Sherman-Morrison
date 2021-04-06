@@ -1,7 +1,8 @@
 *.o
 *.mod
+*.dbg
 .vscode
 Slater*
 Updates*
-datasets/datasets.*
+datasets/dataset.*
 bin/

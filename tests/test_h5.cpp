@@ -130,7 +130,7 @@ int test_cycle(H5File file, int cycle, std::string version) {
 int main(int argc, char **argv) {
   if (argc != 4) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
-    std::cerr << "usage: test_internal_h5 <version> <start cycle> <stop cycle>" << std::endl;
+    std::cerr << "usage: test_h5 <version> <start cycle> <stop cycle>" << std::endl;
     return 1;
   }
   std::string version(argv[1]);

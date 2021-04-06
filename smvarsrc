@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-export HDF5_CXX=icpc
-export HDF5_CXXLINKER=icpc
-
-export PATH=$PWD/bin:$PATH
