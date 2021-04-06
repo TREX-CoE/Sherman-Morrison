@@ -29,4 +29,5 @@ jobs:
       - name: Test compilation
         run: |
           sudo apt install libhdf5-dev flang-7 clang-7
+          source smvars.sh llvm
           make
