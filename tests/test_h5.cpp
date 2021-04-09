@@ -13,7 +13,7 @@ using namespace H5;
 const H5std_string FILE_NAME( "dataset.hdf5" );
 
 double residual_max(double * A, unsigned int Dim) {
-  double max= 0.0;
+  double max = 0.0;
   for (unsigned int i = 0; i < Dim; i++) {
     for (unsigned int j = 0; j < Dim; j++) {
       double delta = (A[i * Dim + j] - (i == j));

@@ -102,7 +102,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "] = " << beta << endl;
     cout << endl;
     #endif
-    if (fabs(beta) < 1e-6) {
+    if (fabs(beta) < 1e-3) {
       cerr << "Break-down occured." << endl;
     }
 

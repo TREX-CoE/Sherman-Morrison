@@ -50,7 +50,7 @@ EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
 all: $(EXEC)
 
 clean:
-	@rm -vrf $(OBJ_DIR) *.dbg
+	@rm -vrf $(OBJ_DIR) *.dbg *.cmdx *.cmod *.ilm *.stb
 
 distclean: clean
 	@rm -vrf $(BIN_DIR) \
