@@ -452,7 +452,13 @@ subroutine det_update$n(n,LDS,m,l,S,S_inv,d)
   !DIR$ ASSUME (LDS >= $n)
   integer                        :: i,j
   double precision :: zj, zj1, zj2, zj3
+
+  101 format ('Updating column ', I2)
+  102 format ('#BREAKDOWN_OCCURED: TH=1.d-3')
+
+  write(502, '("In subroutine DET_UPDATE21()")')
   
+  write(502,101) l
   do i=1,$n
     u(i) = m(i) - S(i,l)
   enddo
@@ -469,9 +475,9 @@ subroutine det_update$n(n,LDS,m,l,S,S_inv,d)
   d_inv = 1.d0/d
   d = d+zj
   lambda = d*d_inv
-  if (dabs(lambda) < 1.d-6) then
+  if (dabs(lambda) < 1.d-3) then
     d = 0.d0
-    write(502,"('#BREAKDOWN_OCCURED')")
+    write(502,102)
     return
   end if
   
@@ -970,7 +976,7 @@ subroutine det_update_general(n,LDS,m,l,S,S_inv,d)
   !DIR$ ASSUME (MOD(LDS,$IRP_ALIGN/8) == 0)
   !DIR$ ASSUME (n>150)
 
-  integer          :: i,j,n4
+  integer                        :: i,j,n4
   double precision :: zl
 
   !DIR$ NOPREFETCH
@@ -1168,7 +1174,7 @@ END_PROVIDER
 
   !! Some usefull formats for output
   10001 format ('#START_PACKET')
-  10008 format ('#CYCLE_ID: ', I4)
+  10008 format ('#CYCLE_ID: ', I5)
   10000 format ('#SLATER_MATRIX_DIM: ', I3)
   10002 format ('#NUPDATES: ', I2)
   10003 format ('#SLATER_MATRIX: (i (outer), j (inner)), slater_matrix_alpha(i,j), ddet * slater_matrix_alpha_inv_det(i,j) / ddet')
@@ -1177,8 +1183,9 @@ END_PROVIDER
   10006 format ('#COL_UPDATE_COMP_(',I0.2,'): ', E23.15)
   10007 format ('#END_PACKET',/)
 
-  open (unit = 501, file = "dataset.dat") !! slightly cleaner output
+  open (unit = 501, file = "dataset.dat") !! Only Slater matrices plus updates
   open (unit = 502, file = "dataset.fulltrace.dat")
+  write(502,'("In subroutine BLD_DET_ALPHA_VALUE_CURR(...)")')
 
   if (ifirst == 0) then !! If this is the first time we enter this subroutine
     ifirst = 1
@@ -1191,7 +1198,6 @@ END_PROVIDER
   PROVIDE mo_value
   if (det_i /= det_alpha_order(1) ) then
     ! write(*,*) "det_i: ", det_i
-!  if (det_i == -1 ) then
 
     !! determin number of updates, the updates and 
     n_to_do = 0
@@ -1225,38 +1231,6 @@ END_PROVIDER
       end do
     end do
  
-!  print n_to_do (number of updates to do)
-!  to_do (array of the columns that need to be swapped)
-!  mo_list_alpha_curr (list of orbitals to build the current determinant)
-!  mo_list_alpha_prev (list of the previous determinant)
-!
-!  slater_matrix_alpha (slater matrix that needs to be inverted. This is the initial matrix)
-!  slater_matrix_alpha_inv_det = inverse of the slater matrix divided by the determinant (ddet: l. 1216)
-!
-!
-!
-!       1 2 3  4
-!       --------
-!       2 4 6  8
-!       2 4 10 8
-!    
-!     mo_list(:)       (2,4,10,8)
-!     mo_list_prev(:)  (2,4,6,8)
-!     n_todo           1
-!     to_do            (3)
-!
-!
-!       1 2 3  4
-!       --------
-!       2 4 6  8
-!       2 5 10 8
-!    
-!     mo_list(:)       (2,5,10,8)
-!     mo_list_prev(:)  (2,4,6,8)
-!     n_todo           2
-!     to_do            (2,3)
-
-
     ddet = 0.d0
     
     if (n_to_do < shiftl(elec_alpha_num,1)) then
@@ -1291,6 +1265,7 @@ END_PROVIDER
               slater_matrix_alpha,                                     &
               slater_matrix_alpha_inv_det,                             &
               ddet)
+          write(502, '("BACK in subroutine BLD_DET_ALPHA_VALUE_CURR(...)")')
           if (ddet /= 0.d0) then
             det_alpha_value_curr = ddet
           else
@@ -1305,15 +1280,9 @@ END_PROVIDER
         endif
       enddo
     endif
-
-  write(501,10007)
-  write(502,10007)
-  cycle_id = cycle_id + 1
   
   else
-
     ddet = 0.d0
-
   endif
 
     
@@ -1337,12 +1306,24 @@ END_PROVIDER
         slater_matrix_alpha_inv_det(k,i) = mo_value(i,mo_list_alpha_curr(k))
       enddo
     enddo
+    if (det_i /= det_alpha_order(1)) then
+      write(502,"('#NO_INVERSE_FOUND: ')") cycle_id
+    else
+      write(502,"('#FIRST_DETERMINANT_IN_SUPERCYCLE')")
+    endif
     call invert(slater_matrix_alpha_inv_det,elec_alpha_num_8,elec_alpha_num,ddet)
-    
   endif
+
+  write(501,10007)
+  write(502,10007)
+  cycle_id = cycle_id + 1
+
   ASSERT (ddet /= 0.d0)
   
   det_alpha_value_curr = ddet 
+
+
+
 END_PROVIDER
 
  BEGIN_PROVIDER [ double precision, det_beta_value_curr ]

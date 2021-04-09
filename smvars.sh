@@ -2,12 +2,13 @@
 
 ENV=$1
 
+## Set Sherman-Morrison root dir
 PWD=$(pwd)
 SRCDIR=$(dirname $BASH_SOURCE)
 case $SRCDIR in
-	/*) SMROOT=$SRCDIR ;; ## sourced from absolute path
-	*) ## sourced from absolute path
-		if [[ $SRCDIR = . ]] ## check if already in root
+	/*) SMROOT=$SRCDIR ;;
+	*)
+		if [[ $SRCDIR = . ]]
 		then
 			SMROOT=$PWD
 		else
@@ -17,6 +18,7 @@ case $SRCDIR in
 esac
 export SMROOT
 
+## Set environment for hdf5-tools and Makefile
 case $ENV in
   intel)
 	export HDF5_CXX=icpc
@@ -40,6 +42,7 @@ case $ENV in
 	;;
 esac
 
+## Export path, but only once
 if [[ -z $SMVARS ]]
 then
 	export PATH=$SMROOT/bin:$PATH

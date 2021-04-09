@@ -1,6 +1,10 @@
 *.o
 *.mod
 *.dbg
+*.cmdx
+*.cmod
+*.ilm
+*.stb
 .vscode
 Slater*
 Updates*
