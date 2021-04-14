@@ -2,6 +2,7 @@
 #include "hdf5/serial/H5Cpp.h"
 
 #include "SM_MaponiA3.hpp"
+#include "SM_MaponiA3S.hpp"
 #include "SM_Standard.hpp"
 #include "SM_Helpers.hpp"
 
@@ -89,6 +90,8 @@ int test_cycle(H5File file, int cycle, std::string version) {
 
   if (version == "maponia3") {
     MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "maponia3s") {
+    MaponiA3S(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "sm1") {
     SM1(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "sm2") {

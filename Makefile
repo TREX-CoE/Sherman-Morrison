@@ -28,7 +28,10 @@ FLIBS = -lstdc++
 
 ## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/
-DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o $(OBJ_DIR)/SM_Helpers.o
+DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o \
+		   $(OBJ_DIR)/SM_MaponiA3S.o \
+		   $(OBJ_DIR)/SM_Standard.o \
+		   $(OBJ_DIR)/SM_Helpers.o
 DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
 
 ## Directory structure
@@ -88,6 +91,9 @@ $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
 ### EXPLICIT BUILD RULES
 ## special compiler flag -fPIC otherwise h5c++ builds fail
 $(OBJ_DIR)/SM_MaponiA3.o: $(SRC_DIR)/SM_MaponiA3.cpp $(INC_DIR)/* | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -fPIC $(INCLUDE) -c -o $@ $<
+
+$(OBJ_DIR)/SM_MaponiA3S.o: $(SRC_DIR)/SM_MaponiA3S.cpp $(INC_DIR)/* | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -fPIC $(INCLUDE) -c -o $@ $<
 
 $(OBJ_DIR)/SM_Standard.o: $(SRC_DIR)/SM_Standard.cpp $(INC_DIR)/* | $(OBJ_DIR)
