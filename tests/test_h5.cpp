@@ -1,11 +1,9 @@
-#include <iostream>
-#include <string>
 #include "hdf5/serial/hdf5.h"
 #include "hdf5/serial/H5Cpp.h"
 
 #include "SM_MaponiA3.hpp"
 #include "SM_Standard.hpp"
-#include "Helpers.hpp"
+#include "SM_Helpers.hpp"
 
 using namespace H5;
 // #define DEBUG

@@ -2,9 +2,17 @@
 // Algorithm 3 from P. Maponi,
 // p. 283, doi:10.1016/j.laa.2006.07.007
 #include "SM_MaponiA3.hpp"
-#include "Helpers.hpp"
+#include "SM_Helpers.hpp"
 
-void selectBestUpdate(unsigned int l, unsigned int N_updates, 
+// #define DEBUG
+
+void Switch(unsigned int *p, unsigned int l, unsigned int lbar) {
+  unsigned int tmp = p[l+1];
+  p[l+1] = p[lbar];
+  p[lbar] = tmp;
+}
+
+void selectLargestDenominator(unsigned int l, unsigned int N_updates, 
                       unsigned int *Updates_index, unsigned int *p, 
                       double ***ylk) {
   unsigned int lbar = l+1, max =0;
@@ -16,18 +24,16 @@ void selectBestUpdate(unsigned int l, unsigned int N_updates,
     component = Updates_index[index - 1];
     breakdown = abs(1 + ylk[l][index][component]);
     #ifdef DEBUG
-    cout << "Inside selectBestUpdate()" << endl;
-    cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "][" << component << "]) = " << breakdown << endl;
-    cout << endl;
+    std::cout << "Inside selectLargestDenominator()" << std::endl;
+    std::cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "][" << component << "]) = " << breakdown << std::endl;
+    std::cout << std::endl;
     #endif
     if (breakdown > max) {
       max = breakdown;
       lbar = j;
     }
   }
-  tmp = p[l+1];
-  p[l+1] = p[lbar];
-  p[lbar] = tmp; 
+  Switch(p, l, lbar);
 }
 
 void MaponiA3(double *Slater_inv, unsigned int Dim,
@@ -68,9 +74,9 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   // Calculate the {y_{0,k}}
   for (k = 1; k < N_updates + 1; k++) {
     #ifdef DEBUG
-    cout << "Compute y0k: " << endl;
-    cout << "ylk[0][" << k << "][:]";
-    cout << endl;
+    std::cout << "Compute y0k: " << std::endl;
+    std::cout << "ylk[0][" << k << "][:]";
+    std::cout << std::endl;
     #endif
     for (i = 1; i < Dim + 1; i++) {
       for (j = 1; j < Dim + 1; j++) {
@@ -86,33 +92,33 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
   // Calculate the {y_{l,k}} from the {y_{0,k}}
   for (l = 0; l < N_updates; l++) {
     #ifdef DEBUG
-    cout << "In outer compute-ylk-loop: l = " << l << endl;
-    cout << endl;
+    std::cout << "In outer compute-ylk-loop: l = " << l << std::endl;
+    std::cout << std::endl;
     #endif
 
     // For given l select intermediate update with largest break-down val
-    selectBestUpdate(l, N_updates, Updates_index, p, ylk);
+    selectLargestDenominator(l, N_updates, Updates_index, p, ylk);
 
     // Select component and comp. bd-condition.
     component = Updates_index[p[l+1] - 1];
     beta = 1 + ylk[l][p[l+1]][component];
     #ifdef DEBUG
-    cout << "p[l+1] = " << p[l+1] << endl;
-    cout << "component = " << component << endl;
-    cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "] = " << beta << endl;
-    cout << endl;
+    std::cout << "p[l+1] = " << p[l+1] << std::endl;
+    std::cout << "component = " << component << std::endl;
+    std::cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "] = " << beta << std::endl;
+    std::cout << std::endl;
     #endif
     if (fabs(beta) < 1e-3) {
-      cerr << "Break-down occured." << endl;
+      std::cerr << "Break-down occured." << std::endl;
     }
 
     // Compute intermediate update to Slater_inv
     #ifdef DEBUG
-    cout << "Compute intermediate update to Slater_inv" << endl;
-    cout << "component = " << component << endl;
-    cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "]" << endl;
-    cout << "ylk[l][p[k]][:] = ylk[" << l << "][" << p[l+1] << "][:]" << endl;
-    cout << endl;
+    std::cout << "Compute intermediate update to Slater_inv" << std::endl;
+    std::cout << "component = " << component << std::endl;
+    std::cout << "beta = 1 + ylk[" << l << "][" << p[l+1] << "][" << component << "]" << std::endl;
+    std::cout << "ylk[l][p[k]][:] = ylk[" << l << "][" << p[l+1] << "][:]" << std::endl;
+    std::cout << std::endl;
     #endif
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
@@ -132,9 +138,9 @@ void MaponiA3(double *Slater_inv, unsigned int Dim,
     for (k = l+2; k < N_updates+1; k++) {
       alpha = ylk[l][p[k]][component] / beta;
       #ifdef DEBUG
-      cout << "Inside k-loop: k = " << k << endl;
-      cout << "ylk[" << l+1 << "][" << p[k] << "][:]" << endl;
-      cout << endl;
+      std::cout << "Inside k-loop: k = " << k << std::endl;
+      std::cout << "ylk[" << l+1 << "][" << p[k] << "][:]" << std::endl;
+      std::cout << std::endl;
       #endif
       for (i = 1; i < Dim + 1; i++) {
         ylk[l+1][p[k]][i] = ylk[l][p[k]][i]

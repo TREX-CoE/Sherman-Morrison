@@ -1,43 +1,42 @@
-// Helpers.hpp
+// SM_Helpers.hpp
 // Some usefull helper functions to support the Maponi algorithm.
 #include <iostream>
-#include <cmath>
 #include <string>
 #include <cstring>
-using namespace std;
+#include <cmath>
 
 template<typename T>
-void showScalar(T scalar, string name) {
-    cout << name << " = " << scalar << endl << endl;
+void showScalar(T scalar, std::string name) {
+    std::cout << name << " = " << scalar << std::endl << std::endl;
 }
 
 template<typename T>
-void showVector(T *vector, unsigned int size, string name) {
-    cout << name << " = " << endl;
+void showVector(T *vector, unsigned int size, std::string name) {
+    std::cout << name << " = " << std::endl;
     for (unsigned int i = 0; i < size; i++) {
-        cout << "[ " << vector[i] << " ]" << endl;
+        std::cout << "[ " << vector[i] << " ]" << std::endl;
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
 template<typename T>
-void showMatrix(T *matrix, unsigned int M, string name) {
-    cout.precision(17);
-    cout << name << " = [" << endl;
+void showMatrix(T *matrix, unsigned int M, std::string name) {
+    std::cout.precision(17);
+    std::cout << name << " = [" << std::endl;
     for (unsigned int i = 0; i < M; i++) {
-        cout << "[";
+        std::cout << "[";
         for (unsigned int j = 0; j < M; j++) {
             if (matrix[i*M + j] >= 0) {
-                cout << "  " << matrix[i*M + j] << ",";
+                std::cout << "  " << matrix[i*M + j] << ",";
             }
             else {
-                cout << " " << matrix[i*M + j] << "," ;
+                std::cout << " " << matrix[i*M + j] << "," ;
             }
         }
-        cout << " ]," << endl;
+        std::cout << " ]," << std::endl;
     }
-    cout << "]" << endl;
-    cout << endl;
+    std::cout << "]" << std::endl;
+    std::cout << std::endl;
 }
 
 template<typename T>
