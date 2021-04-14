@@ -30,6 +30,12 @@ case $ENV in
 	export HDF5_CXXLINKER=clang++
 	export ENV=LLVM
     ;;
+  vfc)
+	export HDF5_CXX=clang++
+	export HDF5_CXXLINKER=clang++
+	export ENV=LLVM
+	export VFC_BACKENDS="libinterflop_ieee.so --count-op"
+    ;;
   gnu)
 	export HDF5_CXX=g++
 	export HDF5_CXXLINKER=g++
