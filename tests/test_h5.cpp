@@ -17,6 +17,7 @@ double residual_max(double * A, unsigned int Dim) {
   for (unsigned int i = 0; i < Dim; i++) {
     for (unsigned int j = 0; j < Dim; j++) {
       double delta = (A[i * Dim + j] - (i == j));
+      delta = abs(delta);
       if (delta > max) max = delta;
     }
   }
