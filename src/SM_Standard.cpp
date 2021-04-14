@@ -1,8 +1,7 @@
 // SM-Standard.cpp
 // Standard Sherman Morrison with multiple updates
 #include "SM_Standard.hpp"
-#include "Helpers.hpp"
-#include <iostream>
+#include "SM_Helpers.hpp"
 
 // Set common break-down threshold
 double threshold() {

@@ -28,7 +28,7 @@ FLIBS = -lstdc++
 
 ## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/
-DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o
+DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o $(OBJ_DIR)/SM_Helpers.o
 DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
 
 ## Directory structure
@@ -65,6 +65,9 @@ $(BIN_DIR) $(OBJ_DIR):
 ## C++ objects
 $(OBJ_DIR)/%.o: $(TST_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -fPIE $(INCLUDE) -c -o $@ $<
 
 ## HDF5/C++ objects
 $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
