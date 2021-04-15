@@ -193,6 +193,11 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     l += 1;
   }
 
+  // If all the updates have failed, exit early with an error
+  if (later == N_updates) {
+    std::cerr << "SM3 cannot invert this matrix" << std::endl;
+    return;
+  }
   if (later > 0)
   {
     SM3(Slater_inv, Dim, later, later_updates, later_index);
