@@ -4,7 +4,7 @@
 #include "SM_MaponiA3S.hpp"
 #include "SM_Helpers.hpp"
 
-// #define DEBUG
+#define DEBUG
 
 void MaponiA3S(double *Slater_inv, unsigned int Dim,
               unsigned int N_updates, double *Updates,
