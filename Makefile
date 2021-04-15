@@ -21,7 +21,7 @@ else
     $(error No valid compiler environment set in $$ENV. \
 	First run: $$ source smvars.sh {intel | llvm | gnu})
 endif
-CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) -fPIC
+CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) -fPIC $(THRESHOLD)
 FFLAGS = $(CXXFLAGS)
 H5CXX = h5c++
 H5CXXFLAGS = $(CXXFLAGS)

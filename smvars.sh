@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-
+unset THRESHOLD
 ENV=$1
+THRESHOLD=$2
 
 ## Set Sherman-Morrison root dir
 PWD=$(pwd)
@@ -53,4 +54,10 @@ if [[ -z $SMVARS ]]
 then
 	export PATH=$SMROOT/bin:$PATH
 	export SMVARS=true
+fi
+
+## If a threshold is provided, export compiler flag
+if [[ $# -gt 1 ]]
+then
+    export THRESHOLD="-DTHRESHOLD=$THRESHOLD"
 fi

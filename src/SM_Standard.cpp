@@ -3,12 +3,6 @@
 #include "SM_Standard.hpp"
 #include "SM_Helpers.hpp"
 
-// Set common break-down threshold
-double threshold() {
-  double const threshold = 1e-3;
-  return threshold;
-}
-
 // Naïve Sherman Morrison
 void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
@@ -82,9 +76,9 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
                 << std::endl;
 
       // U_l = U_l / 2 (do the split)
-      for (unsigned int j = 0; j < Dim; j++) {
-        later_updates[later * Dim + j] = Updates[l * Dim + j] / 2.0;
-        C[j] /= 2.0;
+      for (unsigned int i = 0; i < Dim; i++) {
+        later_updates[later * Dim + i] = Updates[l * Dim + i] / 2.0;
+        C[i] /= 2.0;
       }
       later_index[later] = Updates_index[l];
       later++;
@@ -166,7 +160,13 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     l += 1;
   }
 
-  if (later > 0) {
+  // If all the updates have failed, exit early with an error
+  if (later == N_updates) {
+    std::cerr << "SM3 cannot invert this matrix" << std::endl;
+    return;
+  }
+  // If some have failed, make a recursive call
+  else if (later > 0) {
     SM3(Slater_inv, Dim, later, later_updates, later_index);
   }
 }

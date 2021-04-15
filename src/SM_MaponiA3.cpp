@@ -76,7 +76,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
               << "] = " << beta << std::endl;
     std::cout << std::endl;
 #endif
-    if (fabs(beta) < 1e-3) {
+    if (fabs(beta) < threshold()) {
       std::cerr << "Break-down occured." << std::endl;
     }
 
