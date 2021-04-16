@@ -129,10 +129,6 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   }
   memcpy(Slater_inv, last, Dim * Dim * sizeof(double));
 
-  if (later > 0) {
-    MaponiA3S(Slater_inv, Dim, later, later_updates, later_index);
-  }
-
   /*
   CLEANUP MEMORY
   */
@@ -144,6 +140,11 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     delete[] ylk[l];
   }
   delete[] Al, next, p;
+
+  if (later > 0) {
+    std::cout << "Entering recursive loop with " << l << " updates" << std::endl;
+    MaponiA3S(Slater_inv, Dim, later, later_updates, later_index);
+  }
 }
 
 extern "C" {
