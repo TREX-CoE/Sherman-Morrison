@@ -19,6 +19,10 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   double *next = new double[Dim * Dim]{0};
   double *last = Slater_inv, *tmp;
 
+  double later_updates[Dim * N_updates];
+  unsigned int later_index[N_updates];
+  unsigned int later = 0;
+
   // Populate update-order vector
   for (i = 0; i < N_updates; i++) {
     p[i + 1] = i + 1;
@@ -79,18 +83,15 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
       std::cerr << "Breakdown condition triggered at " << component
                 << std::endl;
       
-    //   for (unsigned int i = 0; i < Dim; i++) {
-    //     later_updates[later * Dim + i] = Updates[l * Dim + i] / 2.0;
-    //     ylk[l][p[l + 1]][i] /= 2.0;
-    //   }
-    //   later_index[later] = Updates_index[l];
-    //   later++;
-
-    //   den = 1 + C[Updates_index[l] - 1];
-    // }
-    // double iden = 1 / den;
-
+      for (unsigned int i = 0; i < Dim; i++) {
+        later_updates[later * Dim + i] = Updates[l * Dim + i] * 0.5;
+        ylk[l][p[l + 1]][i] *= 0.5;
+      }
+      later_index[later] = Updates_index[p[l + 1]];
+      later++;
+      beta = 1 + ylk[l][p[l + 1]][component];
     }
+    double ibeta = 1.0 / beta;
 
 // Compute intermediate update to Slater_inv
 #ifdef DEBUG
@@ -105,20 +106,17 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
         Al[i * Dim + j] =
-            (i == j) - (j == component - 1) * ylk[l][p[l + 1]][i + 1] / beta;
+            (i == j) - (j == component - 1) * ylk[l][p[l + 1]][i + 1] * ibeta;
       }
     }
-    matMul(Al, last, next, Dim);
-    tmp = next;
-    next = last;
-    last = tmp;
+    matMul(Al, last, next, Dim); tmp = next; next = last; last = tmp;
 #ifdef DEBUG
     showMatrix(last, Dim, "last");
 #endif
 
     // For given l != 0 compute the next {y_{l,k}}
     for (k = l + 2; k < N_updates + 1; k++) {
-      alpha = ylk[l][p[k]][component] / beta;
+      alpha = ylk[l][p[k]][component] * ibeta;
 #ifdef DEBUG
       std::cout << "Inside k-loop: k = " << k << std::endl;
       std::cout << "ylk[" << l + 1 << "][" << p[k] << "][:]" << std::endl;
@@ -130,6 +128,10 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     }
   }
   memcpy(Slater_inv, last, Dim * Dim * sizeof(double));
+
+  if (later > 0) {
+    MaponiA3S(Slater_inv, Dim, later, later_updates, later_index);
+  }
 
   /*
   CLEANUP MEMORY
@@ -145,9 +147,9 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 }
 
 extern "C" {
-void MaponiA3S_f(double **linSlater_inv, unsigned int *Dim,
-                 unsigned int *N_updates, double **linUpdates,
-                 unsigned int **Updates_index) {
-  MaponiA3S(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-}
+  void MaponiA3S_f(double **linSlater_inv, unsigned int *Dim,
+                  unsigned int *N_updates, double **linUpdates,
+                  unsigned int **Updates_index) {
+    MaponiA3S(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+  }
 }
