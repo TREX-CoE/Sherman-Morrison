@@ -4,13 +4,25 @@ CXX = verificarlo-c++
 FC = verificarlo-f
 
 ## Compiler flags
-H5FLAGS = "-I/usr/include/hdf5/serial -L/usr/lib/x86_64-linux-gnu/hdf5/serial /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl_cpp.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_cpp.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl.a /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5.a -lpthread -lsz -lz -ldl -lm -Wl,-rpath -Wl,/usr/lib/x86_64-linux-gnu/hdf5/serial"
+H5FLAGS = "-I/usr/include/hdf5/serial \
+		   -L/usr/lib/x86_64-linux-gnu/hdf5/serial \
+		   /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl_cpp.a \
+		   /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_cpp.a \
+		   /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl.a \
+		   /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5.a \
+		   -lpthread -lsz -lz -ldl -lm \
+		   -Wl,-rpath -Wl,/usr/lib/x86_64-linux-gnu/hdf5/serial"
 CXXFLAGS = -O0 -g $(H5FLAGS)
-FFLAGS = -O0 -g $(H5FLAGS)
+FFLAGS = $(CXXFLAGS)
 
 INCLUDE = -I $(INC_DIR)/
-DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o $(OBJ_DIR)/SM_Helpers.o
-DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
+DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o \
+		   $(OBJ_DIR)/SM_MaponiA3S.o \
+		   $(OBJ_DIR)/SM_Standard.o \
+		   $(OBJ_DIR)/SM_Helpers.o
+DEPS_F = $(DEPS_CXX) \
+		 $(OBJ_DIR)/SM_MaponiA3_mod.o \
+		 $(OBJ_DIR)/Helpers_mod.o
 FLIBS = -lstdc++
 
 SRC_DIR := src
@@ -33,7 +45,7 @@ EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
 all: $(EXEC)
 
 clean:
-	@rm -vrf $(OBJ_DIR)
+	@rm -vrf $(OBJ_DIR) .*.o *.dbg *.cmdx *.cmod *.ilm *.stb
 
 distclean: clean
 	@rm -vrf $(BIN_DIR) \
@@ -50,7 +62,7 @@ $(OBJ_DIR)/%.o: $(TST_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) $(ARCH) $(INCLUDE) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIE $(INCLUDE) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
 
 ## HDF5/C++ objects
 $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
@@ -58,32 +70,19 @@ $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
 
 ## Fortran modules
 $(OBJ_DIR)/%_mod.o: $(SRC_DIR)/%_mod.f90 | $(OBJ_DIR)
-	$(FC) $(FFLAGS) $(ARCH) -module $(OBJ_DIR)/ -c -o $@ $<
+	$(FC) $(FFLAGS) $(ARCH) -J $(OBJ_DIR)/ -c -o $@ $<
 
 ## Fortran objects
 $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
 	$(FC) $(FFLAGS) $(ARCH) -I $(OBJ_DIR)/ -c -o $@ $<
-
-### EXPLICIT BUILD RULES
-## special compiler flag -fPIC otherwise h5c++ builds fail
-$(OBJ_DIR)/SM_MaponiA3.o: $(SRC_DIR)/SM_MaponiA3.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIC $(ARCH) $(INCLUDE) -c -o $@ $<
-
-$(OBJ_DIR)/SM_Standard.o: $(SRC_DIR)/SM_Standard.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIC $(ARCH) $(INCLUDE) -c -o $@ $<
 
 
 #### LINKING
 $(BIN_DIR)/cMaponiA3_test_3x3_3: $(OBJ_DIR)/cMaponiA3_test_3x3_3.o $(DEPS_CXX) | $(BIN_DIR)
 	$(CXX) -o $@ $^
 
-#begin H5
 $(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
 	$(CXX) -o $@ $^ $(H5FLAGS)
-#$(BIN_DIR)/test_external_h5: $(OBJ_DIR)/test_external_h5.o $(DEPS_CXX) | $(BIN_DIR)
-#	$(CXX) -o $@ $^ $(H5FLAGS)
-#end H5
-
 
 $(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
 	$(FC) $(FLIBS) -o $@ $^

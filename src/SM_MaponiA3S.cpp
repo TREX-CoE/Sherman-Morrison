@@ -1,14 +1,13 @@
 // SM-MaponiA3_f.cpp
 // Algorithm 3 from P. Maponi,
 // p. 283, doi:10.1016/j.laa.2006.07.007
-#include "SM_MaponiA3.hpp"
+#include "SM_MaponiA3S.hpp"
 #include "SM_Helpers.hpp"
 
 // #define DEBUG
 
-void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-              double *Updates, unsigned int *Updates_index) {
-
+void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
+               double *Updates, unsigned int *Updates_index) {
   /*
   DECLARE AND INITIALISE ARRAYS
   */
@@ -77,7 +76,20 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     std::cout << std::endl;
 #endif
     if (fabs(beta) < threshold()) {
-      std::cerr << "Break-down occured." << std::endl;
+      std::cerr << "Breakdown condition triggered at " << component
+                << std::endl;
+      
+    //   for (unsigned int i = 0; i < Dim; i++) {
+    //     later_updates[later * Dim + i] = Updates[l * Dim + i] / 2.0;
+    //     ylk[l][p[l + 1]][i] /= 2.0;
+    //   }
+    //   later_index[later] = Updates_index[l];
+    //   later++;
+
+    //   den = 1 + C[Updates_index[l] - 1];
+    // }
+    // double iden = 1 / den;
+
     }
 
 // Compute intermediate update to Slater_inv
@@ -133,9 +145,9 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 }
 
 extern "C" {
-void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
-                unsigned int *N_updates, double **linUpdates,
-                unsigned int **Updates_index) {
-  MaponiA3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+void MaponiA3S_f(double **linSlater_inv, unsigned int *Dim,
+                 unsigned int *N_updates, double **linUpdates,
+                 unsigned int **Updates_index) {
+  MaponiA3S(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
 }
 }

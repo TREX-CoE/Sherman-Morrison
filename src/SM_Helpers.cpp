@@ -1,15 +1,24 @@
 #include "SM_Helpers.hpp"
 
+// Set common break-down threshold
+double threshold() {
+  const double threshold = THRESHOLD;
+#ifdef DEBUG
+  std::cerr << "Break-down threshold set to: " << threshold << std::endl;
+#endif
+  return threshold;
+}
+
 void Switch(unsigned int *p, unsigned int l, unsigned int lbar) {
-  unsigned int tmp = p[l+1];
-  p[l+1] = p[lbar];
+  unsigned int tmp = p[l + 1];
+  p[l + 1] = p[lbar];
   p[lbar] = tmp;
 }
 
-void selectLargestDenominator(unsigned int l, unsigned int N_updates, 
-                      unsigned int *Updates_index, unsigned int *p, 
-                      double ***ylk) {
-  unsigned int lbar = l+1, max =0;
+void selectLargestDenominator(unsigned int l, unsigned int N_updates,
+                              unsigned int *Updates_index, unsigned int *p,
+                              double ***ylk) {
+  unsigned int lbar = l + 1, max = 0;
   unsigned int index = 0, component = 0;
   unsigned int tmp = 0;
   double breakdown = 0;
@@ -17,11 +26,12 @@ void selectLargestDenominator(unsigned int l, unsigned int N_updates,
     index = p[j];
     component = Updates_index[index - 1];
     breakdown = abs(1 + ylk[l][index][component]);
-    #ifdef DEBUG
+#ifdef DEBUG
     std::cout << "Inside selectLargestDenominator()" << std::endl;
-    std::cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "][" << component << "]) = " << breakdown << std::endl;
+    std::cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "]["
+              << component << "]) = " << breakdown << std::endl;
     std::cout << std::endl;
-    #endif
+#endif
     if (breakdown > max) {
       max = breakdown;
       lbar = j;

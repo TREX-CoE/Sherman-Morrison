@@ -18,18 +18,24 @@ else ifeq ($(ENV),GNU)
 	OPT = -O0
 	DEBUG = -g
 else
-    $(error No valid compiler environment set in $$ENV. First run: $$ source smvars.sh {intel | llvm | gnu})
+    $(error No valid compiler environment set in $$ENV. \
+	First run: $$ source smvars.sh {intel | llvm | gnu})
 endif
-CXXFLAGS = $(OPT) $(ARCH) $(DEBUG)
+CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) -fPIC $(THRESHOLD)
 FFLAGS = $(CXXFLAGS)
 H5CXX = h5c++
-H5CXXFLAGS = $(CXXFLAGS) -fPIC
+H5CXXFLAGS = $(CXXFLAGS)
 FLIBS = -lstdc++
 
 ## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/
-DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o $(OBJ_DIR)/SM_Standard.o $(OBJ_DIR)/SM_Helpers.o
-DEPS_F = $(DEPS_CXX) $(OBJ_DIR)/SM_MaponiA3_mod.o $(OBJ_DIR)/Helpers_mod.o
+DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o \
+		   $(OBJ_DIR)/SM_MaponiA3S.o \
+		   $(OBJ_DIR)/SM_Standard.o \
+		   $(OBJ_DIR)/SM_Helpers.o
+DEPS_F = $(DEPS_CXX) \
+		 $(OBJ_DIR)/SM_MaponiA3_mod.o \
+		 $(OBJ_DIR)/Helpers_mod.o
 
 ## Directory structure
 SRC_DIR := src
@@ -67,7 +73,7 @@ $(OBJ_DIR)/%.o: $(TST_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIE $(INCLUDE) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -o $@ $<
 
 ## HDF5/C++ objects
 $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
@@ -84,14 +90,6 @@ endif
 ## Fortran objects
 $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
 	$(FC) $(FFLAGS) -I $(OBJ_DIR)/ -c -o $@ $<
-
-### EXPLICIT BUILD RULES
-## special compiler flag -fPIC otherwise h5c++ builds fail
-$(OBJ_DIR)/SM_MaponiA3.o: $(SRC_DIR)/SM_MaponiA3.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIC $(INCLUDE) -c -o $@ $<
-
-$(OBJ_DIR)/SM_Standard.o: $(SRC_DIR)/SM_Standard.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -fPIC $(INCLUDE) -c -o $@ $<
 
 
 #### LINKING
