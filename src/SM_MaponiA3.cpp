@@ -79,6 +79,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     if (fabs(beta) < threshold()) {
       std::cerr << "Break-down occured." << std::endl;
     }
+    double ibeta = 1.0 / beta; 
 
 // Compute intermediate update to Slater_inv
 #ifdef DEBUG
@@ -93,7 +94,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     for (i = 0; i < Dim; i++) {
       for (j = 0; j < Dim; j++) {
         Al[i * Dim + j] =
-            (i == j) - (j == component - 1) * ylk[l][p[l + 1]][i + 1] / beta;
+            (i == j) - (j == component - 1) * ylk[l][p[l + 1]][i + 1] * ibeta;
       }
     }
     matMul(Al, last, next, Dim);
@@ -106,7 +107,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // For given l != 0 compute the next {y_{l,k}}
     for (k = l + 2; k < N_updates + 1; k++) {
-      alpha = ylk[l][p[k]][component] / beta;
+      alpha = ylk[l][p[k]][component] * ibeta;
 #ifdef DEBUG
       std::cout << "Inside k-loop: k = " << k << std::endl;
       std::cout << "ylk[" << l + 1 << "][" << p[k] << "][:]" << std::endl;
