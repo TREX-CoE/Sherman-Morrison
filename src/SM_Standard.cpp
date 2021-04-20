@@ -170,3 +170,23 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     SM3(Slater_inv, Dim, later, later_updates, later_index);
   }
 }
+
+extern "C" {
+  void SM1_f(double **linSlater_inv, unsigned int *Dim,
+                  unsigned int *N_updates, double **linUpdates,
+                  unsigned int **Updates_index) {
+    SM1(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+  }
+
+  void SM2_f(double **linSlater_inv, unsigned int *Dim,
+                  unsigned int *N_updates, double **linUpdates,
+                  unsigned int **Updates_index) {
+    SM2(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+  }
+  
+  void SM3_f(double **linSlater_inv, unsigned int *Dim,
+                  unsigned int *N_updates, double **linUpdates,
+                  unsigned int **Updates_index) {
+    SM3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+  }
+}

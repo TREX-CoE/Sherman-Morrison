@@ -57,11 +57,11 @@ program QMCChem_dataset_test
     !! S_inv needs to be transposed first before it
     !! goes to MaponiA3
     call Transpose(S_inv, S_inv_t, dim)
-    call MaponiA3(S_inv_t, dim, n_updates, U, Updates_index)
+    ! call MaponiA3S(S_inv_t, dim, n_updates, U, Updates_index)
+    call SM2(S_inv_t, dim, n_updates, U, Updates_index)
     !! S_inv_t needs to be transposed back before it
     !! can be multiplied with S to test unity
     call Transpose(S_inv_t, S_inv, dim)
-
 
     !! Write new S and S_inv to file for check in Octave
     open(unit = 4000, file = "Slater.dat")

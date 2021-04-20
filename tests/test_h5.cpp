@@ -61,7 +61,6 @@ int test_cycle(H5File file, int cycle, std::string version) {
 
   double * slater_inverse = new double[dim*dim];
   read_double(file, group + "/slater_inverse", slater_inverse);
-  //slater_inverse = transpose(slater_inverse, dim);
 
   unsigned int * col_update_index = new unsigned int[nupdates];
   read_int(file, group + "/col_update_index", col_update_index);
@@ -80,6 +79,7 @@ int test_cycle(H5File file, int cycle, std::string version) {
   showMatrix(slater_inverse, dim, "OLD Inverse");
 #endif
 
+  // Transform replacement updates in 'updates[]' into additive updates in 'u[]'
   for (j = 0; j < nupdates; j++) {
     for (i = 0; i < dim; i++) {
       col = col_update_index[j];

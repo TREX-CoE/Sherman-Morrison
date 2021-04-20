@@ -4,7 +4,7 @@
 #include "SM_MaponiA3S.hpp"
 #include "SM_Helpers.hpp"
 
-// #define DEBUG
+#define DEBUG
 
 void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
                double *Updates, unsigned int *Updates_index) {
@@ -139,7 +139,7 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     }
     delete[] ylk[l];
   }
-  delete[] Al, next, p;
+  delete[] Al, next, p, ylk;
 
   if (later > 0) {
     std::cout << "Entering recursive loop with " << l << " updates" << std::endl;

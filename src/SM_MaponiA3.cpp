@@ -130,13 +130,13 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     }
     delete[] ylk[l];
   }
-  delete[] Al, next, p;
+  delete[] Al, next, p, ylk;
 }
 
 extern "C" {
-void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
-                unsigned int *N_updates, double **linUpdates,
-                unsigned int **Updates_index) {
-  MaponiA3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-}
+  void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
+                  unsigned int *N_updates, double **linUpdates,
+                  unsigned int **Updates_index) {
+    MaponiA3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+  }
 }
