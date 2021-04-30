@@ -12,3 +12,5 @@ datasets/dataset.*
 bin/
 *.vfcrun.hd5
 *.vfcraw.hd5
+__pycache__
+ci/__pycache__

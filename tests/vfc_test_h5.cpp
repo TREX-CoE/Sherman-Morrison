@@ -167,7 +167,7 @@ int test_cycle(H5File file, int cycle, std::string version, vfc_probes * probes)
 int main(int argc, char **argv) {
   if (argc != 3) {
     std::cerr << "Execute from within '/'" << std::endl;
-    std::cerr << "usage: test_h5 <version> <start cycle> <stop cycle>" << std::endl;
+    std::cerr << "usage: test_h5 <version> <path to cycles file>" << std::endl;
     return 1;
   }
   std::string version(argv[1]);
