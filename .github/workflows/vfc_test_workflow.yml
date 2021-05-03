@@ -27,7 +27,7 @@ jobs:
         run: |
           pip install numpy scipy pandas bokeh jinja2 tables GitPython
           apt update
-          apt install wget
+          apt install -y wget libhdf5-dev g++
           wget https://raw.githubusercontent.com/verificarlo/significantdigits/main/sigdigits.py -P /usr/local/lib/python3.8/dist-packages
 
       - name: Run tests
