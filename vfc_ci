@@ -10,9 +10,10 @@
 
 import argparse
 
-################################################################################
+##########################################################################
 
-    # Parameters validation helpers
+# Parameters validation helpers
+
 
 def is_port(string):
     value = int(string)
@@ -31,8 +32,7 @@ def is_directory(string):
     return string
 
 
-################################################################################
-
+##########################################################################
 
     # Subcommand decorator
 
@@ -40,6 +40,7 @@ cli = argparse.ArgumentParser(
     description="Define, run, automatize, and visualize custom Verificarlo tests."
 )
 subparsers = cli.add_subparsers(dest="subcommand")
+
 
 def subcommand(description="", args=[], parent=subparsers):
     def decorator(func):
@@ -54,15 +55,13 @@ def argument(*name_or_flags, **kwargs):
     return ([*name_or_flags], kwargs)
 
 
-
-################################################################################
-
+##########################################################################
 
     # "setup" subcommand
 
 @subcommand(
     description="Create an automated workflow to execute Verificarlo tests.",
-    args = [
+    args=[
         argument(
             "git_host",
             help="""
@@ -76,13 +75,12 @@ def setup(args):
     import ci.setup
     ci.setup.setup(args.git_host)
 
-
-
     # "test" subcommand
+
 
 @subcommand(
     description="Execute predefined Verificarlo tests and save their results.",
-    args = [
+    args=[
         argument(
             "-g", "--is-git-commit",
             help="""
@@ -112,15 +110,14 @@ def test(args):
     import ci.test
     ci.test.run(args.is_git_commit, args.export_raw_results, args.dry_run)
 
-
-
     # "serve" subcommand
+
 
 @subcommand(
     description="""
     Start a server to visualize Verificarlo test results.
     """,
-    args = [
+    args=[
         argument(
             "-s", "--show",
             help="""
@@ -174,9 +171,9 @@ def test(args):
 def serve(args):
 
     # git_directory and git_url are supposed to be exclusive
-    if args.git_directory != None and args.git_url != None:
+    if args.git_directory is not None and args.git_url is not None:
         raise argparse.ArgumentTypeError(
-            "\"-gd\" / \"--git-directory\" and \"-gu\" / \"--git-url\" are "\
+            "\"-gd\" / \"--git-directory\" and \"-gu\" / \"--git-url\" are "
             "mutually exclusive. Please make sure to use at most one of them."
         )
 
@@ -191,12 +188,9 @@ def serve(args):
     )
 
 
-
 ###############################################################################
 
-
     # Main command group and entry point
-
 if __name__ == "__main__":
     args = cli.parse_args()
     if args.subcommand is None:

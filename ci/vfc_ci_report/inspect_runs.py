@@ -9,19 +9,18 @@ import numpy as np
 from bokeh.plotting import figure, curdoc
 from bokeh.embed import components
 from bokeh.models import Select, ColumnDataSource, Panel, Tabs, HoverTool,\
-RadioButtonGroup, CheckboxGroup, CustomJS
+    RadioButtonGroup, CheckboxGroup, CustomJS
 
 import helper
 import plot
 
 
-################################################################################
-
+##########################################################################
 
 
 class InspectRuns:
 
-        # Helper functions related to InspectRun
+    # Helper functions related to InspectRun
 
     # Returns a dictionary mapping user-readable strings to all run timestamps
     def gen_runs_selection(self):
@@ -40,7 +39,6 @@ class InspectRuns:
 
         return runs_dict
 
-
     def gen_boxplot_tooltips(self, prefix):
         return [
             ("Name", "@%s_x" % prefix),
@@ -55,33 +53,34 @@ class InspectRuns:
 
     def gen_boxplot_tooltips_formatters(self, prefix):
         return {
-            "@%s_min" % prefix : "printf",
-            "@%s_max" % prefix : "printf",
-            "@%s_quantile25" % prefix : "printf",
-            "@%s_quantile50" % prefix : "printf",
-            "@%s_quantile75" % prefix : "printf",
-            "@%s_mu" % prefix : "printf"
+            "@%s_min" % prefix: "printf",
+            "@%s_max" % prefix: "printf",
+            "@%s_quantile25" % prefix: "printf",
+            "@%s_quantile50" % prefix: "printf",
+            "@%s_quantile75" % prefix: "printf",
+            "@%s_mu" % prefix: "printf"
         }
-
 
     # Data processing helper
     # (computes new distributions for sigma, s2, s10)
+
     def data_processing(self, dataframe):
 
         # Compute aggragated mu
-        dataframe["mu"] = np.vectorize(np.average)(dataframe["mu"], weights=dataframe["nsamples"])
+        dataframe["mu"] = np.vectorize(
+            np.average)(
+            dataframe["mu"],
+            weights=dataframe["nsamples"])
 
         # nsamples is the number of aggregated elements (as well as the number
         # of samples for our new sigma and s distributions)
         dataframe["nsamples"] = dataframe["nsamples"].apply(lambda x: len(x))
-
 
         dataframe["mu_x"] = dataframe.index
         # Make sure that strings don't excede a certain length
         dataframe["mu_x"] = dataframe["mu_x"].apply(
             lambda x: x[:17] + "[...]" + x[-17:] if len(x) > 39 else x
         )
-
 
         # Get quantiles and mu for sigma, s10, s2
         for prefix in ["sigma", "s10", "s2"]:
@@ -91,19 +90,19 @@ class InspectRuns:
             dataframe[prefix] = dataframe[prefix].apply(np.sort)
 
             dataframe["%s_min" % prefix] = dataframe[prefix].apply(np.min)
-            dataframe["%s_quantile25" % prefix] = dataframe[prefix].apply(np.quantile, args=(0.25,))
-            dataframe["%s_quantile50" % prefix] = dataframe[prefix].apply(np.quantile, args=(0.50,))
-            dataframe["%s_quantile75" % prefix] = dataframe[prefix].apply(np.quantile, args=(0.75,))
+            dataframe["%s_quantile25" % prefix] = dataframe[prefix].apply(
+                np.quantile, args=(0.25,))
+            dataframe["%s_quantile50" % prefix] = dataframe[prefix].apply(
+                np.quantile, args=(0.50,))
+            dataframe["%s_quantile75" % prefix] = dataframe[prefix].apply(
+                np.quantile, args=(0.75,))
             dataframe["%s_max" % prefix] = dataframe[prefix].apply(np.max)
             dataframe["%s_mu" % prefix] = dataframe[prefix].apply(np.average)
             del dataframe[prefix]
 
-
         return dataframe
 
-
-
-            # Plots update function
+        # Plots update function
 
     def update_plots(self):
 
@@ -117,8 +116,7 @@ class InspectRuns:
         ]
         filterby = self.factors_dict[filterby_display]
 
-
-            # Groupby and aggregate lines belonging to the same group in lists
+        # Groupby and aggregate lines belonging to the same group in lists
 
         groups = self.run_data[
             self.run_data.index.isin(
@@ -131,32 +129,31 @@ class InspectRuns:
             "sigma": lambda x: x.tolist(),
             "s10": lambda x: x.tolist(),
             "s2": lambda x: x.tolist(),
+
             "mu": lambda x: x.tolist(),
 
             # Used for mu weighted average first, then will be replaced
             "nsamples": lambda x: x.tolist()
         })
 
-
-            # Compute the new distributions, ...
+        # Compute the new distributions, ...
         groups = self.data_processing(groups).to_dict("list")
 
-
-            # Update source
+        # Update source
 
         # Assign each ColumnDataSource, starting with the boxplots
         for prefix in ["sigma", "s10", "s2"]:
 
             dict = {
-                    "%s_x" % prefix: groups["%s_x" % prefix],
-                    "%s_min" % prefix: groups["%s_min" % prefix],
-                    "%s_quantile25" % prefix: groups["%s_quantile25" % prefix],
-                    "%s_quantile50" % prefix: groups["%s_quantile50" % prefix],
-                    "%s_quantile75" % prefix: groups["%s_quantile75" % prefix],
-                    "%s_max" % prefix: groups["%s_max" % prefix],
-                    "%s_mu" % prefix: groups["%s_mu" % prefix],
+                "%s_x" % prefix: groups["%s_x" % prefix],
+                "%s_min" % prefix: groups["%s_min" % prefix],
+                "%s_quantile25" % prefix: groups["%s_quantile25" % prefix],
+                "%s_quantile50" % prefix: groups["%s_quantile50" % prefix],
+                "%s_quantile75" % prefix: groups["%s_quantile75" % prefix],
+                "%s_max" % prefix: groups["%s_max" % prefix],
+                "%s_mu" % prefix: groups["%s_mu" % prefix],
 
-                    "nsamples": groups["nsamples"]
+                "nsamples": groups["nsamples"]
             }
 
             # Filter outliers if the box is checked
@@ -166,7 +163,8 @@ class InspectRuns:
                 top_outliers = helper.detect_outliers(dict["%s_max" % prefix])
                 helper.remove_boxplot_outliers(dict, top_outliers, prefix)
 
-                bottom_outliers = helper.detect_outliers(dict["%s_min" % prefix])
+                bottom_outliers = helper.detect_outliers(
+                    dict["%s_min" % prefix])
                 helper.remove_boxplot_outliers(dict, bottom_outliers, prefix)
 
             self.sources["%s_source" % prefix].data = dict
@@ -185,8 +183,8 @@ class InspectRuns:
         if len(self.widgets["outliers_filtering_inspect"].active) > 0:
             mu_outliers = helper.detect_outliers(groups["mu"])
             groups["mu"] = helper.remove_outliers(groups["mu"], mu_outliers)
-            groups["mu_x"] = helper.remove_outliers(groups["mu_x"], mu_outliers)
-
+            groups["mu_x"] = helper.remove_outliers(
+                groups["mu_x"], mu_outliers)
 
             # Update plots axis/titles
 
@@ -194,42 +192,38 @@ class InspectRuns:
         factors_dict = self.factors_dict.copy()
         del factors_dict[groupby_display]
         del factors_dict[filterby_display]
-        over_all = list(factors_dict.keys())[0]
+        for_all = list(factors_dict.keys())[0]
 
         # Update all display strings for plot title (remove caps, plural)
         groupby_display = groupby_display.lower()
         filterby_display = filterby_display.lower()[:-1]
-        over_all = over_all.lower()
+        for_all = for_all.lower()
 
         self.plots["mu_inspect"].title.text = \
-        "Empirical average μ of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
+            "Empirical average μ of %s (groupped by %s, for all %s)" \
+            % (filterby_display, groupby_display, for_all)
 
         self.plots["sigma_inspect"].title.text = \
-        "Standard deviation σ of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
+            "Standard deviation σ of %s (groupped by %s, for all %s)" \
+            % (filterby_display, groupby_display, for_all)
 
         self.plots["s10_inspect"].title.text = \
-        "Significant digits s of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
+            "Significant digits s of %s (groupped by %s, for all %s)" \
+            % (filterby_display, groupby_display, for_all)
 
         self.plots["s2_inspect"].title.text = \
-        "Significant digits s of %s (groupped by %s, for all %s)" \
-        % (filterby_display, groupby_display, over_all)
-
-
-            # Update x_ranges
+            "Significant digits s of %s (groupped by %s, for all %s)" \
+            % (filterby_display, groupby_display, for_all)
 
         helper.reset_x_range(self.plots["mu_inspect"], groups["mu_x"])
         helper.reset_x_range(self.plots["sigma_inspect"], groups["sigma_x"])
         helper.reset_x_range(self.plots["s10_inspect"], groups["s10_x"])
         helper.reset_x_range(self.plots["s2_inspect"], groups["s2_x"])
 
-
-
         # Widets' callback functions
 
     # Run selector callback
+
     def update_run(self, attrname, old, new):
 
         filterby = self.widgets["filterby_radio"].labels[
@@ -248,7 +242,7 @@ class InspectRuns:
 
         # Update filter options
         options = self.run_data.index\
-        .get_level_values(filterby).drop_duplicates().tolist()
+            .get_level_values(filterby).drop_duplicates().tolist()
         self.widgets["select_filter"].options = options
 
         if old_value not in self.widgets["select_filter"].options:
@@ -260,15 +254,14 @@ class InspectRuns:
             # anyway)
             self.update_filter("", "", old_value)
 
-
     # "Group by" radio
+
     def update_groupby(self, attrname, old, new):
 
         # Update "Filter by" radio list
         filterby_list = list(self.factors_dict.keys())
         del filterby_list[self.widgets["groupby_radio"].active]
         self.widgets["filterby_radio"].labels = filterby_list
-
 
         filterby = self.widgets["filterby_radio"].labels[
             self.widgets["filterby_radio"].active
@@ -280,7 +273,7 @@ class InspectRuns:
 
         # Update filter options
         options = self.run_data.index\
-        .get_level_values(filterby).drop_duplicates().tolist()
+            .get_level_values(filterby).drop_duplicates().tolist()
         self.widgets["select_filter"].options = options
 
         if old_value not in self.widgets["select_filter"].options:
@@ -292,8 +285,8 @@ class InspectRuns:
             # anyway)
             self.update_filter("", "", old_value)
 
-
     # "Filter by" radio
+
     def update_filterby(self, attrname, old, new):
 
         filterby = self.widgets["filterby_radio"].labels[
@@ -306,7 +299,7 @@ class InspectRuns:
 
         # Update filter selector options
         options = self.run_data.index\
-        .get_level_values(filterby).drop_duplicates().tolist()
+            .get_level_values(filterby).drop_duplicates().tolist()
         self.widgets["select_filter"].options = options
 
         if old_value not in self.widgets["select_filter"].options:
@@ -318,19 +311,17 @@ class InspectRuns:
             # anyway)
             self.update_filter("", "", old_value)
 
-
     # Filter selector callback
+
     def update_filter(self, attrname, old, new):
         self.update_plots()
 
-
     # Filter outliers checkbox callback
+
     def update_outliers_filtering(self, attrname, old, new):
         # The status (checked/unchecked) of the checkbox is also verified inside
         # self.update_plots(), so calling this function is enough
         self.update_plots()
-
-
 
         # Bokeh setup functions
         # (for both variable and backend selection at once)
@@ -339,8 +330,7 @@ class InspectRuns:
 
         tools = "pan, wheel_zoom, xwheel_zoom, ywheel_zoom, reset, save"
 
-
-            # Tooltips and formatters
+        # Tooltips and formatters
 
         dotplot_tooltips = [
             ("Name", "@mu_x"),
@@ -348,20 +338,22 @@ class InspectRuns:
             ("Number of samples (tests)", "@nsamples")
         ]
         dotplot_formatters = {
-            "@mu" : "printf"
+            "@mu": "printf"
         }
 
         sigma_boxplot_tooltips = self.gen_boxplot_tooltips("sigma")
-        sigma_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters("sigma")
+        sigma_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters(
+            "sigma")
 
         s10_boxplot_tooltips = self.gen_boxplot_tooltips("s10")
-        s10_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters("s10")
+        s10_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters(
+            "s10")
 
         s2_boxplot_tooltips = self.gen_boxplot_tooltips("s2")
-        s2_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters("s2")
+        s2_boxplot_tooltips_formatters = self.gen_boxplot_tooltips_formatters(
+            "s2")
 
-
-            # Plots
+        # Plots
 
         # Mu plot
         self.plots["mu_inspect"] = figure(
@@ -372,11 +364,10 @@ class InspectRuns:
         )
         plot.fill_dotplot(
             self.plots["mu_inspect"], self.sources["mu_source"], "mu",
-            tooltips = dotplot_tooltips,
-            tooltips_formatters = dotplot_formatters
+            tooltips=dotplot_tooltips,
+            tooltips_formatters=dotplot_formatters
         )
         self.doc.add_root(self.plots["mu_inspect"])
-
 
         # Sigma plot
         self.plots["sigma_inspect"] = figure(
@@ -386,12 +377,12 @@ class InspectRuns:
             tools=tools, sizing_mode="scale_width"
         )
         plot.fill_boxplot(
-            self.plots["sigma_inspect"], self.sources["sigma_source"], prefix="sigma",
-            tooltips = sigma_boxplot_tooltips,
-            tooltips_formatters = sigma_boxplot_tooltips_formatters
-        )
+            self.plots["sigma_inspect"],
+            self.sources["sigma_source"],
+            prefix="sigma",
+            tooltips=sigma_boxplot_tooltips,
+            tooltips_formatters=sigma_boxplot_tooltips_formatters)
         self.doc.add_root(self.plots["sigma_inspect"])
-
 
         # s plots
         self.plots["s10_inspect"] = figure(
@@ -401,11 +392,14 @@ class InspectRuns:
             tools=tools, sizing_mode='scale_width'
         )
         plot.fill_boxplot(
-            self.plots["s10_inspect"], self.sources["s10_source"], prefix="s10",
-            tooltips = s10_boxplot_tooltips,
-            tooltips_formatters = s10_boxplot_tooltips_formatters
-        )
-        s10_tab_inspect = Panel(child=self.plots["s10_inspect"], title="Base 10")
+            self.plots["s10_inspect"],
+            self.sources["s10_source"],
+            prefix="s10",
+            tooltips=s10_boxplot_tooltips,
+            tooltips_formatters=s10_boxplot_tooltips_formatters)
+        s10_tab_inspect = Panel(
+            child=self.plots["s10_inspect"],
+            title="Base 10")
 
         self.plots["s2_inspect"] = figure(
             name="s2_inspect",
@@ -415,22 +409,20 @@ class InspectRuns:
         )
         plot.fill_boxplot(
             self.plots["s2_inspect"], self.sources["s2_source"], prefix="s2",
-            tooltips = s2_boxplot_tooltips,
-            tooltips_formatters = s2_boxplot_tooltips_formatters
+            tooltips=s2_boxplot_tooltips,
+            tooltips_formatters=s2_boxplot_tooltips_formatters
         )
         s2_tab_inspect = Panel(child=self.plots["s2_inspect"], title="Base 2")
 
         s_tabs_inspect = Tabs(
-            name = "s_tabs_inspect",
-            tabs=[s10_tab_inspect, s2_tab_inspect], tabs_location = "below"
+            name="s_tabs_inspect",
+            tabs=[s10_tab_inspect, s2_tab_inspect], tabs_location="below"
         )
         self.doc.add_root(s_tabs_inspect)
 
-
-
     def setup_widgets(self):
 
-            # Generation of selectable items
+        # Generation of selectable items
 
         # Dict contains all inspectable runs (maps display strings to timestamps)
         # The dict structure allows to get the timestamp from the display string
@@ -445,8 +437,7 @@ class InspectRuns:
             "Tests": "test"
         }
 
-
-            # Run selection
+        # Run selection
 
         # Contains all options strings
         runs_display = list(self.runs_dict.keys())
@@ -457,8 +448,7 @@ class InspectRuns:
         # This contains only entries matching the run
         self.run_data = self.data[self.data["timestamp"] == self.current_run]
 
-
-        change_run_callback_js="updateRunMetadata(cb_obj.value);"
+        change_run_callback_js = "updateRunMetadata(cb_obj.value);"
 
         self.widgets["select_run"] = Select(
             name="select_run", title="Run :",
@@ -467,7 +457,7 @@ class InspectRuns:
         self.doc.add_root(self.widgets["select_run"])
         self.widgets["select_run"].on_change("value", self.update_run)
         self.widgets["select_run"].js_on_change("value", CustomJS(
-            code = change_run_callback_js,
+            code=change_run_callback_js,
             args=(dict(
                 metadata=helper.metadata_to_dict(
                     helper.get_metadata(self.metadata, self.current_run)
@@ -475,8 +465,7 @@ class InspectRuns:
             ))
         ))
 
-
-            # Factors selection
+        # Factors selection
 
         # "Group by" radio
         self.widgets["groupby_radio"] = RadioButtonGroup(
@@ -490,7 +479,6 @@ class InspectRuns:
             "active",
             self.update_groupby
         )
-
 
         # "Filter by" radio
         # Get all possible factors, and remove the one selected in "Group by"
@@ -509,7 +497,6 @@ class InspectRuns:
             self.update_filterby
         )
 
-
         # Filter selector
 
         filterby = self.widgets["filterby_radio"].labels[
@@ -518,7 +505,7 @@ class InspectRuns:
         filterby = self.factors_dict[filterby]
 
         options = self.run_data.index\
-        .get_level_values(filterby).drop_duplicates().tolist()
+            .get_level_values(filterby).drop_duplicates().tolist()
 
         self.widgets["select_filter"] = Select(
             # We need a different name to avoid collision in the template with
@@ -528,29 +515,25 @@ class InspectRuns:
         )
         self.doc.add_root(self.widgets["select_filter"])
         self.widgets["select_filter"]\
-        .on_change("value", self.update_filter)
+            .on_change("value", self.update_filter)
 
-
-            # Toggle for outliers filtering
+        # Toggle for outliers filtering
 
         self.widgets["outliers_filtering_inspect"] = CheckboxGroup(
             name="outliers_filtering_inspect",
-            labels=["Filter outliers"], active = []
+            labels=["Filter outliers"], active=[]
         )
         self.doc.add_root(self.widgets["outliers_filtering_inspect"])
         self.widgets["outliers_filtering_inspect"]\
-        .on_change("active", self.update_outliers_filtering)
-
-
+            .on_change("active", self.update_outliers_filtering)
 
         # Communication methods
         # (to send/receive messages to/from master)
 
     # When received, switch to the run_name in parameter
+
     def switch_view(self, run_name):
         self.widgets["select_run"].value = run_name
-
-
 
         # Constructor
 
@@ -562,11 +545,10 @@ class InspectRuns:
         self.data = data
         self.metadata = metadata
 
-
         self.sources = {
             "mu_source": ColumnDataSource(data={}),
             "sigma_source": ColumnDataSource(data={}),
-            "s10_source" :ColumnDataSource(data={}),
+            "s10_source": ColumnDataSource(data={}),
             "s2_source": ColumnDataSource(data={})
         }
 

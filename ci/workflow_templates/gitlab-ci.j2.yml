@@ -29,7 +29,7 @@ run_verificarlo_tests:
   - git fetch --all
   - git checkout -b {{ci_branch}} origin/{{ci_branch}}
   - mkdir -p vfcruns
-  - mv *.vfcrun.hd5 vfcruns
+  - mv *.vfcrun.h5 vfcruns
   - git add vfcruns/*
   - git commit -m "[auto] New test results for commit ${git_hash}"
   - git push
@@ -39,4 +39,4 @@ run_verificarlo_tests:
 
   artifacts:
     paths:
-    - "*.vfcraw.hd5"
+    - "*.vfcraw.h5"

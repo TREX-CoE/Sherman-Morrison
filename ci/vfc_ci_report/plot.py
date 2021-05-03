@@ -15,20 +15,18 @@ def fill_dotplot(
 ):
 
     # (Optional) Tooltip and tooltip formatters
-    if tooltips != None:
-        hover = HoverTool(tooltips = tooltips, mode="vline", names=["circle"])
+    if tooltips is not None:
+        hover = HoverTool(tooltips=tooltips, mode="vline", names=["circle"])
 
-        if tooltips_formatters != None:
+        if tooltips_formatters is not None:
             hover.formatters = tooltips_formatters
 
         plot.add_tools(hover)
 
-
     # (Optional) Add TapTool (for JS tap callback)
-    if js_tap_callback != None:
+    if js_tap_callback is not None:
         tap = TapTool(callback=CustomJS(code=js_tap_callback))
         plot.add_tools(tap)
-
 
     # (Optional) Add segment to represent a lower bound
     if lower_bound:
@@ -38,23 +36,19 @@ def fill_dotplot(
             source=source, line_color="black"
         )
 
-
     # Draw dots (actually Bokeh circles)
     circle = plot.circle(
         name="circle",
         x="%s_x" % data_field, y=data_field, source=source, size=12
     )
 
-
     # (Optional) Draw lines between dots
     if lines:
         line = plot.line(x="%s_x" % data_field, y=data_field, source=source)
 
-
     # (Optional) Add server tap callback
-    if server_tap_callback != None:
+    if server_tap_callback is not None:
         circle.data_source.selected.on_change("indices", server_tap_callback)
-
 
     # Plot appearance
     plot.xgrid.grid_line_color = None
@@ -64,32 +58,29 @@ def fill_dotplot(
     plot.yaxis[0].formatter.power_limit_low = 0
     plot.yaxis[0].formatter.precision = 3
 
-    plot.xaxis[0].major_label_orientation = pi/8
-
+    plot.xaxis[0].major_label_orientation = pi / 8
 
 
 def fill_boxplot(
     plot, source,
     prefix="",
     tooltips=None, tooltips_formatters=None,
-    js_tap_callback=None, server_tap_callback=None,
+    js_tap_callback=None, server_tap_callback=None
 ):
 
     # (Optional) Tooltip and tooltip formatters
-    if tooltips != None:
-        hover = HoverTool(tooltips = tooltips, mode="vline", names=["full_box"])
+    if tooltips is not None:
+        hover = HoverTool(tooltips=tooltips, mode="vline", names=["full_box"])
 
-        if tooltips_formatters != None:
+        if tooltips_formatters is not None:
             hover.formatters = tooltips_formatters
 
         plot.add_tools(hover)
 
-
     # (Optional) Add TapTool (for JS tap callback)
-    if js_tap_callback != None:
+    if js_tap_callback is not None:
         tap = TapTool(callback=CustomJS(code=js_tap_callback))
         plot.add_tools(tap)
-
 
     # Draw boxes (the prefix argument modifies the fields of ColumnDataSource
     # that are used)
@@ -128,17 +119,17 @@ def fill_boxplot(
         color="black"
     )
 
-
     # (Optional) Add server tap callback
-    if server_tap_callback != None:
+    if server_tap_callback is not None:
         top_stem.data_source.selected.on_change("indices", server_tap_callback)
-        bottom_stem.data_source.selected.on_change("indices", server_tap_callback)
+        bottom_stem.data_source.selected.on_change(
+            "indices", server_tap_callback)
 
         full_box.data_source.selected.on_change("indices", server_tap_callback)
-        bottom_box.data_source.selected.on_change("indices", server_tap_callback)
+        bottom_box.data_source.selected.on_change(
+            "indices", server_tap_callback)
 
         mu_dot.data_source.selected.on_change("indices", server_tap_callback)
-
 
     # Plot appearance
     plot.xgrid.grid_line_color = None
@@ -148,4 +139,4 @@ def fill_boxplot(
     plot.yaxis[0].formatter.power_limit_low = 0
     plot.yaxis[0].formatter.precision = 3
 
-    plot.xaxis[0].major_label_orientation = pi/8
+    plot.xaxis[0].major_label_orientation = pi / 8

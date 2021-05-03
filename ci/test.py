@@ -1,6 +1,10 @@
 # This script reads the vfc_tests_config.json file and executes tests accordingly
-# It will also generate a ... .vfcrun.hd5 file with the results of the run
+# It will also generate a ... .vfcrunh5 file with the results of the run
 
+import sigdigits as sd
+import scipy.stats
+import numpy as np
+import pandas as pd
 import os
 import json
 
@@ -12,21 +16,15 @@ import time
 import pickle
 pickle.HIGHEST_PROTOCOL = 4
 
-import pandas as pd
-import numpy as np
-import scipy.stats
-
-import sigdigits as sd
 
 # Magic numbers
 min_pvalue = 0.05
 max_zscore = 3
 
 
-################################################################################
+##########################################################################
 
-
-    # Helper functions
+# Helper functions
 
 # Read a CSV file outputted by vfc_probe as a Pandas dataframe
 def read_probes_csv(filepath, backend, warnings, execution_data):
@@ -36,35 +34,34 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
 
     except FileNotFoundError:
         print(
-            "Warning [vfc_ci]: Probes not found, your code might have crashed " \
+            "Warning [vfc_ci]: Probes not found, your code might have crashed "
             "or you might have forgotten to call vfc_dump_probes"
         )
         warnings.append(execution_data)
         return pd.DataFrame(
-            columns = ["test", "variable", "values", "vfc_backend"]
+            columns=["test", "variable", "values", "vfc_backend"]
         )
 
     except Exception:
         print(
-            "Warning [vfc_ci]: Your probes could not be read for some unknown " \
+            "Warning [vfc_ci]: Your probes could not be read for some unknown "
             "reason"
         )
         warnings.append(execution_data)
         return pd.DataFrame(
-            columns = ["test", "variable", "values", "vfc_backend"]
+            columns=["test", "variable", "values", "vfc_backend"]
         )
 
     if len(results) == 0:
         print(
-            "Warning [vfc_ci]: Probes empty, it looks like you have dumped " \
+            "Warning [vfc_ci]: Probes empty, it looks like you have dumped "
             "them without calling vfc_put_probe"
         )
         warnings.append(execution_data)
 
-
     # Once the CSV has been opened and validated, return its content
     results["value"] = results["value"].apply(lambda x: float.fromhex(x))
-    results.rename(columns = {"value":"values"}, inplace = True)
+    results.rename(columns={"value": "values"}, inplace=True)
 
     results["vfc_backend"] = backend
 
@@ -75,67 +72,61 @@ def read_probes_csv(filepath, backend, warnings, execution_data):
 
 def significant_digits(x):
 
-    # In a pandas DF, "values" actually refers to the array of columns, and
-    # not the column named "values"
-    distribution = x.values[3]
-    distribution = distribution.reshape(len(distribution), 1)
-
-    # The distribution's empirical average will be used as the reference
-    mu = np.array([x.mu])
-
-    # If the null hypothesis is rejected, call sigdigits with General mode:
+    # If the null hypothesis is rejected, call sigdigits with the General
+    # formula:
     if x.pvalue < min_pvalue:
-        method = sd.Method.General
+        # In a pandas DF, "values" actually refers to the array of columns, and
+        # not the column named "values"
+        distribution = x.values[3]
+        distribution = distribution.reshape(len(distribution), 1)
+
+        # The distribution's empirical average will be used as the reference
+        mu = np.array([x.mu])
+
         s = sd.significant_digits(
             distribution,
             mu,
-            precision=sd.Precision.Absolute,
-            method=method
+            precision=sd.Precision.Relative,
+            method=sd.Method.General,
+
+            probability=0.9,
+            confidence=0.95
         )
 
+        # s is returned inside a list
+        return s[0]
 
-    # Else, manually compute sMCA which is equivalent to a 66% confidence interval
+    # Else, manually compute sMCA (Stott-Parker formula)
     else:
-        method = sd.Method.CNH
-        s = sd.significant_digits(
-            distribution,
-            mu,
-            precision=sd.Precision.Absolute,
-            method=method,
-
-            probability=0.66,
-            confidence=0.66,
-        )
-
-    # s is returned as a size 1 list
-    return s[0]
+        return -np.log2(np.absolute(x.sigma / x.mu))
 
 
 def significant_digits_lower_bound(x):
     # If the null hypothesis is rejected, no lower bound
     if x.pvalue < min_pvalue:
-            return x.s2
+        return x.s2
 
-    # Else, the lower bound will be a 95% confidence interval
+    # Else, the lower bound will be computed with p= .9 alpha-1=.95
+    else:
+        distribution = x.values[3]
+        distribution = distribution.reshape(len(distribution), 1)
 
-    distribution = x.values[3]
-    distribution = distribution.reshape(len(distribution), 1)
+        mu = np.array([x.mu])
 
-    mu = np.array([x.mu])
+        s = sd.significant_digits(
+            distribution,
+            mu,
+            precision=sd.Precision.Relative,
+            method=sd.Method.CNH,
 
-    s = sd.significant_digits(
-        distribution,
-        mu,
-        precision=sd.Precision.Absolute,
-        method=sd.Method.CNH,
-    )
+            probability=0.9,
+            confidence=0.95
+        )
 
-    return s[0]
-
-
-################################################################################
+        return s[0]
 
 
+##########################################################################
 
     # Main functions
 
@@ -148,11 +139,10 @@ def read_config():
 
     except FileNotFoundError as e:
         e.strerror = "Error [vfc_ci]: This file is required to describe the tests "\
-        "to run and generate a Verificarlo run file"
+            "to run and generate a Verificarlo run file"
         raise e
 
     return json.loads(data)
-
 
 
 # Set up metadata
@@ -167,7 +157,6 @@ def generate_metadata(is_git_commit):
         "message": ""
     }
 
-
     if is_git_commit:
         print("Fetching metadata from last commit...")
         from git import Repo
@@ -179,11 +168,10 @@ def generate_metadata(is_git_commit):
 
         metadata["hash"] = str(head_commit)[0:7]
         metadata["author"] = "%s <%s>" \
-        % (str(head_commit.author), head_commit.author.email)
+            % (str(head_commit.author), head_commit.author.email)
         metadata["message"] = head_commit.message.split("\n")[0]
 
     return metadata
-
 
 
 # Execute tests and collect results in a Pandas dataframe (+ dataprocessing)
@@ -204,10 +192,10 @@ def run_tests(config):
     # not get any data
     warnings = []
 
-
     # Tests execution loop
     for executable in config["executables"]:
-        print("Info [vfc_ci]: Running executable :", executable["executable"], "...")
+        print("Info [vfc_ci]: Running executable :",
+              executable["executable"], "...")
 
         parameters = ""
         if "parameters" in executable:
@@ -245,26 +233,23 @@ def run_tests(config):
 
                 n_files = n_files + 1
 
-
     # Clean CSV output files (by deleting the tmp folder)
     os.system("rm -rf .vfcruns.tmp")
-
 
     # Combine all separate executions in one dataframe
     data = pd.concat(data, sort=False, ignore_index=True)
     data = data.groupby(["test", "vfc_backend", "variable"])\
-    .values.apply(list).reset_index()
-
+        .values.apply(list).reset_index()
 
     # Make sure we have some data to work on
     assert(len(data) != 0), "Error [vfc_ci]: No data have been generated " \
-    "by your tests executions, aborting run without writing results file"
+        "by your tests executions, aborting run without writing results file"
 
     return data, warnings
 
-
-
     # Data processing
+
+
 def data_processing(data):
 
     data["values"] = data["values"].apply(lambda x: np.array(x).astype(float))
@@ -272,8 +257,8 @@ def data_processing(data):
     # Get empirical average, standard deviation and p-value
     data["mu"] = data["values"].apply(np.average)
     data["sigma"] = data["values"].apply(np.std)
-    data["pvalue"] = data["values"].apply(lambda x: scipy.stats.shapiro(x).pvalue)
-
+    data["pvalue"] = data["values"].apply(
+        lambda x: scipy.stats.shapiro(x).pvalue)
 
     # Significant digits
     data["s2"] = data.apply(significant_digits, axis=1)
@@ -281,8 +266,8 @@ def data_processing(data):
 
     # Lower bound of the confidence interval using the sigdigits module
     data["s2_lower_bound"] = data.apply(significant_digits_lower_bound, axis=1)
-    data["s10_lower_bound"] = data["s2_lower_bound"].apply(lambda x: sd.change_base(x, 10))
-
+    data["s10_lower_bound"] = data["s2_lower_bound"].apply(
+        lambda x: sd.change_base(x, 10))
 
     # Compute moments of the distribution
     # (including a new distribution obtained by filtering outliers)
@@ -297,13 +282,13 @@ def data_processing(data):
 
     data["nsamples"] = data["values"].apply(len)
 
-
-
     # Display all executions that resulted in a warning
+
+
 def show_warnings(warnings):
     if len(warnings) > 0:
         print(
-            "Warning [vfc_ci]: Some of your runs could not generate any data " \
+            "Warning [vfc_ci]: Some of your runs could not generate any data "
             "(for instance because your code crashed) and resulted in "
             "warnings. Here is the complete list :"
         )
@@ -316,9 +301,7 @@ def show_warnings(warnings):
             print("  Repetition: %s" % warnings[i]["repetition"])
 
 
-
-################################################################################
-
+##########################################################################
 
     # Entry point
 
@@ -334,54 +317,51 @@ def run(is_git_commit, export_raw_values, dry_run):
     data, warnings = run_tests(config)
     show_warnings(warnings)
 
-
     # Data processing
     print("Info [vfc_ci]: Processing data...")
     data_processing(data)
 
-
-    # Prepare data for export (by creating a proper index and linking run timestamp)
+    # Prepare data for export (by creating a proper index and linking run
+    # timestamp)
     data = data.set_index(["test", "variable", "vfc_backend"]).sort_index()
     data["timestamp"] = metadata["timestamp"]
 
-    filename = metadata["hash"] if is_git_commit else str(metadata["timestamp"])
-
+    filename = metadata["hash"] if is_git_commit else str(
+        metadata["timestamp"])
 
     # Prepare metadata for export
     metadata = pd.DataFrame.from_dict([metadata])
     metadata = metadata.set_index("timestamp")
 
-
     # NOTE : Exporting to HDF5 requires to install "tables" on the system
 
     # Export raw data if needed
     if export_raw_values and not dry_run:
-        data.to_hdf(filename + ".vfcraw.hd5", key="data")
-        metadata.to_hdf(filename + ".vfcraw.hd5", key="metadata")
+        data.to_hdf(filename + ".vfcraw.h5", key="data")
+        metadata.to_hdf(filename + ".vfcraw.h5", key="metadata")
 
     # Export data
     del data["values"]
     if not dry_run:
-        data.to_hdf(filename + ".vfcrun.hd5", key="data")
-        metadata.to_hdf(filename + ".vfcrun.hd5", key="metadata")
-
+        data.to_hdf(filename + ".vfcrun.h5", key="data")
+        metadata.to_hdf(filename + ".vfcrun.h5", key="metadata")
 
     # Print termination messages
     print(
-        "Info [vfc_ci]: The results have been successfully written to " \
-        "%s.vfcrun.hd5." \
-         % filename
-     )
+        "Info [vfc_ci]: The results have been successfully written to "
+        "%s.vfcrun.h5."
+        % filename
+    )
 
     if export_raw_values:
         print(
-            "Info [vfc_ci]: A file containing the raw values has also been " \
-            "created : %s.vfcraw.hd5."
+            "Info [vfc_ci]: A file containing the raw values has also been "
+            "created : %s.vfcraw.h5."
             % filename
         )
 
     if dry_run:
         print(
-            "Info [vfc_ci]: The dry run flag was enabled, so no files were " \
+            "Info [vfc_ci]: The dry run flag was enabled, so no files were "
             "actually created."
         )

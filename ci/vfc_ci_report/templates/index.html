@@ -291,19 +291,19 @@
                 <!-- PLOTS -->
                 <div class="column is-9">
                     <h3 class="title is-3">Plots</h3>
-                        <div class="card plot-card">
+                        <div class="card plot-card" style="z-index: 3;">
                             {{ embed(roots.s_tabs_inspect) }}
                         </div>
 
                         <br>
 
-                        <div class="card plot-card">
+                        <div class="card plot-card" style="z-index: 2;">
                             {{ embed(roots.sigma_inspect) }}
                         </div>
 
                         <br>
 
-                        <div class="card plot-card">
+                        <div class="card plot-card" style="z-index: 1;">
                             {{ embed(roots.mu_inspect) }}
                         </div>
                     </div>
@@ -325,6 +325,8 @@
         </div>
 
 
+
+        <!-- JAVASCRIPT -->
         <script>
 
             // Listen to clicks on breadcrumb (for responsive header)

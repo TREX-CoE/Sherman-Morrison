@@ -10,7 +10,7 @@ import numpy as np
 max_ticks = 15
 max_zscore = 3
 
-################################################################################
+##########################################################################
 
 
 # From a timestamp, return the associated metadata as a Pandas serie
@@ -38,7 +38,6 @@ def get_run_name(timestamp, hash):
     gmt = time.gmtime()
     now = calendar.timegm(gmt)
     diff = now - timestamp
-
 
     # Special case : < 1 minute (return string directly)
     if diff < 60:
@@ -83,11 +82,9 @@ def get_run_name(timestamp, hash):
 
     str = str % (n, plural)
 
-
     # We might want to add the git hash
     if hash != "":
         str = str + " (%s)" % hash
-
 
     # Finally, check for duplicate with previously generated string
     if str == get_run_name.previous:
@@ -96,11 +93,13 @@ def get_run_name(timestamp, hash):
         str = "%s (%s)" % (str, get_run_name.counter)
 
     else:
-        # No duplicate, reset both previously generated str and duplicate counter
+        # No duplicate, reset both previously generated str and duplicate
+        # counter
         get_run_name.counter = 0
         get_run_name.previous = str
 
     return str
+
 
 # These external variables will store data about the last generated string to
 # avoid duplicates (assuming the runs are sorted by time)
@@ -156,11 +155,16 @@ def remove_boxplot_outliers(dict, outliers, prefix):
 
     dict["%s_x" % prefix] = remove_outliers(dict["%s_x" % prefix], outliers)
 
-    dict["%s_min" % prefix] = remove_outliers(dict["%s_min" % prefix], outliers)
-    dict["%s_quantile25" % prefix] = remove_outliers(dict["%s_quantile25" % prefix], outliers)
-    dict["%s_quantile50" % prefix] = remove_outliers(dict["%s_quantile50" % prefix], outliers)
-    dict["%s_quantile75" % prefix] = remove_outliers(dict["%s_quantile75" % prefix], outliers)
-    dict["%s_max" % prefix] = remove_outliers(dict["%s_max" % prefix], outliers)
+    dict["%s_min" % prefix] = remove_outliers(
+        dict["%s_min" % prefix], outliers)
+    dict["%s_quantile25" % prefix] = remove_outliers(
+        dict["%s_quantile25" % prefix], outliers)
+    dict["%s_quantile50" % prefix] = remove_outliers(
+        dict["%s_quantile50" % prefix], outliers)
+    dict["%s_quantile75" % prefix] = remove_outliers(
+        dict["%s_quantile75" % prefix], outliers)
+    dict["%s_max" % prefix] = remove_outliers(
+        dict["%s_max" % prefix], outliers)
     dict["%s_mu" % prefix] = remove_outliers(dict["%s_mu" % prefix], outliers)
 
     dict["nsamples"] = remove_outliers(dict["nsamples"], outliers)

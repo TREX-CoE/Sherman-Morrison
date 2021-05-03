@@ -1,5 +1,5 @@
 # Look for and read all the run files in the current directory (ending with
-# .vfcrun.hd5), and lanch a Bokeh server for the visualization of this data.
+# .vfcrunh5), and lanch a Bokeh server for the visualization of this data.
 
 import os
 import sys
@@ -14,18 +14,16 @@ import compare_runs
 import inspect_runs
 import helper
 
-################################################################################
+##########################################################################
 
+# Read vfcrun files, and aggregate them in one dataset
 
-    # Read vfcrun files, and aggregate them in one dataset
-
-run_files = [ f for f in os.listdir(".") if f.endswith(".vfcrun.hd5") ]
+run_files = [f for f in os.listdir(".") if f.endswith(".vfcrun.h5")]
 
 if len(run_files) == 0:
     print(
-        "Warning [vfc_ci]: Could not find any vfcrun files in the directory. " \
-        "This will result in server errors and prevent you from viewing the report."
-    )
+        "Warning [vfc_ci]: Could not find any vfcrun files in the directory. "
+        "This will result in server errors and prevent you from viewing the report.")
 
 # These are arrays of Pandas dataframes for now
 metadata = []
@@ -55,15 +53,14 @@ metadata["date"] = metadata.index.to_series().map(
 )
 
 
-################################################################################
+##########################################################################
 
 
 curdoc().title = "Verificarlo Report"
 
-
-    # Read server arguments
-    # (this is quite easy because Bokeh server is called through a wrapper, so
-    # we know exactly what the arguments might be)
+# Read server arguments
+# (this is quite easy because Bokeh server is called through a wrapper, so
+# we know exactly what the arguments might be)
 
 git_repo_linked = False
 commit_link = ""
@@ -83,7 +80,6 @@ for i in range(1, len(sys.argv)):
         address = sys.argv[i + 2]
         url = ""
 
-
         # Here, address is either the remote URL or the path to the local Git
         # repo (depending on the method)
 
@@ -99,11 +95,10 @@ for i in range(1, len(sys.argv)):
 
         else:
             raise ValueError(
-                "Error [vfc_ci]: The specified method to get the Git " \
-                "repository is invalid. Are you calling Bokeh directly " \
+                "Error [vfc_ci]: The specified method to get the Git "
+                "repository is invalid. Are you calling Bokeh directly "
                 "instead of using the Verificarlo wrapper ?"
             )
-
 
         # At this point, "url" should be set correctly, we can get the repo's
         # URL and name, after making sure we're on a Git URL
@@ -113,7 +108,7 @@ for i in range(1, len(sys.argv)):
         path = parsed_url.path.split("/")
         if len(path) < 3:
             raise ValueError(
-                "Error [vfc_ci]: The found URL doesn't seem to be pointing " \
+                "Error [vfc_ci]: The found URL doesn't seem to be pointing "
                 "to a Git repository (path is too short)"
             )
 
@@ -122,12 +117,11 @@ for i in range(1, len(sys.argv)):
         curdoc().template_variables["repo_url"] = url
         curdoc().template_variables["repo_name"] = repo_name
 
-
         # We should have a "github.com" or a "*gitlab*" URL
 
         if parsed_url.netloc == "github.com":
             commit_link = "https://%s%s/commit/" \
-            % (parsed_url.netloc, parsed_url.path)
+                % (parsed_url.netloc, parsed_url.path)
 
             curdoc().template_variables["commit_link"] = commit_link
             curdoc().template_variables["git_host"] = "GitHub"
@@ -138,7 +132,7 @@ for i in range(1, len(sys.argv)):
         # We assume we have a GitLab URL
         else:
             commit_link = "https://%s%s/-/commit/" \
-            % (parsed_url.netloc, parsed_url.path)
+                % (parsed_url.netloc, parsed_url.path)
 
             curdoc().template_variables["commit_link"] = commit_link
             curdoc().template_variables["git_host"] = "GitLab"
@@ -147,8 +141,6 @@ for i in range(1, len(sys.argv)):
             commit_link = commit_link + "@hash"
 
         git_repo_linked = True
-
-
 
     # Look for a logo URL
     # If a logo URL is specified, it will be included in the report's header
@@ -162,10 +154,9 @@ curdoc().template_variables["git_repo_linked"] = git_repo_linked
 curdoc().template_variables["has_logo"] = has_logo
 
 
-################################################################################
+##########################################################################
 
-
-    # Setup report views
+# Setup report views
 
 # Define a ViewsMaster class to allow two-ways communication between views.
 # This approach by classes allows us to have separate scopes for each view and
@@ -174,13 +165,12 @@ curdoc().template_variables["has_logo"] = has_logo
 
 class ViewsMaster:
 
-        # Communication functions
+    # Communication functions
 
     def go_to_inspect(self, run_name):
         self.inspect.switch_view(run_name)
 
-
-        #Constructor
+        # Constructor
 
     def __init__(self, data, metadata, git_repo_linked, commit_link):
 
@@ -190,28 +180,29 @@ class ViewsMaster:
         self.commit_link = commit_link
 
         # Pass metadata to the template as a JSON string
-        curdoc().template_variables["metadata"] = self.metadata.to_json(orient="index")
+        curdoc().template_variables["metadata"] = self.metadata.to_json(
+            orient="index")
 
         # Runs comparison
         self.compare = compare_runs.CompareRuns(
-            master = self,
-            doc = curdoc(),
-            data = data,
-            metadata = metadata,
+            master=self,
+            doc=curdoc(),
+            data=data,
+            metadata=metadata,
         )
 
         # Runs inspection
         self.inspect = inspect_runs.InspectRuns(
-            master = self,
-            doc = curdoc(),
-            data = data,
-            metadata = metadata,
+            master=self,
+            doc=curdoc(),
+            data=data,
+            metadata=metadata,
         )
 
 
 views_master = ViewsMaster(
-    data = data,
-    metadata = metadata,
-    git_repo_linked = git_repo_linked,
-    commit_link = commit_link
+    data=data,
+    metadata=metadata,
+    git_repo_linked=git_repo_linked,
+    commit_link=commit_link
 )
