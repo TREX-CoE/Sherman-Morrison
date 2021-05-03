@@ -19,7 +19,7 @@
 using namespace H5;
 // #define DEBUG
 
-const H5std_string FILE_NAME( "datasets/dataset.hdf5" );
+const H5std_string FILE_NAME( "datasets/ci_dataset.hdf5" );
 
 double residual_max(double * A, unsigned int Dim) {
   double max = 0.0;
@@ -78,6 +78,12 @@ int test_cycle(H5File file, int cycle, std::string version, vfc_probes * probes)
   /* Read the data */
 
   std::string group = "cycle_" + std::to_string(cycle);
+
+  // This will result in the same string as group but with the cycle number
+  // being zero-padded. This is used when calling vfc_put_probe later on.
+  std::string zero_padded_group = std::to_string(cycle);
+  zero_padded_group = "cycle_" +
+  std::string(5 - zero_padded_group.length(), '0') + zero_padded_group;
 
   try{
     file.openGroup(group);
@@ -155,8 +161,8 @@ int test_cycle(H5File file, int cycle, std::string version, vfc_probes * probes)
   showMatrix(res, dim, "Result");
 #endif
 
-  vfc_put_probe(probes, &(group)[0], &("res_max_" + version)[0], res_max);
-  vfc_put_probe(probes, &(group)[0], &("res2_" + version)[0], res2);
+  vfc_put_probe(probes, &(zero_padded_group)[0], &("res_max_" + version)[0], res_max);
+  vfc_put_probe(probes, &(zero_padded_group)[0], &("res2_" + version)[0], res2);
 
   delete [] res, updates, u, col_update_index,
             slater_matrix, slater_inverse;
