@@ -1,5 +1,5 @@
 {
-    "make_command": "make -f Makefile.vfc_ci",
+    "make_command": "make -f Makefile.verificarlo",
     "executables": [
         {
             "executable": "bin/vfc_test_h5",
