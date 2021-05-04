@@ -1,0 +1,57 @@
+# This workflow will be executed when dev is updated:
+# it will run the configured tests and upload the results on vfc_ci_dev.
+
+name: "Verificarlo CI (dev)"
+
+on:
+  # Triggers the workflow when dev is updated
+  push:
+    branches: [ dev ]
+
+  workflow_dispatch:
+
+
+jobs:
+  run_verificarlo_tests:
+    runs-on: ubuntu-latest
+    container: verificarlo/verificarlo
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+            fetch-depth: 0
+
+      # We will probably drop these installations when integrating CI into
+      # Verificarlo
+      - name: Install Python requirements
+        run: |
+          pip install numpy scipy pandas bokeh jinja2 tables GitPython
+          apt update
+          apt install -y wget libhdf5-dev g++
+          wget https://raw.githubusercontent.com/verificarlo/significantdigits/main/sigdigits.py -P /usr/local/lib/python3.8/dist-packages
+
+      - name: Run tests
+        # We assume the script is included in the repo for now
+        # (we'll probably want to remove "./" if the script ends up being integrated
+        # in Verificarlo and becomes available system-wide)
+        run: ./vfc_ci test -g -r
+
+      - name: Commit test results
+        run: |
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git checkout vfc_ci_dev
+          mkdir -p vfcruns
+          mv *.vfcrun.h5 vfcruns
+          git add vfcruns/*
+          git commit -m "[auto] New test results for commit ${git_hash}"
+          git push
+
+      - name: Upload raw results as artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.sha}}.vfcraw
+          path: ./*.vfcraw.h5
