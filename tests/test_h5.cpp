@@ -7,7 +7,7 @@
 #include "SM_Helpers.hpp"
 
 using namespace H5;
-// #define DEBUG
+#define DEBUG
 
 const H5std_string FILE_NAME( "dataset.hdf5" );
 
@@ -46,7 +46,7 @@ void read_double(H5File file, std::string key, double * data) {
   ds.close();
 }
 
-int test_cycle(H5File file, int cycle, std::string version) {
+int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
 
   /* Read the data */
 
@@ -61,7 +61,6 @@ int test_cycle(H5File file, int cycle, std::string version) {
 
   double * slater_inverse = new double[dim*dim];
   read_double(file, group + "/slater_inverse", slater_inverse);
-  //slater_inverse = transpose(slater_inverse, dim);
 
   unsigned int * col_update_index = new unsigned int[nupdates];
   read_int(file, group + "/col_update_index", col_update_index);
@@ -73,13 +72,10 @@ int test_cycle(H5File file, int cycle, std::string version) {
 
   /* Test */
 #ifdef DEBUG
-  showMatrix(slater_matrix, dim, "OLD Slater");
-#endif
-
-#ifdef DEBUG
   showMatrix(slater_inverse, dim, "OLD Inverse");
 #endif
 
+  // Transform replacement updates in 'updates[]' into additive updates in 'u[]'
   for (j = 0; j < nupdates; j++) {
     for (i = 0; i < dim; i++) {
       col = col_update_index[j];
@@ -87,6 +83,16 @@ int test_cycle(H5File file, int cycle, std::string version) {
       slater_matrix[i*dim + (col - 1)] = updates[i + j*dim];
     }
   }
+
+#ifdef DEBUG
+  showMatrix(slater_matrix, dim, "OLD Slater");
+#endif
+
+#ifdef DEBUG
+  showMatrix(u, dim, "Updates");
+#endif
+
+
 
   if (version == "maponia3") {
     MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
@@ -113,7 +119,7 @@ int test_cycle(H5File file, int cycle, std::string version) {
 
   double * res = new double[dim*dim] {0};
   matMul(slater_matrix, slater_inverse, res, dim);
-  bool ok = is_identity(res, dim, 1e-3);
+  bool ok = is_identity(res, dim, tolerance);
 
   double res_max = residual_max(res, dim);
   double res2 = residual2(res, dim);
@@ -130,19 +136,20 @@ int test_cycle(H5File file, int cycle, std::string version) {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 4) {
+  if (argc != 5) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
-    std::cerr << "usage: test_h5 <version> <start cycle> <stop cycle>" << std::endl;
+    std::cerr << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance>" << std::endl;
     return 1;
   }
   std::string version(argv[1]);
   int start_cycle = std::stoi(argv[2]);
   int stop_cycle = std::stoi(argv[3]);
+  double tolerance = std::stod(argv[4]);
   H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
   bool ok;
   for (int cycle = start_cycle; cycle < stop_cycle+1; cycle++) {
-    ok = test_cycle(file, cycle, version);
+    ok = test_cycle(file, cycle, version, tolerance);
     if (ok) {
       std::cerr << "ok -- cycle " << std::to_string(cycle)
       << std::endl;

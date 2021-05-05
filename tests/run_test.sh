@@ -12,6 +12,7 @@ ALGO=$1
 START=$2
 STOP=$3
 BLOCKSIZE=329
+TOLERANCE=1e-3
 
 BLOCKS=$((STOP / BLOCKSIZE))
 LEFT=$((STOP % BLOCKSIZE))
@@ -25,17 +26,17 @@ then
     do
         BSTART=$(((i-1)*BLOCKSIZE+1))
         BSTOP=$((i*BLOCKSIZE-1))
-        $TEST $ALGO $BSTART $BSTOP
+        $TEST $ALGO $BSTART $BSTOP $TOLERANCE
         LAST=$i
     done
     LSTART=$((LAST*BLOCKSIZE+1))
     LSTOP=$((LSTART+LEFT-1))
-    $TEST $ALGO $LSTART $LSTOP
+    $TEST $ALGO $LSTART $LSTOP $TOLERANCE
 else
     for ((i=1; i<=$BLOCKS; i++))
     do
         BSTART=$(((i-1)*BLOCKSIZE+1))
         BSTOP=$((i*BLOCKSIZE-1))
-        $TEST $ALGO $BSTART $BSTOP
+        $TEST $ALGO $BSTART $BSTOP $TOLERANCE
     done
 fi
