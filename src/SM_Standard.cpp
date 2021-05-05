@@ -162,7 +162,8 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
   // If all the updates have failed, exit early with an error
   if (later == N_updates) {
-    std::cerr << "SM3 cannot invert this matrix" << std::endl;
+    std::cerr << "SM3 cannot invert matrix." << std::endl;
+    showMatrix(Slater_inv, Dim, "Slater_inverse");
     return;
   }
   // If some have failed, make a recursive call
