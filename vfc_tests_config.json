@@ -8,47 +8,7 @@
                 {
                     "name": "libinterflop_mca.so",
                     "repetitions": 50
-                }
-            ]
-        },
-
-        {
-            "executable": "bin/vfc_test_h5",
-            "parameters" : "sm1 vfc_ci_cycles.txt",
-            "vfc_backends": [
-                {
-                    "name": "libinterflop_mca.so",
-                    "repetitions": 50
-                }
-            ]
-        },
-
-        {
-            "executable": "bin/vfc_test_h5",
-            "parameters" : "sm2 vfc_ci_cycles.txt",
-            "vfc_backends": [
-                {
-                    "name": "libinterflop_mca.so",
-                    "repetitions": 50
-                }
-            ]
-        },
-
-        {
-            "executable": "bin/vfc_test_h5",
-            "parameters" : "sm3 vfc_ci_cycles.txt",
-            "vfc_backends": [
-                {
-                    "name": "libinterflop_mca.so",
-                    "repetitions": 50
-                }
-            ]
-        },
-
-        {
-            "executable": "bin/vfc_test_h5",
-            "parameters" : "maponia3 vfc_ci_cycles.txt",
-            "vfc_backends": [
+                },
                 {
                     "name": "libinterflop_mca.so --mode=rr",
                     "repetitions": 50
@@ -61,6 +21,10 @@
             "parameters" : "sm1 vfc_ci_cycles.txt",
             "vfc_backends": [
                 {
+                    "name": "libinterflop_mca.so",
+                    "repetitions": 50
+                },
+                {
                     "name": "libinterflop_mca.so --mode=rr",
                     "repetitions": 50
                 }
@@ -72,6 +36,10 @@
             "parameters" : "sm2 vfc_ci_cycles.txt",
             "vfc_backends": [
                 {
+                    "name": "libinterflop_mca.so",
+                    "repetitions": 50
+                },
+                {
                     "name": "libinterflop_mca.so --mode=rr",
                     "repetitions": 50
                 }
@@ -82,6 +50,25 @@
             "executable": "bin/vfc_test_h5",
             "parameters" : "sm3 vfc_ci_cycles.txt",
             "vfc_backends": [
+                {
+                    "name": "libinterflop_mca.so",
+                    "repetitions": 50
+                },
+                {
+                    "name": "libinterflop_mca.so --mode=rr",
+                    "repetitions": 50
+                }
+            ]
+        },
+
+        {
+            "executable": "bin/vfc_test_h5",
+            "parameters" : "sm4 vfc_ci_cycles.txt",
+            "vfc_backends": [
+                {
+                    "name": "libinterflop_mca.so",
+                    "repetitions": 50
+                },
                 {
                     "name": "libinterflop_mca.so --mode=rr",
                     "repetitions": 50
