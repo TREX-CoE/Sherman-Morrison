@@ -137,7 +137,7 @@ int test_cycle(H5File file, int cycle, std::string version, vfc_probes * probes)
     SM2(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "sm3") {
     SM3(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm3") {
+  } else if (version == "sm4") {
     SM4(slater_inverse, dim, nupdates, u, col_update_index);
   } else {
     std::cerr << "Unknown version " << version << std::endl;
