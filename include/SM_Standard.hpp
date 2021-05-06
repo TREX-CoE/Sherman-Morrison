@@ -10,3 +10,8 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // Sherman Morrison, leaving zero denominators for later
 void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index);
+
+// Sherman Morrison (SM3+SM2), leaving zero denominators for later (SM3), and
+// when none are left falling back on Splitting (SM2)
+void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
+         double *Updates, unsigned int *Updates_index);
