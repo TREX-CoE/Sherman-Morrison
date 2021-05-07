@@ -44,6 +44,16 @@ double residual2(double * A, unsigned int Dim) {
   return res;
 }
 
+double frobenius2(double * A, unsigned int Dim) {
+    double res = 0.0;
+    for (unsigned int i = 0; i < Dim; i++) {
+      for (unsigned int j = 0; j < Dim; j++) {
+        res += A[i * Dim + j] * A[i * Dim + j];
+      }
+    }
+    return res;
+}
+
 void read_int(H5File file, std::string key, unsigned int * data) {
   DataSet ds = file.openDataSet(key);
   ds.read(data, PredType::STD_U32LE);
@@ -158,6 +168,7 @@ int test_cycle(H5File file, int cycle, std::string version, vfc_probes * probes)
 
   double res_max = residual_max(res, dim);
   double res2 = residual2(res, dim);
+  double frob2 = frobenius2(res, dim);
 
 #ifdef DEBUG
   showMatrix(res, dim, "Result");
@@ -165,6 +176,7 @@ int test_cycle(H5File file, int cycle, std::string version, vfc_probes * probes)
 
   vfc_put_probe(probes, &(zero_padded_group)[0], &("res_max_" + version)[0], res_max);
   vfc_put_probe(probes, &(zero_padded_group)[0], &("res2_" + version)[0], res2);
+  vfc_put_probe(probes, &(zero_padded_group)[0], &("frob2_" + version)[0], frob2);
 
   delete [] res, updates, u, col_update_index,
             slater_matrix, slater_inverse;
@@ -173,29 +185,35 @@ int test_cycle(H5File file, int cycle, std::string version, vfc_probes * probes)
 }
 
 int main(int argc, char **argv) {
-  if (argc != 3) {
+  if (argc != 2) {
     std::cerr << "Execute from within '/'" << std::endl;
-    std::cerr << "usage: test_h5 <version> <path to cycles file>" << std::endl;
+    std::cerr << "usage: test_h5 <path to cycles file>" << std::endl;
     return 1;
   }
-  std::string version(argv[1]);
-  std::vector<int> cycles_list = get_cycles_list(argv[2]);
+  std::vector<int> cycles_list = get_cycles_list(argv[1]);
   H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
   vfc_probes probes = vfc_init_probes();
   probes = vfc_init_probes();
 
+  std::vector<std::string> algorithms = {
+    "maponia3", "sm1", "sm2", "sm3", "sm4"
+  };
   bool ok;
-  for (int i = 0; i < cycles_list.size(); i++) {
-    ok = test_cycle(file, cycles_list[i], version, &probes);
-    if (ok) {
-      std::cout << "ok -- cycle " << std::to_string(i)
-      << std::endl;
-    }
-    else {
-      std::cerr << "failed -- cycle " << std::to_string(i)
-      << std::endl;
-    }
+
+  for(int i = 0; i < algorithms.size(); i++) {
+      std::cout << "Using algorithm : " << algorithms[i] << std::endl;
+      for (int j = 0; j < cycles_list.size(); j++) {
+        ok = test_cycle(file, cycles_list[j], algorithms[i], &probes);
+        if (ok) {
+            std::cout << "ok -- cycle " << std::to_string(j)
+          << std::endl;
+        }
+        else {
+          std::cerr << "failed -- cycle " << std::to_string(j)
+          << std::endl;
+        }
+      }
   }
 
   vfc_dump_probes(&probes);
