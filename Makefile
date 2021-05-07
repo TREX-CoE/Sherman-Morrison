@@ -29,13 +29,12 @@ FLIBS = -lstdc++
 
 ## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/
-DEPS_CXX = $(OBJ_DIR)/SM_MaponiA3.o \
-		   $(OBJ_DIR)/SM_MaponiA3S.o \
+DEPS_CXX = $(OBJ_DIR)/SM_Maponi.o \
 		   $(OBJ_DIR)/SM_Standard.o \
 		   $(OBJ_DIR)/SM_Helpers.o
 DEPS_F = $(DEPS_CXX) \
-		 $(OBJ_DIR)/SM_mod.o \
-		 $(OBJ_DIR)/Helpers_mod.o
+		 $(OBJ_DIR)/finterface_mod.o \
+		 $(OBJ_DIR)/helpers_mod.o
 
 ## Directory structure
 SRC_DIR := src

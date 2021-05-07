@@ -45,6 +45,7 @@ case $ENV in
   *)
     echo "Unknown environment descriptor given."
 	echo "Usage: source smvars.sh {intel | llvm | vfc | gnu}"
+	echo "Usage: source smvars.sh {intel | llvm | vfc | gnu} [threshold]"
 	return 1
 	;;
 esac

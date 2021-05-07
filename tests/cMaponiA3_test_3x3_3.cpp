@@ -1,5 +1,5 @@
 // main.cpp
-#include "SM_MaponiA3.hpp"
+#include "SM_Maponi.hpp"
 #include "SM_Helpers.hpp"
 
 int main() {

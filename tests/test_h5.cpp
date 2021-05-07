@@ -1,38 +1,14 @@
 #include "hdf5/serial/hdf5.h"
 #include "hdf5/serial/H5Cpp.h"
 
-#include "SM_MaponiA3.hpp"
-#include "SM_MaponiA3S.hpp"
+#include "SM_Maponi.hpp"
 #include "SM_Standard.hpp"
 #include "SM_Helpers.hpp"
 
 using namespace H5;
-#define DEBUG
+// #define DEBUG
 
 const H5std_string FILE_NAME( "dataset.hdf5" );
-
-double residual_max(double * A, unsigned int Dim) {
-  double max = 0.0;
-  for (unsigned int i = 0; i < Dim; i++) {
-    for (unsigned int j = 0; j < Dim; j++) {
-      double delta = (A[i * Dim + j] - (i == j));
-      delta = abs(delta);
-      if (delta > max) max = delta;
-    }
-  }
-  return max;
-}
-
-double residual2(double * A, unsigned int Dim) {
-  double res = 0.0;
-  for (unsigned int i = 0; i < Dim; i++) {
-    for (unsigned int j = 0; j < Dim; j++) {
-      double delta = (A[i * Dim + j] - (i == j));
-      res += delta*delta;
-    }
-  }
-  return res;
-}
 
 void read_int(H5File file, std::string key, unsigned int * data) {
   DataSet ds = file.openDataSet(key);
@@ -92,8 +68,6 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   showMatrix(u, dim, "Updates");
 #endif
 
-
-
   if (version == "maponia3") {
     MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "maponia3s") {
@@ -124,7 +98,7 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   bool ok = is_identity(res, dim, tolerance);
 
   double res_max = residual_max(res, dim);
-  double res2 = residual2(res, dim);
+  double res2 = residual_frobenius2(res, dim);
   std::cout << "Residual = " << version << " " << cycle << " " << res_max << " " << res2 << std::endl;
 
 #ifdef DEBUG

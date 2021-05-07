@@ -50,7 +50,7 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // http://hdl.handle.net/10919/52966
 void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
-  std::cerr << "Called SM2 with updates " << N_updates << std::endl;
+  std::cerr << "Called SM2 with " << N_updates << " updates" << std::endl;
   double C[Dim];
   double D[Dim];
 
@@ -110,7 +110,7 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // Sherman Morrison, leaving zero denominators for later
 void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
-  std::cerr << "Called SM3 with updates " << N_updates << std::endl;
+  std::cerr << "Called SM3 with " << N_updates << " updates" << std::endl;
   double C[Dim];
   double D[Dim];
 
@@ -176,7 +176,7 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // Leave zero denominators for later (SM3), and when none are left then split (SM2)
 void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
-  std::cerr << "Called SM4 with updates " << N_updates << std::endl;
+  std::cerr << "Called SM4 with " << N_updates << " updates" << std::endl;
   double C[Dim];
   double D[Dim];
 
@@ -254,6 +254,7 @@ extern "C" {
                   unsigned int **Updates_index) {
     SM3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
   }
+
   void SM4_f(double **linSlater_inv, unsigned int *Dim,
                   unsigned int *N_updates, double **linUpdates,
                   unsigned int **Updates_index) {
