@@ -80,7 +80,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
     }
-    double ibeta = 1.0 / beta; 
+    double ibeta = 1.0 / beta;
 
 // Compute intermediate update to Slater_inv
 #ifdef DEBUG
@@ -184,7 +184,7 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
       }
     }
 #ifdef DEBUG
-    showVector(ylk[0][k], Dim+1, "");
+    showVector(ylk[0][k], Dim + 1, "");
 #endif
   }
 
@@ -237,7 +237,10 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
             (i == j) - (j == component - 1) * ylk[l][p[l + 1]][i + 1] * ibeta;
       }
     }
-    matMul(Al, last, next, Dim); tmp = next; next = last; last = tmp;
+    matMul(Al, last, next, Dim);
+    tmp = next;
+    next = last;
+    last = tmp;
 #ifdef DEBUG
     showMatrix(last, Dim, "last");
 #endif
@@ -275,17 +278,17 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 }
 
 extern "C" {
-  void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
-                  unsigned int *N_updates, double **linUpdates,
-                  unsigned int **Updates_index) {
-    MaponiA3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-  }
+void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
+                unsigned int *N_updates, double **linUpdates,
+                unsigned int **Updates_index) {
+  MaponiA3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+}
 }
 
 extern "C" {
-  void MaponiA3S_f(double **linSlater_inv, unsigned int *Dim,
-                  unsigned int *N_updates, double **linUpdates,
-                  unsigned int **Updates_index) {
-    MaponiA3S(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-  }
+void MaponiA3S_f(double **linSlater_inv, unsigned int *Dim,
+                 unsigned int *N_updates, double **linUpdates,
+                 unsigned int **Updates_index) {
+  MaponiA3S(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+}
 }
