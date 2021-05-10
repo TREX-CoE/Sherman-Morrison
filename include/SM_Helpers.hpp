@@ -127,3 +127,53 @@ template <typename T> bool is_identity(T *A, unsigned int M, double tolerance) {
   }
   return true;
 }
+
+template <typename T> T norm_max(T * A, unsigned int Dim) {
+  T res = 0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      T delta = A[i * Dim + j];
+      delta = fabs(delta);
+      if (delta > res) {
+        res = delta;
+      }
+    }
+  }
+  return res;
+}
+
+template  <typename T> T norm_frobenius2(T * A, unsigned int Dim) {
+  T res = 0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      T delta = A[i * Dim + j];
+      res += delta*delta;
+    }
+  }
+  return res;
+}
+
+template <typename T> T residual_max(T * A, unsigned int Dim) {
+  T res = 0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      T  delta = A[i * Dim + j] - (i == j);
+      delta = fabs(delta);
+      if (delta > res) {
+        res = delta;
+      }
+    }
+  }
+  return res;
+}
+
+template <typename T> T residual_frobenius2(T * A, unsigned int Dim) {
+  T res = 0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      T delta = A[i * Dim + j] - (i == j);
+      res += delta*delta;
+    }
+  }
+  return res;
+}
