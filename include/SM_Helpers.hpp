@@ -119,9 +119,9 @@ template <typename T> T matDet(T **A, unsigned int M) {
 template <typename T> bool is_identity(T *A, unsigned int M, double tolerance) {
   for (unsigned int i = 0; i < M; i++) {
     for (unsigned int j = 0; j < M; j++) {
-      if (i == j && fabs(A[i * M + j] - 1) > tolerance)
+      if (i == j && std::fabs(A[i * M + j] - 1) > tolerance)
         return false;
-      if (i != j && fabs(A[i * M + j]) > tolerance)
+      if (i != j && std::fabs(A[i * M + j]) > tolerance)
         return false;
     }
   }
@@ -133,7 +133,7 @@ template <typename T> T norm_max(T *A, unsigned int Dim) {
   for (unsigned int i = 0; i < Dim; i++) {
     for (unsigned int j = 0; j < Dim; j++) {
       T delta = A[i * Dim + j];
-      delta = fabs(delta);
+      delta = std::fabs(delta);
       if (delta > res) {
         res = delta;
       }
@@ -158,7 +158,7 @@ template <typename T> T residual_max(T *A, unsigned int Dim) {
   for (unsigned int i = 0; i < Dim; i++) {
     for (unsigned int j = 0; j < Dim; j++) {
       T delta = A[i * Dim + j] - (i == j);
-      delta = fabs(delta);
+      delta = std::fabs(delta);
       if (delta > res) {
         res = delta;
       }

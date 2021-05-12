@@ -23,7 +23,7 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
     }
@@ -71,7 +71,7 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
 
@@ -131,7 +131,7 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
 
@@ -198,7 +198,7 @@ void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
 
