@@ -23,7 +23,7 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
     }
@@ -71,7 +71,7 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
 
@@ -131,7 +131,7 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
 
@@ -173,7 +173,8 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 }
 
 // Sherman Morrison, mix between SM3 + SM2
-// Leave zero denominators for later (SM3), and when none are left then split (SM2)
+// Leave zero denominators for later (SM3), and when none are left then split
+// (SM2)
 void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
   std::cerr << "Called SM4 with " << N_updates << " updates" << std::endl;
@@ -197,7 +198,7 @@ void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (fabs(den) < threshold()) {
+    if (std::fabs(den) < threshold()) {
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
 
@@ -237,27 +238,23 @@ void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 }
 
 extern "C" {
-  void SM1_f(double **linSlater_inv, unsigned int *Dim,
-                  unsigned int *N_updates, double **linUpdates,
-                  unsigned int **Updates_index) {
-    SM1(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-  }
+void SM1_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
+           double **linUpdates, unsigned int **Updates_index) {
+  SM1(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+}
 
-  void SM2_f(double **linSlater_inv, unsigned int *Dim,
-                  unsigned int *N_updates, double **linUpdates,
-                  unsigned int **Updates_index) {
-    SM2(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-  }
+void SM2_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
+           double **linUpdates, unsigned int **Updates_index) {
+  SM2(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+}
 
-  void SM3_f(double **linSlater_inv, unsigned int *Dim,
-                  unsigned int *N_updates, double **linUpdates,
-                  unsigned int **Updates_index) {
-    SM3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-  }
+void SM3_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
+           double **linUpdates, unsigned int **Updates_index) {
+  SM3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+}
 
-  void SM4_f(double **linSlater_inv, unsigned int *Dim,
-                  unsigned int *N_updates, double **linUpdates,
-                  unsigned int **Updates_index) {
-    SM4(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
-  }
+void SM4_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
+           double **linUpdates, unsigned int **Updates_index) {
+  SM4(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+}
 }

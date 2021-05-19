@@ -25,10 +25,10 @@ void selectLargestDenominator(unsigned int l, unsigned int N_updates,
   for (unsigned int j = lbar; j < N_updates + 1; j++) {
     index = p[j];
     component = Updates_index[index - 1];
-    breakdown = abs(1 + ylk[l][index][component]);
+    breakdown = std::fabs(1 + ylk[l][index][component]);
 #ifdef DEBUG
     std::cout << "Inside selectLargestDenominator()" << std::endl;
-    std::cout << "breakdown = abs(1 + ylk[" << l << "][" << index << "]["
+    std::cout << "breakdown = fabs(1 + ylk[" << l << "][" << index << "]["
               << component << "]) = " << breakdown << std::endl;
     std::cout << std::endl;
 #endif
