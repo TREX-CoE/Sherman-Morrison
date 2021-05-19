@@ -81,49 +81,98 @@ T1 *outProd(T1 *vec1, T2 *vec2, unsigned int M) {
   }
   return C;
 }
+ 
+// // This flat version doesn't work. Get's stuck in an infinite recursion loop.
+// template <typename T> T determinant(T *A, unsigned int M) {
+//   std::cout << "determinant() called..." << std::endl;
+//   T det = 0;
+//   int p, h, k, i, j;
+//   T *temp = new T[M * M];
+//   if (M == 1) {
+//     return A[0];
+//   } else if (M == 2) {
+//     det = (A[0] * A[3] - A[1] * A[2]);
+//     return det;
+//   } else {
+//     for (p = 0; p < M; p++) {
+//       h = 0;
+//       k = 0;
+//       for (i = 1; i < M; i++) {
+//         for (j = 0; j < M; j++) {
+//           if (j == p) {
+//             continue;
+//           }
+//           temp[h * M + k] = A[i * M + j];
+//           k++;
+//           if (k == M - 1) {
+//             h++;
+//             k = 0;
+//           }
+//         }
+//       }
+//       det = det + A[p] * pow(-1, p) * determinant(temp, M - 1);
+//     }
+//     return det;
+//   }
+//   delete temp;
+// }
 
-template <typename T> T matDet(T **A, unsigned int M) {
-  int det = 0, p, h, k, i, j;
-  T **temp = new T *[M];
-  for (int i = 0; i < M; i++)
-    temp[i] = new T[M];
-  if (M == 1) {
-    return A[0][0];
-  } else if (M == 2) {
-    det = (A[0][0] * A[1][1] - A[0][1] * A[1][0]);
-    return det;
-  } else {
-    for (p = 0; p < M; p++) {
-      h = 0;
-      k = 0;
-      for (i = 1; i < M; i++) {
-        for (j = 0; j < M; j++) {
-          if (j == p) {
-            continue;
-          }
-          temp[h][k] = A[i][j];
-          k++;
-          if (k == M - 1) {
-            h++;
-            k = 0;
-          }
-        }
-      }
-      det = det + A[0][p] * pow(-1, p) * matDet(temp, M - 1);
-    }
-    return det;
-  }
-  delete[] temp;
-}
+// // This version also gets stuck in a recursion loop
+// template <typename T> T determinant(T **A, unsigned int M) {
+//   int p, h, k, i, j;
+//   T det = 0;
+//   T **temp = new T *[M];
+//   for (int i = 0; i < M; i++) {
+//     temp[i] = new T[M];
+//   }
+//   if (M == 1) {
+//     return A[0][0];
+//   } else if (M == 2) {
+//     det = (A[0][0] * A[1][1] - A[0][1] * A[1][0]);
+//     return det;
+//   } else {
+//     for (p = 0; p < M; p++) {
+//       h = 0;
+//       k = 0;
+//       for (i = 1; i < M; i++) {
+//         for (j = 0; j < M; j++) {
+//           if (j == p) {
+//             continue;
+//           }
+//           temp[h][k] = A[i][j];
+//           k++;
+//           if (k == M - 1) {
+//             h++;
+//             k = 0;
+//           }
+//         }
+//       }
+//       det = det + A[0][p] * pow(-1, p) * determinant(temp, M - 1);
+//     }
+//     return det;
+//   }
+//   delete[] temp;
+// }
 
 template <typename T> bool is_identity(T *A, unsigned int M, double tolerance) {
   for (unsigned int i = 0; i < M; i++) {
     for (unsigned int j = 0; j < M; j++) {
-      if (i == j && std::fabs(A[i * M + j] - 1) > tolerance)
+      if (i == j && std::fabs(A[i * M + j] - 1) > tolerance) {
         return false;
-      if (i != j && std::fabs(A[i * M + j]) > tolerance)
+      }
+      if (i != j && std::fabs(A[i * M + j]) > tolerance) {
         return false;
+      }
     }
+  }
+  return true;
+}
+
+template <typename T>
+bool is_identity2(T *A, unsigned int M, double tolerance) {
+  double det = determinant(A, M);
+  if (det - 1 > tolerance) {
+    return false;
   }
   return true;
 }

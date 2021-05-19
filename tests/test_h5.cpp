@@ -100,6 +100,19 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
 
   double res_max = residual_max(res, dim);
   double res2 = residual_frobenius2(res, dim);
+  // double det;
+  // double **tmp = new double *[dim];
+  // for (int i = 0; i < dim; i++) {
+  //   tmp[i] = new double[dim];
+  //   for (int j = 0; j < dim; j++) {
+  //     tmp[i][j] = res[i * dim + j];
+  //   }
+  // }
+  // det = determinant(tmp, dim);
+  // delete[] tmp;
+  // std::cout << "Residual = " << version << " " << cycle << " " << res_max <<
+  // " "
+  //           << res2 << " " << det << std::endl;
   std::cout << "Residual = " << version << " " << cycle << " " << res_max << " "
             << res2 << std::endl;
 
