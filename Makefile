@@ -21,11 +21,13 @@ else
     $(error No valid compiler environment set in $$ENV. \
 	First run: $$ source smvars.sh {intel | llvm | gnu})
 endif
-CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) -fPIC $(THRESHOLD)
+CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) $(THRESHOLD) -fPIC
 FFLAGS = $(CXXFLAGS)
 H5CXX = h5c++
 H5CXXFLAGS = $(CXXFLAGS)
 FLIBS = -lstdc++
+LFLAGS = -mkl=sequential
+H5LFLAGS = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 
 ## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/
@@ -93,16 +95,16 @@ $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
 
 #### LINKING
 $(BIN_DIR)/cMaponiA3_test_3x3_3: $(OBJ_DIR)/cMaponiA3_test_3x3_3.o $(DEPS_CXX) | $(BIN_DIR)
-	$(CXX) -o $@ $^
+	$(CXX) $(LFLAGS) -o $@ $^
 
 $(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
-	$(H5CXX) -o $@ $^
+	$(H5CXX) $(H5LFLAGS) -o $@ $^
 
 $(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
-	$(FC) $(FLIBS) -o $@ $^
+	$(FC) $(LFLAGS) $(FLIBS) -o $@ $^
 
 $(BIN_DIR)/fMaponiA3_test_4x4_2: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_4x4_2.o  | $(BIN_DIR)
-	$(FC) $(FLIBS) -o $@ $^
+	$(FC) $(LFLAGS) $(FLIBS) -o $@ $^
 
 $(BIN_DIR)/QMCChem_dataset_test: $(DEPS_F) $(OBJ_DIR)/QMCChem_dataset_test.o  | $(BIN_DIR)
-	$(FC) $(FLIBS) -o $@ $^
+	$(FC) $(LFLAGS) $(FLIBS) -o $@ $^
