@@ -4,7 +4,9 @@
 #include <cstring>
 #include <iostream>
 #include <string>
-
+#ifdef MKL
+#include <mkl_lapacke.h>
+#endif
 // #define DEBUG
 
 #ifndef THRESHOLD
@@ -17,6 +19,10 @@ void Switch(unsigned int *p, unsigned int l, unsigned int lbar);
 void selectLargestDenominator(unsigned int l, unsigned int N_updates,
                               unsigned int *Updates_index, unsigned int *p,
                               double ***ylk);
+
+#ifdef MKL
+lapack_int inverse(double *A, unsigned n);
+#endif
 
 template <typename T> void showScalar(T scalar, std::string name) {
   std::cout << name << " = " << scalar << std::endl << std::endl;
