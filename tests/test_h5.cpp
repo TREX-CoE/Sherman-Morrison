@@ -81,9 +81,11 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     SM3(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "sm4") {
     SM4(slater_inverse, dim, nupdates, u, col_update_index);
+#ifdef MKL
   } else if (version == "lapack") {
     memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));
     inverse(slater_inverse, dim);
+#endif
   } else {
     std::cerr << "Unknown version " << version << std::endl;
     exit(1);

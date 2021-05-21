@@ -40,6 +40,7 @@ void selectLargestDenominator(unsigned int l, unsigned int N_updates,
   Switch(p, l, lbar);
 }
 
+#ifdef MKL
 // Inplace inverse n x n matrix A.
 // returns:
 //   ret = 0 on success
@@ -57,3 +58,4 @@ lapack_int inverse(double *A, unsigned n) {
   ret = LAPACKE_dgetri(LAPACK_COL_MAJOR, n, A, n, ipiv);
   return ret;
 }
+#endif

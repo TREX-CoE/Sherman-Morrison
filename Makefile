@@ -22,12 +22,15 @@ else
 	First run: $$ source smvars.sh {intel | llvm | gnu})
 endif
 CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) $(THRESHOLD) -fPIC
+ifeq ($(MKL),-DMKL)
+CXXFLAGS += $(MKL)
+LFLAGS = -mkl=sequential
+H5LFLAGS = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+endif
 FFLAGS = $(CXXFLAGS)
 H5CXX = h5c++
 H5CXXFLAGS = $(CXXFLAGS)
 FLIBS = -lstdc++
-LFLAGS = -mkl=sequential
-H5LFLAGS = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 
 ## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/
