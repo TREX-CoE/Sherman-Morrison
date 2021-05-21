@@ -21,16 +21,22 @@ else
     $(error No valid compiler environment set in $$ENV. \
 	First run: $$ source smvars.sh {intel | llvm | gnu})
 endif
-CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) $(THRESHOLD) -fPIC
-ifeq ($(MKL),-DMKL)
-CXXFLAGS += $(MKL)
-LFLAGS = -mkl=sequential
-H5LFLAGS = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-endif
-FFLAGS = $(CXXFLAGS)
 H5CXX = h5c++
-H5CXXFLAGS = $(CXXFLAGS)
 FLIBS = -lstdc++
+CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) $(THRESHOLD) -fPIC
+
+## MKL linker flags
+ifeq ($(MKL),-DMKL)
+	CXXFLAGS += $(MKL)
+	H5LFLAGS = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+	ifeq ($(ENV),INTEL)
+		LFLAGS = -mkl=sequential # implicit
+	else
+		LFLAGS = $(H5LFLAGS)
+	endif
+endif
+H5CXXFLAGS = $(CXXFLAGS)
+FFLAGS = $(CXXFLAGS)
 
 ## Includes and dependencies
 INCLUDE = -I $(INC_DIR)/

@@ -13,6 +13,17 @@ H5FLAGS = "-I/usr/include/hdf5/serial \
 		   -lpthread -lsz -lz -ldl -lm \
 		   -Wl,-rpath -Wl,/usr/lib/x86_64-linux-gnu/hdf5/serial"
 CXXFLAGS = -O0 -g $(H5FLAGS)
+## MKL linker flags
+ifeq ($(MKL),-DMKL)
+	CXXFLAGS += $(MKL)
+	H5LFLAGS = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+	ifeq ($(ENV),INTEL)
+		LFLAGS = -mkl=sequential # implicit
+	else
+		LFLAGS = $(H5LFLAGS)
+	endif
+endif
+H5CXXFLAGS = $(CXXFLAGS)
 FFLAGS = $(CXXFLAGS)
 
 INCLUDE = -I $(INC_DIR)/
@@ -79,19 +90,19 @@ $(OBJ_DIR)/%.o: $(TST_DIR)/%.f90 | $(OBJ_DIR)
 
 #### LINKING
 $(BIN_DIR)/cMaponiA3_test_3x3_3: $(OBJ_DIR)/cMaponiA3_test_3x3_3.o $(DEPS_CXX) | $(BIN_DIR)
-	$(CXX) -o $@ $^
+	$(CXX) $(LFLAGS) -o $@ $^
 
 $(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
-	$(CXX) -o $@ $^ $(H5FLAGS)
+	$(CXX) $(H5LFLAGS) -o $@ $^ $(H5FLAGS)
 
 $(BIN_DIR)/vfc_test_h5: $(OBJ_DIR)/vfc_test_h5.o $(DEPS_CXX) | $(BIN_DIR)
-	$(CXX) -o $@ $^ $(H5FLAGS)
+	$(CXX) $(H5LFLAGS) -o $@ $^ $(H5FLAGS)
 
 $(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
-	$(FC) $(FLIBS) -o $@ $^
+	$(FC) $(LFLAGS) $(FLIBS) -o $@ $^
 
 $(BIN_DIR)/fMaponiA3_test_4x4_2: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_4x4_2.o  | $(BIN_DIR)
-	$(FC) $(FLIBS) -o $@ $^
+	$(FC) $(LFLAGS) $(FLIBS) -o $@ $^
 
 $(BIN_DIR)/QMCChem_dataset_test: $(DEPS_F) $(OBJ_DIR)/QMCChem_dataset_test.o  | $(BIN_DIR)
-	$(FC) $(FLIBS) -o $@ $^
+	$(FC) $(LFLAGS) $(FLIBS) -o $@ $^
