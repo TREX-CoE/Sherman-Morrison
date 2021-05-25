@@ -87,7 +87,7 @@ T1 *outProd(T1 *vec1, T2 *vec2, unsigned int M) {
   }
   return C;
 }
- 
+
 // // This flat version doesn't work. Get's stuck in an infinite recursion loop.
 // template <typename T> T determinant(T *A, unsigned int M) {
 //   std::cout << "determinant() called..." << std::endl;
@@ -228,6 +228,18 @@ template <typename T> T residual_frobenius2(T *A, unsigned int Dim) {
     for (unsigned int j = 0; j < Dim; j++) {
       T delta = A[i * Dim + j] - (i == j);
       res += delta * delta;
+    }
+  }
+  return res;
+}
+
+
+template <typename T> T residual2(T * A, unsigned int Dim) {
+  double res = 0.0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      T delta = (A[i * Dim + j] - (i == j));
+      res += delta*delta;
     }
   }
   return res;
