@@ -235,8 +235,8 @@ class CompareRuns:
 
     def update_n_runs(self, attrname, old, new):
         # Simply update runs selection (value and string display)
-        self.select_n_runs.value = new
-        self.current_n_runs = self.n_runs_dict[self.select_n_runs.value]
+        self.widgets["select_n_runs"].value = new
+        self.current_n_runs = self.n_runs_dict[self.widgets["select_n_runs"].value]
 
         self.update_plots()
 

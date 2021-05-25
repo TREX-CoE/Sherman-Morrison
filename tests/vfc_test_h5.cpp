@@ -133,15 +133,15 @@ int test_cycle(H5File file, int cycle, std::string version,
   matMul(slater_matrix, slater_inverse, res, dim);
   bool ok = is_identity(res, dim, 1e-3);
 
-  double res_max = residual_max(res, dim);
-  double res2 = residual_frobenius2(res, dim);
+  double res2 = residual2(res, dim);
+  double frob2 = norm_frobenius2(res, dim);
 
 #ifdef DEBUG
   showMatrix(res, dim, "Result");
 #endif
 
-  vfc_put_probe(probes, &(zero_padded_group)[0], &("res_max_" + version)[0],
-                res_max);
+  vfc_put_probe(probes, &(zero_padded_group)[0], &("frob2_" + version)[0],
+                frob2);
   vfc_put_probe(probes, &(zero_padded_group)[0], &("res2_" + version)[0], res2);
 
   delete[] res, updates, u, col_update_index, slater_matrix, slater_inverse;
