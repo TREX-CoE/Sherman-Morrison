@@ -1,7 +1,7 @@
 // SM-Standard.cpp
 // Standard Sherman Morrison with multiple updates
 #include "SM_Standard.hpp"
-#include "SM_Helpers.hpp"
+#include "Helpers.hpp"
 
 // Naïve Sherman Morrison
 void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,

@@ -2,7 +2,7 @@
 // Algorithm 3 from P. Maponi,
 // p. 283, doi:10.1016/j.laa.2006.07.007
 #include "SM_Maponi.hpp"
-#include "SM_Helpers.hpp"
+#include "Helpers.hpp"
 
 // #define DEBUG
 

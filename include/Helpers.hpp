@@ -1,4 +1,4 @@
-// SM_Helpers.hpp
+// Helpers.hpp
 // Some usefull helper functions to support the Maponi algorithm.
 #include <cmath>
 #include <cstring>
