@@ -18,15 +18,15 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   std::cerr << "Called Woodbury 2x2 kernel" << std::endl;
 
   // Construct V from Updates_index
-  unsigned int V[2 * Dim]{0}; // 2 x Dim matrix stored in row-major order
+  unsigned int V[2 * Dim]; // 2 x Dim matrix stored in row-major order
   V[Updates_index[0] - 1] = 1;
   V[Dim + Updates_index[1] - 1] = 1;
 
   // Compute C
-  double C[2 * Dim]{0};
+  double C[2 * Dim];
   matMul2(Slater_inv, Updates, C, Dim, Dim, 2);
   // Compute B
-  double B[4]{0};
+  double B[4];
   matMul2(V, C, B, 2, Dim, 2);
   // Compute 1 + B
   B[0] += 1;
@@ -34,7 +34,7 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
 
   // Invert 1 + B with explicit formula for 2x2 inversion
   double idet = 1.0 / (B[0] * B[3] - B[1] * B[2]);
-  double Binv[4]{0};
+  double Binv[4];
   Binv[0] = idet * B[3];
   Binv[1] = -1.0 * idet * B[1];
   Binv[2] = -1.0 * idet * B[2];
@@ -48,11 +48,11 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   }
 
   // Compute (S + U * V)^{-1} with Woobury identity
-  double D[2 * Dim]{0};
+  double D[2 * Dim];
   matMul2(V, Slater_inv, D, 2, Dim, Dim);
-  double tmp[2 * Dim]{0};
+  double tmp[2 * Dim];
   matMul2(Binv, D, tmp, 2, 2, Dim);
-  double tmp2[Dim * Dim]{0};
+  double tmp2[Dim * Dim];
   matMul2(C, tmp, tmp2, Dim, 2, Dim);
   for (unsigned int i = 0; i < Dim * Dim; i++) {
     Slater_inv[i] -= tmp2[i];
@@ -66,16 +66,16 @@ bool WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   std::cerr << "Called Woodbury 3x3 kernel" << std::endl;
   
   // Construct V from Updates_index
-  unsigned int V[3 * Dim]{0}; // 2 x Dim matrix stored in row-major order
+  unsigned int V[3 * Dim]; // 2 x Dim matrix stored in row-major order
   V[Updates_index[0] - 1] = 1;
   V[Dim + Updates_index[1] - 1] = 1;
   V[2 * Dim + Updates_index[2] - 1] = 1;
 
   // Compute C
-  double C[3 * Dim]{0};
+  double C[3 * Dim];
   matMul2(Slater_inv, Updates, C, Dim, Dim, 3);
   // Compute B
-  double B[9]{0};
+  double B[9];
   matMul2(V, C, B, 3, Dim, 3);
   // Compute 1 + B
   B[0] += 1;
@@ -106,11 +106,11 @@ bool WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   }
 
   // Compute (S + U * V)^{-1} with Woobury identity
-  double D[3 * Dim]{0};
+  double D[3 * Dim];
   matMul2(V, Slater_inv, D, 3, Dim, Dim);
-  double tmp[3 * Dim]{0};
+  double tmp[3 * Dim];
   matMul2(Binv, D, tmp, 3, 3, Dim);
-  double tmp2[Dim * Dim]{0};
+  double tmp2[Dim * Dim];
   matMul2(C, tmp, tmp2, Dim, 3, Dim);
   for (unsigned int i = 0; i < Dim * Dim; i++) {
     Slater_inv[i] -= tmp2[i];
