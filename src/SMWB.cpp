@@ -5,12 +5,15 @@
 
 // Sherman-Morrison-Woodbury kernel 1
 // WB2, WB3, SM2 mixing scheme 1
-void SMWB1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-         double *Updates, unsigned int *Updates_index) {
+void SMWB1(double *Slater_inv, unsigned int Dim, unsigned int N_updates, double *Updates, unsigned int *Updates_index) {
            std::cerr << "Called Sherman-Morrison-Woodbury kernel 1 with " << N_updates << " updates" << std::endl;
-           WB3(Slater_inv, Dim, Updates, Updates_index);
-           WB2(Slater_inv, Dim, Updates, Updates_index);
-           SM2(Slater_inv, Dim, N_updates, Updates, Updates_index);
+
+           bool ok;
+           ok = WB2(Slater_inv, Dim, Updates, Updates_index);
+           if (!ok) {
+             std::cerr << "Woodbury kernel failed!" << std::endl;
+             SM2(Slater_inv, Dim, N_updates, Updates, Updates_index);
+           }
          }
 
 extern "C" {
