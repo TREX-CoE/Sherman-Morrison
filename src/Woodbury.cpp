@@ -19,12 +19,26 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
 
   // Construct V from Updates_index
   unsigned int V[2 * Dim]; // 2 x Dim matrix stored in row-major order
+  std::memset(V, 0, 2 * Dim * sizeof(unsigned int));
   V[Updates_index[0] - 1] = 1;
   V[Dim + Updates_index[1] - 1] = 1;
+
+  showMatrix2(Slater_inv, Dim, Dim, "Slater_inv");
+  showMatrix2(Updates, 2, Dim, "Updates");
+  showMatrix2(Updates_index, 1, 2, "Updates_index");
+  showMatrix2(V, 2, Dim, "V");
 
   // Compute C
   double C[2 * Dim];
   matMul2(Slater_inv, Updates, C, Dim, Dim, 2);
+
+  int A[6] = {1,2,3,4,5,6};
+  int Y[12] = {7,8,9,10,11,12,13,14,15,16,17,18};
+  int Z[8] = {0,0,0,0,0,0,0,0};
+  matMul2(A,Y,Z,2,3,4);
+  showMatrix2(Z, 2,4,"Z");
+
+  showMatrix2(C, 2, Dim, "C = S_inv * Updates");
   // Compute B
   double B[4];
   matMul2(V, C, B, 2, Dim, 2);

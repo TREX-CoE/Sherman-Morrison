@@ -117,7 +117,7 @@ template <typename T> void matMul(T *A, T *B, T *C, unsigned int M) {
 }
 
 template <typename T1, typename T2, typename T3>
-static inline void matMul2(T1 *A, T2 *B, T3 *C, unsigned int M, unsigned int N, unsigned int P) {
+void matMul2(T1 *A, T2 *B, T3 *C, unsigned int M, unsigned int N, unsigned int P) {
   for(unsigned int i = 0; i < M; i++) {
     for(unsigned int j = 0; j < P; j++) {
       C[i * P + j] = 0;
