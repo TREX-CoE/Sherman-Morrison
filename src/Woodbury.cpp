@@ -1,13 +1,15 @@
-// Woodbury.cpp
-// Woodbury 2x2 and 3x3 kernels
-//
-// Woodbury matrix identity:
-// (S + U * V)^{-1} = S^{-1} - S^{-1} * U * B^{-1} * V * S^{-1}
-// B := 1 + V * C,  2 x 2
-// C := S^{-1} * U, dim x 2
-// D := V * S^{-1}, 2 x dim
-//
-// All matrices are stored in row-major order
+/*  Woodbury.cpp
+    Woodbury 2x2 and 3x3 kernels
+
+    Woodbury matrix identity:
+
+    (S + U V)^{-1}  =  S^{-1} - C B^{-1} D
+
+    C := S^{-1} U,    dim x 2
+    B := 1 + V C,     2 x 2
+    D := V S^{-1},    2 x dim
+
+    All matrices are stored in row-major order */
 
 #include "Woodbury.hpp"
 #include "Helpers.hpp"
@@ -23,30 +25,29 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   V[Updates_index[0] - 1] = 1;
   V[Dim + Updates_index[1] - 1] = 1;
 
-  showMatrix2(Slater_inv, Dim, Dim, "Slater_inv");
-  showMatrix2(Updates, 2, Dim, "Updates");
-  showMatrix2(Updates_index, 1, 2, "Updates_index");
-  showMatrix2(V, 2, Dim, "V");
-
-  // Compute C
+  // Compute C = S_inv U  !! NON-STANDARD MATRIX MULTIPLICATION BECAUSE 
+  // OF LAYOUT OF 'Updates' !!
   double C[2 * Dim];
-  matMul2(Slater_inv, Updates, C, Dim, Dim, 2);
+  for(unsigned int i = 0; i < Dim; i++) {
+    for(unsigned int j = 0; j < 2; j++) {
+      C[i * 2 + j] = 0;
+      for(unsigned int k = 0; k < Dim; k++) {
+        C[i * 2 + j] += Slater_inv[i * Dim + k] * Updates[4 * j + k];
+      }
+    }
+  }
 
-  int A[6] = {1,2,3,4,5,6};
-  int Y[12] = {7,8,9,10,11,12,13,14,15,16,17,18};
-  int Z[8] = {0,0,0,0,0,0,0,0};
-  matMul2(A,Y,Z,2,3,4);
-  showMatrix2(Z, 2,4,"Z");
+  // Compute D = V x S^{-1}
+  double D[2 * Dim];
+  matMul2(V, Slater_inv, D, 2, Dim, Dim);
 
-  showMatrix2(C, 2, Dim, "C = S_inv * Updates");
-  // Compute B
+  // Compute B = 1 + V C
   double B[4];
   matMul2(V, C, B, 2, Dim, 2);
-  // Compute 1 + B
   B[0] += 1;
   B[3] += 1;
 
-  // Invert 1 + B with explicit formula for 2x2 inversion
+  // Compute B^{-1} with explicit formula for 2x2 inversion
   double idet = 1.0 / (B[0] * B[3] - B[1] * B[2]);
   double Binv[4];
   Binv[0] = idet * B[3];
@@ -61,16 +62,19 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
     return false;
   }
 
-  // Compute (S + U * V)^{-1} with Woobury identity
-  double D[2 * Dim];
-  matMul2(V, Slater_inv, D, 2, Dim, Dim);
+  // Compute B^{-1} x D
   double tmp[2 * Dim];
   matMul2(Binv, D, tmp, 2, 2, Dim);
+
+  // Compute C x B^{-1} x D
   double tmp2[Dim * Dim];
   matMul2(C, tmp, tmp2, Dim, 2, Dim);
+
+  // Compute (S + U V)^{-1} = S^{-1} - C B^{-1} D
   for (unsigned int i = 0; i < Dim * Dim; i++) {
     Slater_inv[i] -= tmp2[i];
   }
+
   return true;
 }
 
