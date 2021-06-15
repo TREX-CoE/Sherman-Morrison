@@ -3,6 +3,10 @@ unset THRESHOLD
 unset MKL
 ENV=$1
 
+echo
+echo "Sherman-Morrison-Woodbury parameters"
+echo "------------------------------------"
+
 ## Set Sherman-Morrison root dir
 PWD=$(pwd)
 SRCDIR=$(dirname $BASH_SOURCE)

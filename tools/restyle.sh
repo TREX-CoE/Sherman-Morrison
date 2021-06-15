@@ -9,7 +9,7 @@ then
 	exit 1
 fi
 
-for ext in c cpp h hpp
+for ext in c cc cpp h hpp
 do
     find $SMROOT -type f -iname "*.${ext}" -exec echo "$FORMATER $STYLE" {} \;
 done

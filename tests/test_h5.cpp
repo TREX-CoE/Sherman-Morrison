@@ -1,9 +1,10 @@
 #include "hdf5/serial/H5Cpp.h"
 #include "hdf5/serial/hdf5.h"
 
-#include "SM_Helpers.hpp"
+#include "Helpers.hpp"
 #include "SM_Maponi.hpp"
 #include "SM_Standard.hpp"
+#include "SMWB.hpp"
 
 using namespace H5;
 // #define DEBUG
@@ -81,6 +82,8 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     SM3(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "sm4") {
     SM4(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "smwb1") {
+    SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
 #ifdef MKL
   } else if (version == "lapack") {
     memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));

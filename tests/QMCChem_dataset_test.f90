@@ -33,15 +33,15 @@ program QMCChem_dataset_test
     close(2000)
     close(3000)
 
-    !! Write Updates to file to check
-    open(unit = 2000, file = "Updates.dat")
-    do i=1,dim
-        do j=1,n_updates
-            write(2000,"(E23.15, 1X)", advance="no") Updates(i,j)
-        end do
-        write(2000,*)
-    end do
-    close(2000)
+    ! !! Write Updates to file to check
+    ! open(unit = 2000, file = "Updates.dat")
+    ! do i=1,dim
+    !     do j=1,n_updates
+    !         write(2000,"(E23.15, 1X)", advance="no") Updates(i,j)
+    !     end do
+    !     write(2000,*)
+    ! end do
+    ! close(2000)
 
     !! Update S & transform replacement updates 'Updates'
     !! into additive updates 'U' to compute the inverse
@@ -52,6 +52,16 @@ program QMCChem_dataset_test
             S(i,col) = Updates(i,j)
         end do
     end do
+
+    !! Write Updates to file to check
+    open(unit = 2000, file = "Updates.dat")
+    do i=1,dim
+        do j=1,n_updates
+            write(2000,"(E23.15, 1X)", advance="no") U(i,j)
+        end do
+        write(2000,*)
+    end do
+    close(2000)
 
     !! Update S_inv
     !! S_inv needs to be transposed first before it

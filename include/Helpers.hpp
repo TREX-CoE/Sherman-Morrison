@@ -1,4 +1,4 @@
-// SM_Helpers.hpp
+// Helpers.hpp
 // Some usefull helper functions to support the Maponi algorithm.
 #include <cmath>
 #include <cstring>
@@ -56,6 +56,25 @@ void showMatrix(T *matrix, unsigned int M, std::string name) {
   std::cout << std::endl;
 }
 
+template <typename T>
+void showMatrix2(T *matrix, unsigned int M, unsigned int N, std::string name) {
+  std::cout.precision(17);
+  std::cout << name << " = [" << std::endl;
+  for (unsigned int i = 0; i < M; i++) {
+    std::cout << "[";
+    for (unsigned int j = 0; j < N; j++) {
+      if (matrix[i * N + j] >= 0) {
+        std::cout << "  " << matrix[i * N + j] << ",";
+      } else {
+        std::cout << " " << matrix[i * N + j] << ",";
+      }
+    }
+    std::cout << " ]," << std::endl;
+  }
+  std::cout << "]" << std::endl;
+  std::cout << std::endl;
+}
+
 template <typename T> T *transpose(T *A, unsigned int M) {
   T *B = new T[M * M];
   for (unsigned int i = 0; i < M; i++) {
@@ -72,6 +91,18 @@ template <typename T> void matMul(T *A, T *B, T *C, unsigned int M) {
     for (unsigned int j = 0; j < M; j++) {
       for (unsigned int k = 0; k < M; k++) {
         C[i * M + j] += A[i * M + k] * B[k * M + j];
+      }
+    }
+  }
+}
+
+template <typename T1, typename T2, typename T3>
+void matMul2(T1 *A, T2 *B, T3 *C, unsigned int M, unsigned int N, unsigned int P) {
+  for(unsigned int i = 0; i < M; i++) {
+    for(unsigned int j = 0; j < P; j++) {
+      C[i * P + j] = 0;
+      for(unsigned int k = 0; k < N; k++) {
+        C[i * P + j] += A[i * N + k] * B[k * P + j];
       }
     }
   }
