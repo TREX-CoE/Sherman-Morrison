@@ -29,7 +29,9 @@ FFLAGS = $(CXXFLAGS)
 INCLUDE = -I $(INC_DIR)/
 DEPS_CXX = $(OBJ_DIR)/SM_Maponi.o \
 		   $(OBJ_DIR)/SM_Standard.o \
-		   $(OBJ_DIR)/SM_Helpers.o
+		   $(OBJ_DIR)/Woodbury.o \
+		   $(OBJ_DIR)/SMWB.o \
+		   $(OBJ_DIR)/Helpers.o
 DEPS_F = $(DEPS_CXX) \
 		 $(OBJ_DIR)/finterface_mod.o \
 		 $(OBJ_DIR)/helpers_mod.o
