@@ -52,8 +52,6 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   showMatrix(slater_inverse, dim, "OLD Inverse");
 #endif
 
-  showMatrix2(slater_matrix, dim, dim, "Slater");
-  
   // Transform replacement updates in 'updates[]' into additive updates in 'u[]'
   for (j = 0; j < nupdates; j++) {
     for (i = 0; i < dim; i++) {
