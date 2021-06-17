@@ -20,7 +20,7 @@ ifeq ($(MKL),-DMKL)
 	ifeq ($(ENV),INTEL)
 		LFLAGS = -mkl=sequential # implicit
 	else
-		LFLAGS = $(H5LFLAGS)
+		LFLAGS = $(H5LFLAGS) -lvfc_probes
 	endif
 endif
 H5CXXFLAGS = $(CXXFLAGS)
