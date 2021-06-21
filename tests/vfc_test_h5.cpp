@@ -150,26 +150,33 @@ int test_cycle(H5File file, int cycle, std::string version,
 }
 
 int main(int argc, char **argv) {
-  if (argc != 3) {
+  if (argc != 2) {
     std::cerr << "Execute from within '/'" << std::endl;
-    std::cerr << "usage: test_h5 <version> <path to cycles file>" << std::endl;
+    std::cerr << "usage: vfc_test_h5 <path to cycles file>" << std::endl;
     return 1;
   }
-  std::string version(argv[1]);
-  std::vector<int> cycles_list = get_cycles_list(argv[2]);
+  std::vector<int> cycles_list = get_cycles_list(argv[1]);
   H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
   vfc_probes probes = vfc_init_probes();
   probes = vfc_init_probes();
 
+  std::vector<std::string> versions = {"maponia3", "sm1", "sm2", "sm3", "sm4"};
+
   bool ok;
   for (int i = 0; i < cycles_list.size(); i++) {
-    ok = test_cycle(file, cycles_list[i], version, &probes);
-    if (ok) {
-      std::cout << "ok -- cycle " << std::to_string(i) << std::endl;
-    } else {
-      std::cerr << "failed -- cycle " << std::to_string(i) << std::endl;
+
+    for(const auto& version: versions) {
+
+      ok = test_cycle(file, cycles_list[i], version, &probes);
+      if (ok) {
+        std::cout << "ok -- cycle " << std::to_string(i) << std::endl;
+      } else {
+        std::cerr << "failed -- cycle " << std::to_string(i) << std::endl;
+      }
+
     }
+
   }
 
   vfc_dump_probes(&probes);
