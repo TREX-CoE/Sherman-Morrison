@@ -40,7 +40,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
   // Calculate the {y_{0,k}}
   for (k = 1; k < N_updates + 1; k++) {
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "Compute y0k: " << std::endl;
     std::cerr << "ylk[0][" << k << "][:]";
     std::cerr << std::endl;
@@ -51,14 +51,14 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
                         Updates[(k - 1) * Dim + (j - 1)];
       }
     }
-#ifdef DEBUG
+#ifdef DEBUG2
     showVector(ylk[0][k], Dim, "");
 #endif
   }
 
   // Calculate the {y_{l,k}} from the {y_{0,k}}
   for (l = 0; l < N_updates; l++) {
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "In outer compute-ylk-loop: l = " << l << std::endl;
     std::cerr << std::endl;
 #endif
@@ -69,7 +69,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Select component and comp. bd-condition.
     component = Updates_index[p[l + 1] - 1];
     beta = 1 + ylk[l][p[l + 1]][component];
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "p[l+1] = " << p[l + 1] << std::endl;
     std::cerr << "component = " << component << std::endl;
     std::cerr << "beta = 1 + ylk[" << l << "][" << p[l + 1] << "][" << component
@@ -83,7 +83,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     double ibeta = 1.0 / beta;
 
 // Compute intermediate update to Slater_inv
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "Compute intermediate update to Slater_inv" << std::endl;
     std::cerr << "component = " << component << std::endl;
     std::cerr << "beta = 1 + ylk[" << l << "][" << p[l + 1] << "][" << component
@@ -102,14 +102,14 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     tmp = next;
     next = last;
     last = tmp;
-#ifdef DEBUG
+#ifdef DEBUG2
     showMatrix(last, Dim, "last");
 #endif
 
     // For given l != 0 compute the next {y_{l,k}}
     for (k = l + 2; k < N_updates + 1; k++) {
       alpha = ylk[l][p[k]][component] * ibeta;
-#ifdef DEBUG
+#ifdef DEBUG2
       std::cerr << "Inside k-loop: k = " << k << std::endl;
       std::cerr << "ylk[" << l + 1 << "][" << p[k] << "][:]" << std::endl;
       std::cerr << std::endl;
@@ -172,7 +172,7 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
   // Calculate the y_{0,k}  = S_0^{-1} u_k
   for (k = 1; k < N_updates + 1; k++) {
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "Compute y0k: " << std::endl;
     std::cerr << "ylk[0][" << k << "][:]";
     std::cerr << std::endl;
@@ -183,14 +183,14 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
                         Updates[(k - 1) * Dim + (j - 1)];
       }
     }
-#ifdef DEBUG
+#ifdef DEBUG2
     showVector(ylk[0][k], Dim + 1, "");
 #endif
   }
 
   // Calculate the {y_{l,k}} from the {y_{0,k}}
   for (l = 0; l < N_updates; l++) {
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "In outer compute-ylk-loop: l = " << l << std::endl;
     std::cerr << std::endl;
 #endif
@@ -201,7 +201,7 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Select component and comp. bd-condition.
     component = Updates_index[p[l + 1] - 1];
     beta = 1 + ylk[l][p[l + 1]][component];
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "p[l+1] = " << p[l + 1] << std::endl;
     std::cerr << "component = " << component << std::endl;
     std::cerr << "beta = 1 + ylk[" << l << "][" << p[l + 1] << "][" << component
@@ -222,7 +222,7 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     double ibeta = 1.0 / beta;
 
 // Compute intermediate update to Slater_inv
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cerr << "Compute intermediate update to Slater_inv" << std::endl;
     std::cerr << "component = " << component << std::endl;
     std::cerr << "beta = 1 + ylk[" << l << "][" << p[l + 1] << "][" << component
@@ -241,14 +241,14 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     tmp = next;
     next = last;
     last = tmp;
-#ifdef DEBUG
+#ifdef DEBUG2
     showMatrix(last, Dim, "last");
 #endif
 
     // For given l != 0 compute the next {y_{l,k}}
     for (k = l + 2; k < N_updates + 1; k++) {
       alpha = ylk[l][p[k]][component] * ibeta;
-#ifdef DEBUG
+#ifdef DEBUG2
       std::cerr << "Inside k-loop: k = " << k << std::endl;
       std::cerr << "ylk[" << l + 1 << "][" << p[k] << "][:]";
       std::cerr << std::endl;

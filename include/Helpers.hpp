@@ -7,6 +7,7 @@
 #ifdef MKL
 #include <mkl_lapacke.h>
 #endif
+
 // #define DEBUG
 
 #ifndef THRESHOLD
@@ -275,3 +276,38 @@ template <typename T> T residual2(T * A, unsigned int Dim) {
   }
   return res;
 }
+
+// Computes the condition number of A using a previously computed B=A^{-1}
+template <typename T> T condition1(T *A, T *B, unsigned int Dim) {
+  T resA = 0;
+  T resB = 0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      T deltaA = A[i * Dim + j];
+      T deltaB = B[i * Dim + j];
+      resA += deltaA * deltaA;
+      resB += deltaB * deltaB;
+    }
+  }
+  return sqrt(resA * resB);
+}
+
+#ifdef MKL
+// Computes the condition number of A by first inverting it with LAPACKE
+template <typename T> T condition2(T *A, unsigned int Dim) {
+  T B[Dim * Dim];
+  std::memcpy(B, A, Dim * Dim * sizeof(T));
+  inverse(B, Dim);
+  T resA = 0;
+  T resB = 0;
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      T deltaA = A[i * Dim + j];
+      T deltaB = B[i * Dim + j];
+      resA += deltaA * deltaA;
+      resB += deltaB * deltaB;
+    }
+  }
+  return sqrt(resA) * sqrt(resB);
+}
+#endif

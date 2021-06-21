@@ -7,7 +7,7 @@
 ## Call: $ ./run_test.sh <{sm1|sm2|sm3|maponia3}> <start cycle> <stop cycle>
 ## Example: ./run_test.sh sm2 1 500
 
-TEST=test_h5
+TEST=test_h5.O2
 ALGO=$1
 START=$2
 STOP=$3

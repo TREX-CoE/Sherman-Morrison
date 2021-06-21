@@ -3,7 +3,7 @@
 // Set common break-down threshold
 double threshold() {
   const double threshold = THRESHOLD;
-#ifdef DEBUG
+#ifdef DEBUG2
   std::cerr << "Break-down threshold set to: " << threshold << std::endl;
 #endif
   return threshold;
@@ -26,7 +26,7 @@ void selectLargestDenominator(unsigned int l, unsigned int N_updates,
     index = p[j];
     component = Updates_index[index - 1];
     breakdown = std::fabs(1 + ylk[l][index][component]);
-#ifdef DEBUG
+#ifdef DEBUG2
     std::cout << "Inside selectLargestDenominator()" << std::endl;
     std::cout << "breakdown = fabs(1 + ylk[" << l << "][" << index << "]["
               << component << "]) = " << breakdown << std::endl;
