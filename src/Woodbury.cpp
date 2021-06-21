@@ -18,7 +18,9 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
       B := 1 + V * C,     2 x 2
       D := V * S^{-1},    2 x dim
   */
+ #ifdef DEBUG1
   std::cerr << "Called Woodbury 2x2 kernel" << std::endl;
+#endif
 
   // Construct V from Updates_index
   unsigned int V[2 * Dim]; // 2 x Dim matrix stored in row-major order
@@ -59,7 +61,10 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   // Check if determinant of inverted matrix is not zero
   double det = Binv[0] * Binv[3] - Binv[1] * Binv[2];
   if (std::fabs(det) < threshold()) {
-    std::cerr << "Determinant approaching 0!" << std::endl;
+#ifdef DEBUG1
+    std::cerr << "Determinant too close to zero!" << std::endl;
+    std::cerr << "Determinant = " << det << std::endl;
+#endif
     return false;
   }
 
@@ -87,9 +92,10 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
       B := 1 + V * C,     3 x 3
       D := V * S^{-1},    3 x dim
   */
+#ifdef DEBUG1
   std::cerr << "Called Woodbury 3x3 kernel" << std::endl;
-
-#ifdef DEBUG
+#endif
+#ifdef DEBUG2
   showMatrix2(Slater_inv, Dim, Dim, "Slater_inv BEFORE update");
   showMatrix2(Updates, 3, Dim, "Updates");
   showMatrix2(Updates_index, 1, 3, "Updates_index");
@@ -102,7 +108,7 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   V[Dim + Updates_index[1] - 1] = 1;
   V[2 * Dim + Updates_index[2] - 1] = 1;
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix2(V, 3, Dim, "V");
 #endif
 
@@ -118,14 +124,14 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
     }
   }
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix2(C, Dim, 3, "C = S_inv * U");
 #endif
   // Compute D = V * S^{-1}
   double D[3 * Dim];
   matMul2(V, Slater_inv, D, 3, Dim, Dim);
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix2(D, 3, Dim, "D = V * S_inv");
 #endif
 
@@ -136,7 +142,7 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   B[4] += 1;
   B[8] += 1;
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix2(B, 3, 3, "B = 1 + V * C");
 #endif
 
@@ -147,7 +153,7 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
         B[2] * (B[3] * B[7] - B[4] * B[6]);
   idet = 1.0 / det;
 
-#ifdef DEBUG 
+#ifdef DEBUG2 
   std::cerr << "Determinant of B = " << det << std::endl;
 #endif
 
@@ -161,7 +167,8 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   Binv[7] = - ( B[0] * B[7] - B[6] * B[1] ) * idet;
   Binv[8] =   ( B[0] * B[4] - B[3] * B[1] ) * idet;
 
-#ifdef DEBUG
+#ifdef DEBUG2
+  std::cerr << "Conditioning number of B = " << condition1(B, Binv, 3) << std::endl;
   showMatrix2(Binv, 3, 3, "Binv");
 #endif
 
@@ -171,12 +178,15 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
         Binv[1] * (Binv[3] * Binv[8] - Binv[5] * Binv[6]) +
         Binv[2] * (Binv[3] * Binv[7] - Binv[4] * Binv[6]);
 
-#ifdef DEBUG
+#ifdef DEBUG2
   std::cerr << "Determinant of Binv = " << det << std::endl;
 #endif
 
   if (std::fabs(det) < threshold()) {
-    std::cerr << "Determinant approached 0!" << std::endl;
+#ifdef DEBUG1
+    std::cerr << "Determinant too close to zero!" << std::endl;
+    std::cerr << "Determinant = " << det << std::endl;
+#endif
     return false;
   }
 
@@ -184,7 +194,7 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   double tmp[3 * Dim];
   matMul2(Binv, D, tmp, 3, 3, Dim);
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix2(tmp, 3, Dim, "tmp = Binv * D");
 #endif
 
@@ -192,7 +202,7 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   double tmp2[Dim * Dim];
   matMul2(C, tmp, tmp2, Dim, 3, Dim);
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix2(tmp2, Dim, Dim, "tmp2 = C * tmp");
 #endif
 
@@ -201,7 +211,7 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
     Slater_inv[i] -= tmp2[i];
   }
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix2(Slater_inv, Dim, Dim, "Slater_inv AFTER update");
 #endif
   return true;

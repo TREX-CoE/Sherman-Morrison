@@ -7,6 +7,7 @@
 #include "SMWB.hpp"
 
 using namespace H5;
+
 // #define DEBUG
 
 const H5std_string FILE_NAME("dataset.hdf5");
@@ -48,7 +49,7 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   double *u = new double[nupdates * dim];
 
   /* Test */
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix(slater_inverse, dim, "OLD Inverse");
 #endif
 
@@ -62,11 +63,11 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     }
   }
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix(slater_matrix, dim, "OLD Slater");
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix(u, dim, "Updates");
 #endif
 
@@ -84,6 +85,12 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     SM4(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "smwb1") {
     SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "smwb2") {
+    SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "smwb3") {
+    SMWB3(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "smwb4") {
+    SMWB4(slater_inverse, dim, nupdates, u, col_update_index);
 #ifdef MKL
   } else if (version == "lapack") {
     memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));
@@ -94,11 +101,11 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     exit(1);
   }
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix(slater_matrix, dim, "NEW Slater");
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix(slater_inverse, dim, "NEW Inverse");
 #endif
 
@@ -124,7 +131,7 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   std::cout << "Residual = " << version << " " << cycle << " " << res_max << " "
             << res2 << std::endl;
 
-#ifdef DEBUG
+#ifdef DEBUG2
   showMatrix(res, dim, "Result");
 #endif
 

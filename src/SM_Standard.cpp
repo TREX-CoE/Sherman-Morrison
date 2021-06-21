@@ -6,7 +6,10 @@
 // Naïve Sherman Morrison
 void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
+#ifdef DEBUG1
   std::cerr << "Called SM1 with " << N_updates << " updates" << std::endl;
+#endif
+
   double C[Dim];
   double D[Dim];
 
@@ -50,7 +53,9 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // http://hdl.handle.net/10919/52966
 void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
+#ifdef DEBUG1
   std::cerr << "Called SM2 with " << N_updates << " updates" << std::endl;
+#endif
   double C[Dim];
   double D[Dim];
 
@@ -72,8 +77,11 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (std::fabs(den) < threshold()) {
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
+      std::cerr << "Denominator = " << den << std::endl;
+#endif
 
       // U_l = U_l / 2 (do the split)
       for (unsigned int i = 0; i < Dim; i++) {
