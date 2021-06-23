@@ -4,7 +4,14 @@
 #include "Helpers.hpp"
 #include "SM_Maponi.hpp"
 #include "SM_Standard.hpp"
+#include "Woodbury.hpp"
 #include "SMWB.hpp"
+
+// #define PERF
+
+#ifdef PERF
+unsigned int repetition_number;
+#endif
 
 using namespace H5;
 
@@ -71,6 +78,48 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   showMatrix(u, dim, "Updates");
 #endif
 
+#ifdef PERF
+  std::cout << "# of reps. = " << repetition_number << std::endl;
+  double *slater_inverse_nonpersistent = new double[dim * dim];
+  for (unsigned int i = 0; i < repetition_number; i++) {
+    std::memcpy(slater_inverse_nonpersistent, slater_inverse, dim * dim * sizeof(double));
+    if (version == "maponia3") {
+      MaponiA3(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "maponia3s") {
+      MaponiA3S(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "sm1") {
+      SM1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "sm2") {
+      SM2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "sm3") {
+      SM3(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "sm4") {
+      SM4(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "wb2") {
+      WB2(slater_inverse_nonpersistent, dim, u, col_update_index);
+    } else if (version == "wb3") {
+      WB3(slater_inverse_nonpersistent, dim, u, col_update_index);
+    } else if (version == "smwb1") {
+      SMWB1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "smwb2") {
+      SMWB2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "smwb3") {
+      SMWB3(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+    } else if (version == "smwb4") {
+      SMWB4(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+#ifdef MKL
+    } else if (version == "lapack") {
+      memcpy(slater_inverse_nonpersistent, slater_matrix, dim * dim * sizeof(double));
+      inverse(slater_inverse_nonpersistent, dim);
+#endif // MKL
+    } else {
+      std::cerr << "Unknown version " << version << std::endl;
+      exit(1);
+    }
+  }
+  std::memcpy(slater_inverse, slater_inverse_nonpersistent, dim * dim * sizeof(double));
+  delete[] slater_inverse_nonpersistent;
+#else
   if (version == "maponia3") {
     MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "maponia3s") {
@@ -83,6 +132,10 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     SM3(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "sm4") {
     SM4(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "wb2") {
+    WB2(slater_inverse, dim, u, col_update_index);
+  } else if (version == "wb3") {
+    WB3(slater_inverse, dim, u, col_update_index);
   } else if (version == "smwb1") {
     SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "smwb2") {
@@ -95,11 +148,12 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   } else if (version == "lapack") {
     memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));
     inverse(slater_inverse, dim);
-#endif
+#endif // MKL
   } else {
     std::cerr << "Unknown version " << version << std::endl;
     exit(1);
   }
+#endif // PERF
 
 #ifdef DEBUG2
   showMatrix(slater_matrix, dim, "NEW Slater");
@@ -112,22 +166,9 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   double *res = new double[dim * dim]{0};
   matMul(slater_matrix, slater_inverse, res, dim);
   bool ok = is_identity(res, dim, tolerance);
-
   double res_max = residual_max(res, dim);
   double res2 = residual_frobenius2(res, dim);
-  // double det;
-  // double **tmp = new double *[dim];
-  // for (int i = 0; i < dim; i++) {
-  //   tmp[i] = new double[dim];
-  //   for (int j = 0; j < dim; j++) {
-  //     tmp[i][j] = res[i * dim + j];
-  //   }
-  // }
-  // det = determinant(tmp, dim);
-  // delete[] tmp;
-  // std::cout << "Residual = " << version << " " << cycle << " " << res_max <<
-  // " "
-  //           << res2 << " " << det << std::endl;
+
   std::cout << "Residual = " << version << " " << cycle << " " << res_max << " "
             << res2 << std::endl;
 
@@ -141,7 +182,11 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
 }
 
 int main(int argc, char **argv) {
+#ifdef PERF
+  if (argc != 6) {
+#else
   if (argc != 5) {
+#endif    
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
         << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance>"
@@ -153,6 +198,10 @@ int main(int argc, char **argv) {
   int stop_cycle = std::stoi(argv[3]);
   double tolerance = std::stod(argv[4]);
   H5File file(FILE_NAME, H5F_ACC_RDONLY);
+
+#ifdef PERF
+  repetition_number = std::stoi(argv[5]);
+#endif
 
   bool ok;
   for (int cycle = start_cycle; cycle < stop_cycle + 1; cycle++) {
