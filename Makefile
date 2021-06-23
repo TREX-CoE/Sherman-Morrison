@@ -4,7 +4,7 @@ ifeq ($(ENV),INTEL)
 	FC = ifort
 	ARCH = -xCORE-AVX2
 	OPT = -O2
-	DEBUG = -debug full
+	DEBUG = -g -debug full
 else ifeq ($(ENV),LLVM)
 	CXX = clang++
 	FC = flang
