@@ -7,7 +7,7 @@
 #include "Woodbury.hpp"
 #include "SMWB.hpp"
 
-// #define PERF
+#define PERF
 
 #ifdef PERF
 unsigned int repetition_number;

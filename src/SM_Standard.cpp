@@ -56,6 +56,7 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 #ifdef DEBUG1
   std::cerr << "Called SM2 with " << N_updates << " updates" << std::endl;
 #endif
+
   double C[Dim];
   double D[Dim];
 
@@ -118,7 +119,10 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // Sherman Morrison, leaving zero denominators for later
 void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
+#ifdef DEBUG1
   std::cerr << "Called SM3 with " << N_updates << " updates" << std::endl;
+#endif
+
   double C[Dim];
   double D[Dim];
 
@@ -185,7 +189,10 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // (SM2)
 void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
+#ifdef DEBUG1           
   std::cerr << "Called SM4 with " << N_updates << " updates" << std::endl;
+#endif
+
   double C[Dim];
   double D[Dim];
 
