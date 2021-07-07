@@ -10,6 +10,9 @@
 #include "Woodbury.hpp"
 #include "Helpers.hpp"
 
+// #define DEBUG1
+// #define DEBUG2
+
 // Woodbury 2x2 kernel
 bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
          unsigned int *Updates_index) {
@@ -18,7 +21,7 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
       B := 1 + V * C,     2 x 2
       D := V * S^{-1},    2 x dim
   */
- #ifdef DEBUG1
+#ifdef DEBUG1
   std::cerr << "Called Woodbury 2x2 kernel" << std::endl;
 #endif
 
@@ -43,7 +46,6 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
       }
     }
   }
-  // matMul2(Updates, Slater_inv, C, 2, Dim, Dim);
 
   // Compute B = 1 + V * C
   double B[4];
@@ -53,23 +55,22 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   B[3] = C[row2 * 2 + 1];
   B[0] += 1, B[3] += 1;
 
-  // Compute B^{-1} with explicit formula for 2x2 inversion
-  double idet = 1.0 / (B[0] * B[3] - B[1] * B[2]);
-  double Binv[4];
-  Binv[0] = idet * B[3];
-  Binv[1] = -1.0 * idet * B[1];
-  Binv[2] = -1.0 * idet * B[2];
-  Binv[3] = idet * B[0];
-
   // Check if determinant of inverted matrix is not zero
-  double det = Binv[0] * Binv[3] - Binv[1] * Binv[2];
+  double det = B[0] * B[3] - B[1] * B[2];
   if (std::fabs(det) < threshold()) {
+    std::cerr << "Determinant too close to zero! No inverse found." << std::endl;
 #ifdef DEBUG1
-    std::cerr << "Determinant too close to zero!" << std::endl;
     std::cerr << "Determinant = " << det << std::endl;
 #endif
     return false;
   }
+
+  // Compute B^{-1} with explicit formula for 2x2 inversion
+  double Binv[4], idet = 1.0 / det;
+  Binv[0] = idet * B[3];
+  Binv[1] = -1.0 * idet * B[1];
+  Binv[2] = -1.0 * idet * B[2];
+  Binv[3] = idet * B[0];
 
   // Compute B^{-1} x D
   double tmp[2 * Dim];
@@ -127,7 +128,6 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
       }
     }
   }
-  // matMul2(Updates, Slater_inv, C, 2, Dim, Dim);
 
 #ifdef DEBUG2
   showMatrix2(C, Dim, 3, "C = S_inv * U");
@@ -154,17 +154,25 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   showMatrix2(B, 3, 3, "B = 1 + V * C");
 #endif
 
-  // Compute B^{-1} with explicit formula for 3x3 inversion
-  double Binv[9], det, idet;
+  // Check if determinant of B is not too close to zero
+  double det;
   det = B[0] * (B[4] * B[8] - B[5] * B[7]) -
         B[1] * (B[3] * B[8] - B[5] * B[6]) +
         B[2] * (B[3] * B[7] - B[4] * B[6]);
-  idet = 1.0 / det;
-
 #ifdef DEBUG2 
   std::cerr << "Determinant of B = " << det << std::endl;
 #endif
+  if (std::fabs(det) < threshold()) {
+  // if (std::fabs(det) < 1000000) {
+    std::cerr << "Determinant too close to zero! No inverse found." << std::endl;
+#ifdef DEBUG1
+    std::cerr << "Determinant = " << det << std::endl;
+#endif
+    return false;
+  }
 
+  // Compute B^{-1} with explicit formula for 3x3 inversion
+  double Binv[9], idet = 1.0 / det;
   Binv[0] =   ( B[4] * B[8] - B[7] * B[5] ) * idet;
   Binv[1] = - ( B[1] * B[8] - B[7] * B[2] ) * idet;
   Binv[2] =   ( B[1] * B[5] - B[4] * B[2] ) * idet;
@@ -179,24 +187,6 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   std::cerr << "Conditioning number of B = " << condition1(B, Binv, 3) << std::endl;
   showMatrix2(Binv, 3, 3, "Binv");
 #endif
-
-  // Check if determinant of inverted matrix is not zero
-  // double det;
-  det = Binv[0] * (Binv[4] * Binv[8] - Binv[5] * Binv[7]) -
-        Binv[1] * (Binv[3] * Binv[8] - Binv[5] * Binv[6]) +
-        Binv[2] * (Binv[3] * Binv[7] - Binv[4] * Binv[6]);
-
-#ifdef DEBUG2
-  std::cerr << "Determinant of Binv = " << det << std::endl;
-#endif
-
-  if (std::fabs(det) < threshold()) {
-#ifdef DEBUG1
-    std::cerr << "Determinant too close to zero!" << std::endl;
-    std::cerr << "Determinant = " << det << std::endl;
-#endif
-    return false;
-  }
 
   // Compute B^{-1} x D
   double tmp[3 * Dim];

@@ -7,6 +7,9 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index);
 
+void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
+         double *Updates, unsigned int *Updates_index, double *later_updates, unsigned int* later_index, unsigned int *later);
+
 // Sherman Morrison, leaving zero denominators for later
 void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index);
