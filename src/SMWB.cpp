@@ -179,7 +179,7 @@ void SMWB1(double *Slater_inv, unsigned int Dim, unsigned int N_updates, double 
 
 // Sherman-Morrison-Woodbury kernel 4
 // WB2, SM2 mixing scheme
-void SMWB4(double *Slater_inv, unsigned int Dim, unsigned int N_updates, double *Updates, unsigned int *Updates_index) {
+void SMWB4(double *Slater_inv, const unsigned int Dim, const unsigned int N_updates, double *Updates, unsigned int *Updates_index) {
 #ifdef DEBUG2
   std::cerr << "Called Sherman-Morrison-Woodbury kernel 1 with " << N_updates << " updates" << std::endl;
   showMatrix2(Updates_index, 1, N_updates, "Updates_index");

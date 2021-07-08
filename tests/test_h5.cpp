@@ -7,7 +7,7 @@
 #include "Woodbury.hpp"
 #include "SMWB.hpp"
 
-// #define PERF
+#define PERF
 
 #ifdef PERF
 unsigned int repetition_number;
@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
   if (argc != 6) {
 #else
   if (argc != 5) {
-#endif    
+#endif
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
         << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance>"
