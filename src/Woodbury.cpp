@@ -25,15 +25,8 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   std::cerr << "Called Woodbury 2x2 kernel" << std::endl;
 #endif
 
-  // Compute D = V.S^{-1}
-  double D[2 * Dim];
-  unsigned int row1, row2;
-  row1 = Updates_index[0] - 1;
-  row2 = Updates_index[1] - 1;
-  for (unsigned int i = 0; i < Dim; i++) {
-    D[i] = Slater_inv[row1 * Dim + i];
-    D[Dim + i] = Slater_inv[row2 * Dim + i];
-  }
+  const unsigned int row1 = (Updates_index[0] - 1);
+  const unsigned int row2 = (Updates_index[1] - 1);
 
   // Compute C = S_inv * U  !! NON-STANDARD MATRIX MULTIPLICATION BECAUSE 
   // OF LAYOUT OF 'Updates' !!
@@ -72,17 +65,21 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   Binv[2] = -1.0 * idet * B[2];
   Binv[3] = idet * B[0];
 
-  // Compute B^{-1} x D
+  // Compute tmp = B^{-1} x (V.S^{-1})
   double tmp[2 * Dim];
-  matMul2(Binv, D, tmp, 2, 2, Dim);
+  for(unsigned int i = 0; i < 2; i++) {
+    for(unsigned int j = 0; j < Dim; j++) {
+      tmp[i * Dim + j] = Binv[i * 2] * Slater_inv[row1*Dim + j];
+      tmp[i * Dim + j] += Binv[i * 2 + 1] * Slater_inv[row2*Dim + j];
+    }
+  }
 
-  // Compute C x B^{-1} x D
-  double tmp2[Dim * Dim];
-  matMul2(C, tmp, tmp2, Dim, 2, Dim);
-
-  // Compute (S + U V)^{-1} = S^{-1} - C B^{-1} D
-  for (unsigned int i = 0; i < Dim * Dim; i++) {
-    Slater_inv[i] -= tmp2[i];
+  // Compute (S + U V)^{-1} = S^{-1} - C x tmp
+  for(unsigned int i = 0; i < Dim; i++) {
+    for(unsigned int j = 0; j < Dim; j++) {
+      Slater_inv[i * Dim + j] -= C[i * 2 ] * tmp[j];
+      Slater_inv[i * Dim + j] -= C[i * 2 + 1] * tmp[Dim + j];
+    }
   }
 
   return true;
