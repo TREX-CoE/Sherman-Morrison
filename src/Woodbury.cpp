@@ -51,10 +51,10 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   // Check if determinant of inverted matrix is not zero
   double det = B[0] * B[3] - B[1] * B[2];
   if (std::fabs(det) < threshold()) {
+    #ifdef DEBUG1
     std::cerr << "Determinant too close to zero! No inverse found." << std::endl;
-#ifdef DEBUG1
     std::cerr << "Determinant = " << det << std::endl;
-#endif
+    #endif
     return false;
   }
 
@@ -160,11 +160,10 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   std::cerr << "Determinant of B = " << det << std::endl;
 #endif
   if (std::fabs(det) < threshold()) {
-  // if (std::fabs(det) < 1000000) {
+    #ifdef DEBUG1
     std::cerr << "Determinant too close to zero! No inverse found." << std::endl;
-#ifdef DEBUG1
     std::cerr << "Determinant = " << det << std::endl;
-#endif
+    #endif
     return false;
   }
 
