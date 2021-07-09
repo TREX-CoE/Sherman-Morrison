@@ -2,14 +2,14 @@
 ifeq ($(ENV),INTEL)
 	CXX = icpc
 	FC = ifort
-	ARCH = -xCORE-AVX2
-	OPT = -O2
+	ARCH = -march=native
+	OPT = -O3
 	DEBUG = -g -debug full
 else ifeq ($(ENV),LLVM)
 	CXX = clang++
 	FC = flang
-	ARCH =
-	OPT = -O0
+	ARCH = -march=native
+	OPT = -O3
 	DEBUG = -g
 else ifeq ($(ENV),GNU)
 	CXX = g++
@@ -58,6 +58,7 @@ BIN_DIR := bin
 
 EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/test_h5 \
+		$(BIN_DIR)/fnu_test_h5 \
 		$(BIN_DIR)/fMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/fMaponiA3_test_4x4_2 \
 		$(BIN_DIR)/QMCChem_dataset_test
@@ -109,6 +110,9 @@ $(BIN_DIR)/cMaponiA3_test_3x3_3: $(OBJ_DIR)/cMaponiA3_test_3x3_3.o $(DEPS_CXX) |
 	$(CXX) $(LFLAGS) -o $@ $^
 
 $(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
+	$(H5CXX) $(H5LFLAGS) -o $@ $^
+
+$(BIN_DIR)/fnu_test_h5: $(OBJ_DIR)/fnu_test_h5.o $(DEPS_CXX) | $(BIN_DIR)
 	$(H5CXX) $(H5LFLAGS) -o $@ $^
 
 $(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
