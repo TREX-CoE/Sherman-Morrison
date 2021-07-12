@@ -8,9 +8,9 @@
 // Naïve Sherman Morrison
 void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
-  #ifdef DEBUG1
+#ifdef DEBUG1
   std::cerr << "Called SM1 with " << N_updates << " updates" << std::endl;
-  #endif
+#endif
 
   double C[Dim];
   double D[Dim];
@@ -29,10 +29,10 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (std::fabs(den) < threshold()) {
-      #ifdef DEBUG1
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
-      #endif
+#endif
     }
     double iden = 1 / den;
 
@@ -57,9 +57,9 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // http://hdl.handle.net/10919/52966
 void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
-  #ifdef DEBUG1
+#ifdef DEBUG1
   std::cerr << "Called SM2 with " << N_updates << " updates" << std::endl;
-  #endif
+#endif
 
   double later_updates[Dim * N_updates];
   unsigned int later_index[N_updates];
@@ -82,11 +82,11 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (std::fabs(den) < threshold()) {
-      #ifdef DEBUG1
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
       std::cerr << "Denominator = " << den << std::endl;
-      #endif
+#endif
 
       // U_l = U_l / 2 (do the split)
       for (unsigned int i = 0; i < Dim; i++) {
@@ -123,10 +123,12 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // Sherman Morrison, with J. Slagel splitting
 // http://hdl.handle.net/10919/52966
 void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-         double *Updates, unsigned int *Updates_index, double *later_updates, unsigned int* later_index, unsigned int *later) {
-  #ifdef DEBUG1
+             double *Updates, unsigned int *Updates_index,
+             double *later_updates, unsigned int *later_index,
+             unsigned int *later) {
+#ifdef DEBUG1
   std::cerr << "Called SM2* with " << N_updates << " updates" << std::endl;
-  #endif
+#endif
 
   double C[Dim];
   double D[Dim];
@@ -145,11 +147,11 @@ void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (std::fabs(den) < threshold()) {
-      #ifdef DEBUG1
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
       std::cerr << "Denominator = " << den << std::endl;
-      #endif
+#endif
 
       // U_l = U_l / 2 (do the split)
       for (unsigned int i = 0; i < Dim; i++) {
@@ -179,13 +181,12 @@ void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   }
 }
 
-
 // Sherman Morrison, leaving zero denominators for later
 void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
-  #ifdef DEBUG1
+#ifdef DEBUG1
   std::cerr << "Called SM3 with " << N_updates << " updates" << std::endl;
-  #endif
+#endif
 
   double C[Dim];
   double D[Dim];
@@ -208,10 +209,10 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (std::fabs(den) < threshold()) {
-      #ifdef DEBUG1
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
-      #endif
+#endif
       for (unsigned int j = 0; j < Dim; j++) {
         later_updates[later * Dim + j] = Updates[l * Dim + j];
       }
@@ -239,10 +240,10 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
   // If all the updates have failed, exit early with an error
   if (later == N_updates) {
-    #ifdef DEBUG1
+#ifdef DEBUG1
     std::cerr << "SM3 cannot invert matrix." << std::endl;
     showMatrix(Slater_inv, Dim, "Slater_inverse");
-    #endif
+#endif
     return;
   }
   // If some have failed, make a recursive call
@@ -256,9 +257,9 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // (SM2)
 void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
          double *Updates, unsigned int *Updates_index) {
-  #ifdef DEBUG1           
+#ifdef DEBUG1
   std::cerr << "Called SM4 with " << N_updates << " updates" << std::endl;
-  #endif
+#endif
 
   double C[Dim];
   double D[Dim];
@@ -281,10 +282,10 @@ void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
     if (std::fabs(den) < threshold()) {
-      #ifdef DEBUG1
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
-      #endif
+#endif
       for (unsigned int j = 0; j < Dim; j++) {
         later_updates[later * Dim + j] = Updates[l * Dim + j];
       }
