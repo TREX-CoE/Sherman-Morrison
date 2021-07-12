@@ -14,8 +14,8 @@
 // #define DEBUG2
 
 // Woodbury 2x2 kernel
-bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
-         unsigned int *Updates_index) {
+bool WB2(double *Slater_inv, const unsigned int Dim, double *Updates,
+         const unsigned int *Updates_index) {
 /*
     C := S^{-1} * U,    dim x 2
     B := 1 + V * C,     2 x 2
@@ -41,15 +41,13 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   }
 
   // Compute B = 1 + V * C
-  double B[4];
-  B[0] = C[row1 * 2];
-  B[1] = C[row1 * 2 + 1];
-  B[2] = C[row2 * 2];
-  B[3] = C[row2 * 2 + 1];
-  B[0] += 1, B[3] += 1;
+  const double B0 = C[row1 * 2] + 1;
+  const double B1 = C[row1 * 2 + 1];
+  const double B2 = C[row2 * 2];
+  const double B3 = C[row2 * 2 + 1] + 1;
 
   // Check if determinant of inverted matrix is not zero
-  double det = B[0] * B[3] - B[1] * B[2];
+  double det = B0 * B3 - B1 * B2;
   if (std::fabs(det) < threshold()) {
 #ifdef DEBUG1
     std::cerr << "Determinant too close to zero! No inverse found."
@@ -61,10 +59,10 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
 
   // Compute B^{-1} with explicit formula for 2x2 inversion
   double Binv[4], idet = 1.0 / det;
-  Binv[0] = idet * B[3];
-  Binv[1] = -1.0 * idet * B[1];
-  Binv[2] = -1.0 * idet * B[2];
-  Binv[3] = idet * B[0];
+  Binv[0] = idet * B3;
+  Binv[1] = -1.0 * idet * B1;
+  Binv[2] = -1.0 * idet * B2;
+  Binv[3] = idet * B0;
 
   // Compute tmp = B^{-1} x (V.S^{-1})
   double tmp[2 * Dim];
@@ -87,8 +85,8 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
 }
 
 // Woodbury 3x3 kernel
-bool WB3(double *Slater_inv, unsigned int Dim, double *Updates,
-         unsigned int *Updates_index) {
+bool WB3(double *Slater_inv, const unsigned int Dim, double *Updates,
+         const unsigned int *Updates_index) {
 /*
     C := S^{-1} * U,    dim x 3
     B := 1 + V * C,     3 x 3
@@ -120,17 +118,15 @@ bool WB3(double *Slater_inv, unsigned int Dim, double *Updates,
 #endif
 
   // Compute B = 1 + V.C
-  double B[9];
-  B[0] = C[row1 * 3];
-  B[1] = C[row1 * 3 + 1];
-  B[2] = C[row1 * 3 + 2];
-  B[3] = C[row2 * 3];
-  B[4] = C[row2 * 3 + 1];
-  B[5] = C[row2 * 3 + 2];
-  B[6] = C[row3 * 3];
-  B[7] = C[row3 * 3 + 1];
-  B[8] = C[row3 * 3 + 2];
-  B[0] += 1, B[4] += 1, B[8] += 1;
+  const double B0 = C[row1 * 3] + 1;
+  const double B1 = C[row1 * 3 + 1];
+  const double B2 = C[row1 * 3 + 2];
+  const double B3 = C[row2 * 3];
+  const double B4 = C[row2 * 3 + 1] + 1;
+  const double B5 = C[row2 * 3 + 2];
+  const double B6 = C[row3 * 3];
+  const double B7 = C[row3 * 3 + 1];
+  const double B8 = C[row3 * 3 + 2] + 1;
 
 #ifdef DEBUG2
   showMatrix2(B, 3, 3, "B = 1 + V * C");
@@ -138,8 +134,8 @@ bool WB3(double *Slater_inv, unsigned int Dim, double *Updates,
 
   // Check if determinant of B is not too close to zero
   double det;
-  det = B[0] * (B[4] * B[8] - B[5] * B[7]) -
-        B[1] * (B[3] * B[8] - B[5] * B[6]) + B[2] * (B[3] * B[7] - B[4] * B[6]);
+  det = B0 * (B4 * B8 - B5 * B7) -
+        B1 * (B3 * B8 - B5 * B6) + B2 * (B3 * B7 - B4 * B6);
 #ifdef DEBUG2
   std::cerr << "Determinant of B = " << det << std::endl;
 #endif
@@ -154,15 +150,15 @@ bool WB3(double *Slater_inv, unsigned int Dim, double *Updates,
 
   // Compute B^{-1} with explicit formula for 3x3 inversion
   double Binv[9], idet = 1.0 / det;
-  Binv[0] = (B[4] * B[8] - B[7] * B[5]) * idet;
-  Binv[1] = -(B[1] * B[8] - B[7] * B[2]) * idet;
-  Binv[2] = (B[1] * B[5] - B[4] * B[2]) * idet;
-  Binv[3] = -(B[3] * B[8] - B[6] * B[5]) * idet;
-  Binv[4] = (B[0] * B[8] - B[6] * B[2]) * idet;
-  Binv[5] = -(B[0] * B[5] - B[3] * B[2]) * idet;
-  Binv[6] = (B[3] * B[7] - B[6] * B[4]) * idet;
-  Binv[7] = -(B[0] * B[7] - B[6] * B[1]) * idet;
-  Binv[8] = (B[0] * B[4] - B[3] * B[1]) * idet;
+  Binv[0] =  (B4 * B8 - B7 * B5) * idet;
+  Binv[1] = -(B1 * B8 - B7 * B2) * idet;
+  Binv[2] =  (B1 * B5 - B4 * B2) * idet;
+  Binv[3] = -(B3 * B8 - B6 * B5) * idet;
+  Binv[4] =  (B0 * B8 - B6 * B2) * idet;
+  Binv[5] = -(B0 * B5 - B3 * B2) * idet;
+  Binv[6] =  (B3 * B7 - B6 * B4) * idet;
+  Binv[7] = -(B0 * B7 - B6 * B1) * idet;
+  Binv[8] =  (B0 * B4 - B3 * B1) * idet;
 
 #ifdef DEBUG2
   std::cerr << "Conditioning number of B = " << condition1(B, Binv, 3)
