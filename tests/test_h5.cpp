@@ -2,10 +2,10 @@
 #include "hdf5/serial/hdf5.h"
 
 #include "Helpers.hpp"
+#include "SMWB.hpp"
 #include "SM_Maponi.hpp"
 #include "SM_Standard.hpp"
 #include "Woodbury.hpp"
-#include "SMWB.hpp"
 
 #define PERF
 
@@ -82,11 +82,14 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   std::cout << "# of reps. = " << repetition_number << std::endl;
   double *slater_inverse_nonpersistent = new double[dim * dim];
   for (unsigned int i = 0; i < repetition_number; i++) {
-    std::memcpy(slater_inverse_nonpersistent, slater_inverse, dim * dim * sizeof(double));
+    std::memcpy(slater_inverse_nonpersistent, slater_inverse,
+                dim * dim * sizeof(double));
     if (version == "maponia3") {
-      MaponiA3(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+      MaponiA3(slater_inverse_nonpersistent, dim, nupdates, u,
+               col_update_index);
     } else if (version == "maponia3s") {
-      MaponiA3S(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+      MaponiA3S(slater_inverse_nonpersistent, dim, nupdates, u,
+                col_update_index);
     } else if (version == "sm1") {
       SM1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
     } else if (version == "sm2") {
@@ -101,15 +104,18 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
       WB3(slater_inverse_nonpersistent, dim, u, col_update_index);
     } else if (version == "smwb1") {
       SMWB1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    // } else if (version == "smwb2") {
-    //   SMWB2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    // } else if (version == "smwb3") {
-    //   SMWB3(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+      // } else if (version == "smwb2") {
+      //   SMWB2(slater_inverse_nonpersistent, dim, nupdates, u,
+      //   col_update_index);
+      // } else if (version == "smwb3") {
+      //   SMWB3(slater_inverse_nonpersistent, dim, nupdates, u,
+      //   col_update_index);
     } else if (version == "smwb4") {
       SMWB4(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
 #ifdef MKL
     } else if (version == "lapack") {
-      memcpy(slater_inverse_nonpersistent, slater_matrix, dim * dim * sizeof(double));
+      memcpy(slater_inverse_nonpersistent, slater_matrix,
+             dim * dim * sizeof(double));
       inverse(slater_inverse_nonpersistent, dim);
 #endif // MKL
     } else {
@@ -117,7 +123,8 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
       exit(1);
     }
   }
-  std::memcpy(slater_inverse, slater_inverse_nonpersistent, dim * dim * sizeof(double));
+  std::memcpy(slater_inverse, slater_inverse_nonpersistent,
+              dim * dim * sizeof(double));
   delete[] slater_inverse_nonpersistent;
 #else
   if (version == "maponia3") {
@@ -138,10 +145,10 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     WB3(slater_inverse, dim, u, col_update_index);
   } else if (version == "smwb1") {
     SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
-  // } else if (version == "smwb2") {
-  //   SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
-  // } else if (version == "smwb3") {
-  //   SMWB3(slater_inverse, dim, nupdates, u, col_update_index);
+    // } else if (version == "smwb2") {
+    //   SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
+    // } else if (version == "smwb3") {
+    //   SMWB3(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "smwb4") {
     SMWB4(slater_inverse, dim, nupdates, u, col_update_index);
 #ifdef MKL

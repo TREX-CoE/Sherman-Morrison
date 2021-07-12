@@ -16,11 +16,11 @@
 // Woodbury 2x2 kernel
 bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
          unsigned int *Updates_index) {
-  /*
-      C := S^{-1} * U,    dim x 2
-      B := 1 + V * C,     2 x 2
-      D := V * S^{-1},    2 x dim
-  */
+/*
+    C := S^{-1} * U,    dim x 2
+    B := 1 + V * C,     2 x 2
+    D := V * S^{-1},    2 x dim
+*/
 #ifdef DEBUG1
   std::cerr << "Called Woodbury 2x2 kernel" << std::endl;
 #endif
@@ -28,13 +28,13 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   const unsigned int row1 = (Updates_index[0] - 1);
   const unsigned int row2 = (Updates_index[1] - 1);
 
-  // Compute C = S_inv * U  !! NON-STANDARD MATRIX MULTIPLICATION BECAUSE 
+  // Compute C = S_inv * U  !! NON-STANDARD MATRIX MULTIPLICATION BECAUSE
   // OF LAYOUT OF 'Updates' !!
   double C[2 * Dim];
-  for(unsigned int i = 0; i < Dim; i++) {
-    for(unsigned int j = 0; j < 2; j++) {
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < 2; j++) {
       C[i * 2 + j] = 0;
-      for(unsigned int k = 0; k < Dim; k++) {
+      for (unsigned int k = 0; k < Dim; k++) {
         C[i * 2 + j] += Slater_inv[i * Dim + k] * Updates[Dim * j + k];
       }
     }
@@ -51,10 +51,11 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
   // Check if determinant of inverted matrix is not zero
   double det = B[0] * B[3] - B[1] * B[2];
   if (std::fabs(det) < threshold()) {
-    #ifdef DEBUG1
-    std::cerr << "Determinant too close to zero! No inverse found." << std::endl;
+#ifdef DEBUG1
+    std::cerr << "Determinant too close to zero! No inverse found."
+              << std::endl;
     std::cerr << "Determinant = " << det << std::endl;
-    #endif
+#endif
     return false;
   }
 
@@ -67,17 +68,17 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
 
   // Compute tmp = B^{-1} x (V.S^{-1})
   double tmp[2 * Dim];
-  for(unsigned int i = 0; i < 2; i++) {
-    for(unsigned int j = 0; j < Dim; j++) {
-      tmp[i * Dim + j] = Binv[i * 2] * Slater_inv[row1*Dim + j];
-      tmp[i * Dim + j] += Binv[i * 2 + 1] * Slater_inv[row2*Dim + j];
+  for (unsigned int i = 0; i < 2; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      tmp[i * Dim + j] = Binv[i * 2] * Slater_inv[row1 * Dim + j];
+      tmp[i * Dim + j] += Binv[i * 2 + 1] * Slater_inv[row2 * Dim + j];
     }
   }
 
   // Compute (S + U V)^{-1} = S^{-1} - C x tmp
-  for(unsigned int i = 0; i < Dim; i++) {
-    for(unsigned int j = 0; j < Dim; j++) {
-      Slater_inv[i * Dim + j] -= C[i * 2 ] * tmp[j];
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      Slater_inv[i * Dim + j] -= C[i * 2] * tmp[j];
       Slater_inv[i * Dim + j] -= C[i * 2 + 1] * tmp[Dim + j];
     }
   }
@@ -86,41 +87,28 @@ bool WB2(double *Slater_inv, unsigned int Dim, double *Updates,
 }
 
 // Woodbury 3x3 kernel
-bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
+bool WB3(double *Slater_inv, unsigned int Dim, double *Updates,
          unsigned int *Updates_index) {
-  /*
-      C := S^{-1} * U,    dim x 3
-      B := 1 + V * C,     3 x 3
-      D := V * S^{-1},    3 x dim
-  */
+/*
+    C := S^{-1} * U,    dim x 3
+    B := 1 + V * C,     3 x 3
+    D := V * S^{-1},    3 x dim
+*/
 #ifdef DEBUG1
   std::cerr << "Called Woodbury 3x3 kernel" << std::endl;
 #endif
-#ifdef DEBUG2
-  showMatrix2(Slater_inv, Dim, Dim, "Slater_inv BEFORE update");
-  showMatrix2(Updates, 3, Dim, "Updates");
-  showMatrix2(Updates_index, 1, 3, "Updates_index");
-#endif
 
-  // Compute D = V * S^{-1}
-  double D[3 * Dim];
-  unsigned int row1, row2, row3;
-  row1 = Updates_index[0] - 1;
-  row2 = Updates_index[1] - 1;
-  row3 = Updates_index[2] - 1;
-  for (unsigned int i = 0; i < Dim; i++) {
-    D[i] = Slater_inv[row1 * Dim + i];
-    D[Dim + i] = Slater_inv[row2 * Dim + i];
-    D[2 * Dim + i] = Slater_inv[row3 * Dim + i];
-  }
+  const unsigned int row1 = (Updates_index[0] - 1);
+  const unsigned int row2 = (Updates_index[1] - 1);
+  const unsigned int row3 = (Updates_index[2] - 1);
 
-  // Compute C = S_inv * U  !! NON-STANDARD MATRIX MULTIPLICATION BECAUSE 
+  // Compute C = S_inv * U  !! NON-STANDARD MATRIX MULTIPLICATION BECAUSE
   // OF LAYOUT OF 'Updates' !!
   double C[3 * Dim];
-  for(unsigned int i = 0; i < Dim; i++) {
-    for(unsigned int j = 0; j < 3; j++) {
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < 3; j++) {
       C[i * 3 + j] = 0;
-      for(unsigned int k = 0; k < Dim; k++) {
+      for (unsigned int k = 0; k < Dim; k++) {
         C[i * 3 + j] += Slater_inv[i * Dim + k] * Updates[Dim * j + k];
       }
     }
@@ -128,9 +116,6 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
 
 #ifdef DEBUG2
   showMatrix2(C, Dim, 3, "C = S_inv * U");
-#endif
-
-#ifdef DEBUG2
   showMatrix2(D, 3, Dim, "D = V * S_inv");
 #endif
 
@@ -154,55 +139,58 @@ bool  WB3(double *Slater_inv, unsigned int Dim, double *Updates,
   // Check if determinant of B is not too close to zero
   double det;
   det = B[0] * (B[4] * B[8] - B[5] * B[7]) -
-        B[1] * (B[3] * B[8] - B[5] * B[6]) +
-        B[2] * (B[3] * B[7] - B[4] * B[6]);
-#ifdef DEBUG2 
+        B[1] * (B[3] * B[8] - B[5] * B[6]) + B[2] * (B[3] * B[7] - B[4] * B[6]);
+#ifdef DEBUG2
   std::cerr << "Determinant of B = " << det << std::endl;
 #endif
   if (std::fabs(det) < threshold()) {
-    #ifdef DEBUG1
-    std::cerr << "Determinant too close to zero! No inverse found." << std::endl;
+#ifdef DEBUG1
+    std::cerr << "Determinant too close to zero! No inverse found."
+              << std::endl;
     std::cerr << "Determinant = " << det << std::endl;
-    #endif
+#endif
     return false;
   }
 
   // Compute B^{-1} with explicit formula for 3x3 inversion
   double Binv[9], idet = 1.0 / det;
-  Binv[0] =   ( B[4] * B[8] - B[7] * B[5] ) * idet;
-  Binv[1] = - ( B[1] * B[8] - B[7] * B[2] ) * idet;
-  Binv[2] =   ( B[1] * B[5] - B[4] * B[2] ) * idet;
-  Binv[3] = - ( B[3] * B[8] - B[6] * B[5] ) * idet;
-  Binv[4] =   ( B[0] * B[8] - B[6] * B[2] ) * idet;
-  Binv[5] = - ( B[0] * B[5] - B[3] * B[2] ) * idet;
-  Binv[6] =   ( B[3] * B[7] - B[6] * B[4] ) * idet;
-  Binv[7] = - ( B[0] * B[7] - B[6] * B[1] ) * idet;
-  Binv[8] =   ( B[0] * B[4] - B[3] * B[1] ) * idet;
+  Binv[0] = (B[4] * B[8] - B[7] * B[5]) * idet;
+  Binv[1] = -(B[1] * B[8] - B[7] * B[2]) * idet;
+  Binv[2] = (B[1] * B[5] - B[4] * B[2]) * idet;
+  Binv[3] = -(B[3] * B[8] - B[6] * B[5]) * idet;
+  Binv[4] = (B[0] * B[8] - B[6] * B[2]) * idet;
+  Binv[5] = -(B[0] * B[5] - B[3] * B[2]) * idet;
+  Binv[6] = (B[3] * B[7] - B[6] * B[4]) * idet;
+  Binv[7] = -(B[0] * B[7] - B[6] * B[1]) * idet;
+  Binv[8] = (B[0] * B[4] - B[3] * B[1]) * idet;
 
 #ifdef DEBUG2
-  std::cerr << "Conditioning number of B = " << condition1(B, Binv, 3) << std::endl;
+  std::cerr << "Conditioning number of B = " << condition1(B, Binv, 3)
+            << std::endl;
   showMatrix2(Binv, 3, 3, "Binv");
 #endif
 
-  // Compute B^{-1} x D
+  // Compute tmp = B^{-1} x (V.S^{-1})
   double tmp[3 * Dim];
-  matMul2(Binv, D, tmp, 3, 3, Dim);
+  for (unsigned int i = 0; i < 3; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      tmp[i * Dim + j] = Binv[i * 3] * Slater_inv[row1 * Dim + j];
+      tmp[i * Dim + j] += Binv[i * 3 + 1] * Slater_inv[row2 * Dim + j];
+      tmp[i * Dim + j] += Binv[i * 3 + 2] * Slater_inv[row3 * Dim + j];
+    }
+  }
 
 #ifdef DEBUG2
   showMatrix2(tmp, 3, Dim, "tmp = Binv * D");
 #endif
 
-  // Compute C x B^{-1} x D
-  double tmp2[Dim * Dim];
-  matMul2(C, tmp, tmp2, Dim, 3, Dim);
-
-#ifdef DEBUG2
-  showMatrix2(tmp2, Dim, Dim, "tmp2 = C * tmp");
-#endif
-
-  // Compute (S + U V)^{-1} = S^{-1} - C B^{-1} D
-  for (unsigned int i = 0; i < Dim * Dim; i++) {
-    Slater_inv[i] -= tmp2[i];
+  // Compute (S + U V)^{-1} = S^{-1} - C x tmp
+  for (unsigned int i = 0; i < Dim; i++) {
+    for (unsigned int j = 0; j < Dim; j++) {
+      Slater_inv[i * Dim + j] -= C[i * 3] * tmp[j];
+      Slater_inv[i * Dim + j] -= C[i * 3 + 1] * tmp[Dim + j];
+      Slater_inv[i * Dim + j] -= C[i * 3 + 2] * tmp[2 * Dim + j];
+    }
   }
 
 #ifdef DEBUG2

@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
   bool ok;
   for (int i = 0; i < cycles_list.size(); i++) {
 
-    for(const auto& version: versions) {
+    for (const auto &version : versions) {
 
       ok = test_cycle(file, cycles_list[i], version, &probes);
       if (ok) {
@@ -174,9 +174,7 @@ int main(int argc, char **argv) {
       } else {
         std::cerr << "failed -- cycle " << std::to_string(i) << std::endl;
       }
-
     }
-
   }
 
   vfc_dump_probes(&probes);

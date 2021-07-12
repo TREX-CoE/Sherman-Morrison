@@ -75,10 +75,10 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     std::cerr << std::endl;
 #endif
     if (std::fabs(beta) < threshold()) {
-      #ifdef DEBUG1
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
-      #endif
+#endif
     }
     double ibeta = 1.0 / beta;
 
@@ -209,10 +209,10 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     std::cerr << std::endl;
 #endif
     if (std::fabs(beta) < threshold()) {
-      #ifdef DEBUG1
+#ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
-      #endif
+#endif
       for (unsigned int i = 1; i < Dim + 1; i++) {
         ylk[l][p[l + 1]][i] *= 0.5;
         later_updates[later * Dim + i - 1] = Updates[l * Dim + i - 1] * 0.5;

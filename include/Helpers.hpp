@@ -98,11 +98,12 @@ template <typename T> void matMul(T *A, T *B, T *C, unsigned int M) {
 }
 
 template <typename T1, typename T2, typename T3>
-void matMul2(T1 *A, T2 *B, T3 *C, unsigned int M, unsigned int N, unsigned int P) {
-  for(unsigned int i = 0; i < M; i++) {
-    for(unsigned int j = 0; j < P; j++) {
+void matMul2(T1 *A, T2 *B, T3 *C, unsigned int M, unsigned int N,
+             unsigned int P) {
+  for (unsigned int i = 0; i < M; i++) {
+    for (unsigned int j = 0; j < P; j++) {
       C[i * P + j] = 0;
-      for(unsigned int k = 0; k < N; k++) {
+      for (unsigned int k = 0; k < N; k++) {
         C[i * P + j] += A[i * N + k] * B[k * P + j];
       }
     }
@@ -265,13 +266,12 @@ template <typename T> T residual_frobenius2(T *A, unsigned int Dim) {
   return res;
 }
 
-
-template <typename T> T residual2(T * A, unsigned int Dim) {
+template <typename T> T residual2(T *A, unsigned int Dim) {
   double res = 0.0;
   for (unsigned int i = 0; i < Dim; i++) {
     for (unsigned int j = 0; j < Dim; j++) {
       T delta = (A[i * Dim + j] - (i == j));
-      res += delta*delta;
+      res += delta * delta;
     }
   }
   return res;

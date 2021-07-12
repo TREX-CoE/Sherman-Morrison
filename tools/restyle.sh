@@ -11,5 +11,5 @@ fi
 
 for ext in c cc cpp h hpp
 do
-    find $SMROOT -type f -iname "*.${ext}" -exec echo "$FORMATER $STYLE" {} \;
+    find $SMROOT -type f -iname "*.${ext}" -exec $FORMATER $STYLE {} \;
 done
