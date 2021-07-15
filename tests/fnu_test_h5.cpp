@@ -126,11 +126,11 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
                   dim * dim * sizeof(double));
       SMWB1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
     }
-  } else if (version == "smwb4") {
+  } else if (version == "smwb2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       std::memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      SMWB4(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+      SMWB2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
     }
 #ifdef MKL
   } else if (version == "lapack") {
@@ -170,8 +170,8 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     //   SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
     // } else if (version == "smwb3") {
     //   SMWB3(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "smwb4") {
-    SMWB4(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "smwb2") {
+    SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
 #ifdef MKL
   } else if (version == "lapack") {
     memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));

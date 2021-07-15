@@ -80,9 +80,9 @@ void SMWB1(double *Slater_inv, const unsigned int Dim,
   }
 }
 
-// Sherman-Morrison-Woodbury kernel 4
+// Sherman-Morrison-Woodbury kernel 2
 // WB2, SM2 mixing scheme
-void SMWB4(double *Slater_inv, const unsigned int Dim,
+void SMWB2(double *Slater_inv, const unsigned int Dim,
            const unsigned int N_updates, double *Updates,
            unsigned int *Updates_index) {
 #ifdef DEBUG2
@@ -144,8 +144,8 @@ void SMWB1_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
              double **linUpdates, unsigned int **Updates_index) {
   SMWB1(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
 }
-void SMWB4_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
+void SMWB2_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
              double **linUpdates, unsigned int **Updates_index) {
-  SMWB4(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+  SMWB2(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
 }
 }

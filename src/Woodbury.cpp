@@ -134,8 +134,8 @@ bool WB3(double *Slater_inv, const unsigned int Dim, double *Updates,
 
   // Check if determinant of B is not too close to zero
   double det;
-  det = B0 * (B4 * B8 - B5 * B7) -
-        B1 * (B3 * B8 - B5 * B6) + B2 * (B3 * B7 - B4 * B6);
+  det = B0 * (B4 * B8 - B5 * B7) - B1 * (B3 * B8 - B5 * B6) +
+        B2 * (B3 * B7 - B4 * B6);
 #ifdef DEBUG2
   std::cerr << "Determinant of B = " << det << std::endl;
 #endif
@@ -150,15 +150,15 @@ bool WB3(double *Slater_inv, const unsigned int Dim, double *Updates,
 
   // Compute B^{-1} with explicit formula for 3x3 inversion
   double Binv[9], idet = 1.0 / det;
-  Binv[0] =  (B4 * B8 - B7 * B5) * idet;
+  Binv[0] = (B4 * B8 - B7 * B5) * idet;
   Binv[1] = -(B1 * B8 - B7 * B2) * idet;
-  Binv[2] =  (B1 * B5 - B4 * B2) * idet;
+  Binv[2] = (B1 * B5 - B4 * B2) * idet;
   Binv[3] = -(B3 * B8 - B6 * B5) * idet;
-  Binv[4] =  (B0 * B8 - B6 * B2) * idet;
+  Binv[4] = (B0 * B8 - B6 * B2) * idet;
   Binv[5] = -(B0 * B5 - B3 * B2) * idet;
-  Binv[6] =  (B3 * B7 - B6 * B4) * idet;
+  Binv[6] = (B3 * B7 - B6 * B4) * idet;
   Binv[7] = -(B0 * B7 - B6 * B1) * idet;
-  Binv[8] =  (B0 * B4 - B3 * B1) * idet;
+  Binv[8] = (B0 * B4 - B3 * B1) * idet;
 
 #ifdef DEBUG2
   std::cerr << "Conditioning number of B = " << condition1(B, Binv, 3)
@@ -198,10 +198,14 @@ bool WB3(double *Slater_inv, const unsigned int Dim, double *Updates,
 extern "C" {
 bool WB2_f(double **linSlater_inv, unsigned int *Dim, double **linUpdates,
            unsigned int **Updates_index) {
-  WB2(*linSlater_inv, *Dim, *linUpdates, *Updates_index);
+  bool ok;
+  ok = WB2(*linSlater_inv, *Dim, *linUpdates, *Updates_index);
+  return ok;
 }
 bool WB3_f(double **linSlater_inv, unsigned int *Dim, double **linUpdates,
            unsigned int **Updates_index) {
-  WB3(*linSlater_inv, *Dim, *linUpdates, *Updates_index);
+  bool ok;
+  ok = WB3(*linSlater_inv, *Dim, *linUpdates, *Updates_index);
+  return ok;
 }
 }
