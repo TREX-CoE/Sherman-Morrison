@@ -65,7 +65,8 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   unsigned int later_index[N_updates];
   unsigned int later = 0;
 
-  SM2star(Slater_inv, Dim, N_updates, Updates, Updates_index, later_updates, later_index, &later);
+  SM2star(Slater_inv, Dim, N_updates, Updates, Updates_index, later_updates,
+          later_index, &later);
 
   if (later > 0) {
     SM2(Slater_inv, Dim, later, later_updates, later_index);
