@@ -181,15 +181,22 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
 int main(int argc, char **argv) {
 #ifdef PERF
   if (argc != 6) {
+    std::cerr << "Execute from within 'datasets/'" << std::endl;
+    std::cerr
+        << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance> <number of reps.>"
+        << std::endl;
+    return 1;
+  }
 #else
   if (argc != 5) {
-#endif
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
         << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance>"
         << std::endl;
     return 1;
   }
+#endif
+
   std::string version(argv[1]);
   int start_cycle = std::stoi(argv[2]);
   int stop_cycle = std::stoi(argv[3]);

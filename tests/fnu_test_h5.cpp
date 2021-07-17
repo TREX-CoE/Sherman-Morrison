@@ -10,7 +10,7 @@
 #include <vector>
 
 #define PERF
-// #define STATUS
+#define STATUS
 // #define RESIDUAL
 
 #ifdef PERF
@@ -166,10 +166,6 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     WB3(slater_inverse, dim, u, col_update_index);
   } else if (version == "smwb1") {
     SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
-    // } else if (version == "smwb2") {
-    //   SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
-    // } else if (version == "smwb3") {
-    //   SMWB3(slater_inverse, dim, nupdates, u, col_update_index);
   } else if (version == "smwb2") {
     SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
 #ifdef MKL
@@ -213,14 +209,14 @@ int main(int argc, char **argv) {
   if (argc != 5) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
-        << "usage: test_h5 <version> <cycle file> <tolerance> <number of reps.>"
+        << "usage: fnu_test_h5 <version> <cycle file> <tolerance> <number of reps.>"
         << std::endl;
     return 1;
   }
 #else
   if (argc != 4) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
-    std::cerr << "usage: test_h5 <version> <cycle file> <tolerance>"
+    std::cerr << "usage: fnu_test_h5 <version> <cycle file> <tolerance>"
               << std::endl;
     return 1;
   }
