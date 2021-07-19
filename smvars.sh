@@ -27,20 +27,23 @@ export SMROOT
 case $ENV in
   intel)
 	echo "* SM build environment set to 'intel'"
-	export HDF5_CXX=icpc
-	export HDF5_CXXLINKER=icpc
+	export HDF5_CXX=icpx
+	export HDF5_CXXLINKER=icpx
+	export HDF5_CLINKER=icpx
 	export ENV=INTEL
     ;;
   llvm)
   	echo "* SM build environment set to 'llvm'"
 	export HDF5_CXX=clang++
 	export HDF5_CXXLINKER=clang++
+	export HDF5_CLINKER=clang++
 	export ENV=LLVM
     ;;
   vfc)
   	echo "* SM build environment set to 'vfc'"
 	export HDF5_CXX=clang++
 	export HDF5_CXXLINKER=clang++
+	export HDF5_CLINKER=clang++
 	export ENV=LLVM
 	export VFC_BACKENDS="libinterflop_ieee.so --count-op"
     ;;
@@ -48,6 +51,7 @@ case $ENV in
   	echo "* SM build environment set to 'gnu'"
 	export HDF5_CXX=g++
 	export HDF5_CXXLINKER=g++
+	export HDF5_CLINKER=g++
 	export ENV=GNU
 	;;
   *)

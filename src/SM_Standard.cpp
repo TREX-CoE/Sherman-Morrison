@@ -65,55 +65,8 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   unsigned int later_index[N_updates];
   unsigned int later = 0;
 
-  double C[Dim];
-  double D[Dim];
-
-  unsigned int l = 0;
-  // For each update
-  while (l < N_updates) {
-    // C = A^{-1} x U_l
-    for (unsigned int i = 0; i < Dim; i++) {
-      C[i] = 0;
-      for (unsigned int j = 0; j < Dim; j++) {
-        C[i] += Slater_inv[i * Dim + j] * Updates[l * Dim + j];
-      }
-    }
-
-    // Denominator
-    double den = 1 + C[Updates_index[l] - 1];
-    if (std::fabs(den) < threshold()) {
-#ifdef DEBUG1
-      std::cerr << "Breakdown condition triggered at " << Updates_index[l]
-                << std::endl;
-      std::cerr << "Denominator = " << den << std::endl;
-#endif
-
-      // U_l = U_l / 2 (do the split)
-      for (unsigned int i = 0; i < Dim; i++) {
-        later_updates[later * Dim + i] = Updates[l * Dim + i] / 2.0;
-        C[i] /= 2.0;
-      }
-      later_index[later] = Updates_index[l];
-      later++;
-
-      den = 1 + C[Updates_index[l] - 1];
-    }
-    double iden = 1 / den;
-
-    // D = v^T x A^{-1}
-    for (unsigned int j = 0; j < Dim; j++) {
-      D[j] = Slater_inv[(Updates_index[l] - 1) * Dim + j];
-    }
-
-    // A^{-1} = A^{-1} - C x D / den
-    for (unsigned int i = 0; i < Dim; i++) {
-      for (unsigned int j = 0; j < Dim; j++) {
-        double update = C[i] * D[j] * iden;
-        Slater_inv[i * Dim + j] -= update;
-      }
-    }
-    l += 1;
-  }
+  SM2star(Slater_inv, Dim, N_updates, Updates, Updates_index, later_updates,
+          later_index, &later);
 
   if (later > 0) {
     SM2(Slater_inv, Dim, later, later_updates, later_index);
@@ -136,7 +89,7 @@ void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   unsigned int l = 0;
   // For each update
   while (l < N_updates) {
-    // C = A^{-1} x U_l
+    // C = S^{-1} x U_l
     for (unsigned int i = 0; i < Dim; i++) {
       C[i] = 0;
       for (unsigned int j = 0; j < Dim; j++) {
@@ -165,12 +118,12 @@ void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
     }
     double iden = 1 / den;
 
-    // D = v^T x A^{-1}
+    // D = v^T x S^{-1}
     for (unsigned int j = 0; j < Dim; j++) {
       D[j] = Slater_inv[(Updates_index[l] - 1) * Dim + j];
     }
 
-    // A^{-1} = A^{-1} - C x D / den
+    // S^{-1} = S^{-1} - C x D / den
     for (unsigned int i = 0; i < Dim; i++) {
       for (unsigned int j = 0; j < Dim; j++) {
         double update = C[i] * D[j] * iden;

@@ -1,6 +1,6 @@
 ## Compilers, compiler flags & external libs
 ifeq ($(ENV),INTEL)
-	CXX = icpc
+	CXX = icpx
 	FC = ifort
 	ARCH = -march=native
 	OPT = -O3
@@ -15,7 +15,7 @@ else ifeq ($(ENV),GNU)
 	CXX = g++
 	FC = gfortran
 	ARCH = -mavx
-	OPT = -O0
+	OPT = -O3
 	DEBUG = -g
 else
     $(error No valid compiler environment set in $$ENV. \

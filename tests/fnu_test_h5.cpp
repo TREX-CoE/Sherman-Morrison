@@ -10,7 +10,7 @@
 #include <vector>
 
 #define PERF
-// #define STATUS
+#define STATUS
 // #define RESIDUAL
 
 #ifdef PERF
@@ -126,11 +126,11 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
                   dim * dim * sizeof(double));
       SMWB1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
     }
-  } else if (version == "smwb4") {
+  } else if (version == "smwb2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       std::memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      SMWB4(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
+      SMWB2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
     }
 #ifdef MKL
   } else if (version == "lapack") {
@@ -166,12 +166,8 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     WB3(slater_inverse, dim, u, col_update_index);
   } else if (version == "smwb1") {
     SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
-    // } else if (version == "smwb2") {
-    //   SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
-    // } else if (version == "smwb3") {
-    //   SMWB3(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "smwb4") {
-    SMWB4(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "smwb2") {
+    SMWB2(slater_inverse, dim, nupdates, u, col_update_index);
 #ifdef MKL
   } else if (version == "lapack") {
     memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));
@@ -213,14 +209,14 @@ int main(int argc, char **argv) {
   if (argc != 5) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
-        << "usage: test_h5 <version> <cycle file> <tolerance> <number of reps.>"
+        << "usage: fnu_test_h5 <version> <cycle file> <tolerance> <number of reps.>"
         << std::endl;
     return 1;
   }
 #else
   if (argc != 4) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
-    std::cerr << "usage: test_h5 <version> <cycle file> <tolerance>"
+    std::cerr << "usage: fnu_test_h5 <version> <cycle file> <tolerance>"
               << std::endl;
     return 1;
   }
