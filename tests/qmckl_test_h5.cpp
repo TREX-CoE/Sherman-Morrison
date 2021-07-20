@@ -2,6 +2,10 @@
 #include "hdf5/serial/hdf5.h"
 
 #include "qmckl.h"
+#include "cstring"
+#include "iostream"
+
+#include "Helpers.hpp"
 
 #define PERF
 
@@ -15,7 +19,7 @@ using namespace H5;
 
 const H5std_string FILE_NAME("dataset.hdf5");
 
-void read_int(H5File file, std::string key, unsigned int *data) {
+void read_int(H5File file, std::string key, uint64_t *data) {
   DataSet ds = file.openDataSet(key);
   ds.read(data, PredType::STD_U32LE);
   ds.close();
@@ -33,7 +37,9 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
 
   std::string group = "cycle_" + std::to_string(cycle);
 
-  unsigned int dim, nupdates, col, i, j;
+  unsigned int col, i, j;
+  uint64_t dim, nupdates;
+
   read_int(file, group + "/slater_matrix_dim", &dim);
   read_int(file, group + "/nupdates", &nupdates);
 
@@ -43,7 +49,7 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   double *slater_inverse = new double[dim * dim];
   read_double(file, group + "/slater_inverse", slater_inverse);
 
-  unsigned int *col_update_index = new unsigned int[nupdates];
+  uint64_t *col_update_index = new uint64_t[nupdates];
   read_int(file, group + "/col_update_index", col_update_index);
 
   double *updates = new double[nupdates * dim];
@@ -52,9 +58,6 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   double *u = new double[nupdates * dim];
 
   /* Test */
-#ifdef DEBUG2
-  showMatrix(slater_inverse, dim, "OLD Inverse");
-#endif
 
   // Transform replacement updates in 'updates[]' into additive updates in 'u[]'
   for (j = 0; j < nupdates; j++) {
@@ -65,96 +68,48 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
       slater_matrix[i * dim + (col - 1)] = updates[i + j * dim];
     }
   }
-
-#ifdef DEBUG2
-  showMatrix(slater_matrix, dim, "OLD Slater");
-#endif
-
-#ifdef DEBUG2
-  showMatrix(u, dim, "Updates");
-#endif
+  delete[] updates;
 
 #ifdef PERF
-  std::cout << "# of reps. = " << repetition_number << std::endl;
   double *slater_inverse_nonpersistent = new double[dim * dim];
-  for (unsigned int i = 0; i < repetition_number; i++) {
-    std::memcpy(slater_inverse_nonpersistent, slater_inverse,
-                dim * dim * sizeof(double));
-    if (version == "maponia3") {
-      MaponiA3(slater_inverse_nonpersistent, dim, nupdates, u,
-               col_update_index);
-    } else if (version == "maponia3s") {
-      MaponiA3S(slater_inverse_nonpersistent, dim, nupdates, u,
-                col_update_index);
-    } else if (version == "sm1") {
-      SM1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "sm2") {
-      SM2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "sm3") {
-      SM3(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "sm4") {
-      SM4(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "wb2") {
-      WB2(slater_inverse_nonpersistent, dim, u, col_update_index);
-    } else if (version == "wb3") {
-      WB3(slater_inverse_nonpersistent, dim, u, col_update_index);
-    } else if (version == "smwb1") {
-      SMWB1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "smwb2") {
-      SMWB2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-#ifdef MKL
-    } else if (version == "lapack") {
-      memcpy(slater_inverse_nonpersistent, slater_matrix,
-             dim * dim * sizeof(double));
-      inverse(slater_inverse_nonpersistent, dim);
-#endif // MKL
-    } else {
-      std::cerr << "Unknown version " << version << std::endl;
-      exit(1);
+  if (version == "sm1") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      qmckl_exit_code sherman_morrison_exit;
+      qmckl_context context;
+      sherman_morrison_exit = qmckl_sherman_morrison_c(context,
+        dim,
+        nupdates,
+        u,
+        col_update_index,
+        slater_inverse_nonpersistent);
     }
+  }
+  else {
+    std::cerr << "Unknown version " << version << std::endl;
+    exit(1);
   }
   std::memcpy(slater_inverse, slater_inverse_nonpersistent,
               dim * dim * sizeof(double));
   delete[] slater_inverse_nonpersistent;
-#else
-  if (version == "maponia3") {
-    MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "maponia3s") {
-    MaponiA3S(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm1") {
-    SM1(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm2") {
-    SM2(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm3") {
-    SM3(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm4") {
-    SM4(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "wb2") {
-    WB2(slater_inverse, dim, u, col_update_index);
-  } else if (version == "wb3") {
-    WB3(slater_inverse, dim, u, col_update_index);
-  } else if (version == "smwb1") {
-    SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "smwb4") {
-    SMWB4(slater_inverse, dim, nupdates, u, col_update_index);
-#ifdef MKL
-  } else if (version == "lapack") {
-    memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));
-    inverse(slater_inverse, dim);
-#endif // MKL
-  } else {
+#else //  No performance measurements repetition
+  if (version == "sm1") {
+      qmckl_exit_code sherman_morrison_exit;
+      qmckl_context context;
+      sherman_morrison_exit = qmckl_sherman_morrison_c(context,
+        dim,
+        nupdates,
+        u,
+        col_update_index,
+        slater_inverse);
+  }
+  else {
     std::cerr << "Unknown version " << version << std::endl;
     exit(1);
   }
 #endif // PERF
-
-#ifdef DEBUG2
-  showMatrix(slater_matrix, dim, "NEW Slater");
-#endif
-
-#ifdef DEBUG2
-  showMatrix(slater_inverse, dim, "NEW Inverse");
-#endif
+  delete[] u, col_update_index;
 
   double *res = new double[dim * dim]{0};
   matMul(slater_matrix, slater_inverse, res, dim);
@@ -165,11 +120,7 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   std::cout << "Residual = " << version << " " << cycle << " " << res_max << " "
             << res2 << std::endl;
 
-#ifdef DEBUG2
-  showMatrix(res, dim, "Result");
-#endif
-
-  delete[] res, updates, u, col_update_index, slater_matrix, slater_inverse;
+  delete[] res, slater_matrix, slater_inverse;
 
   return ok;
 }

@@ -29,7 +29,7 @@ CXXFLAGS = $(OPT) $(ARCH) $(DEBUG) $(THRESHOLD) -fPIC
 ## MKL linker flags
 ifeq ($(MKL),-DMKL)
 	CXXFLAGS += $(MKL)
-	H5LFLAGS = -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+	H5LFLAGS = -L$(MKLROOT)/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 	ifeq ($(ENV),INTEL)
 		LFLAGS = -mkl=sequential # implicit
 	else
@@ -49,6 +49,11 @@ DEPS_CXX = $(OBJ_DIR)/SM_Maponi.o \
 DEPS_F = $(DEPS_CXX) \
 		 $(OBJ_DIR)/finterface_mod.o \
 		 $(OBJ_DIR)/helpers_mod.o
+
+## QMCkl includes and linking
+QMCKL_INCLUDE = -I $(SMROOT)/qmckl/build/include/
+QMCKLLFLAGS = -L$(SMROOT)/qmckl/build/lib -lqmckl
+
 
 ## Directory structure
 SRC_DIR := src
@@ -91,7 +96,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
 
 ## HDF5/C++ objects
 $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
-	$(H5CXX) $(H5CXXFLAGS) $(INCLUDE) -c -o $@ $<
+	$(H5CXX) $(H5CXXFLAGS) $(INCLUDE) $(QMCKL_INCLUDE) -c -o $@ $<
 
 ## Fortran modules
 $(OBJ_DIR)/%_mod.o: $(SRC_DIR)/%_mod.f90 | $(OBJ_DIR)
@@ -115,6 +120,9 @@ $(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
 
 $(BIN_DIR)/fnu_test_h5: $(OBJ_DIR)/fnu_test_h5.o $(DEPS_CXX) | $(BIN_DIR)
 	$(H5CXX) $(H5LFLAGS) -o $@ $^
+
+$(BIN_DIR)/qmckl_test_h5: $(OBJ_DIR)/qmckl_test_h5.o | $(BIN_DIR)
+	$(H5CXX) $(H5LFLAGS) $(QMCKLLFLAGS) -o $@ $^
 
 $(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
 	$(FC) $(LFLAGS) $(FLIBS) -o $@ $^
