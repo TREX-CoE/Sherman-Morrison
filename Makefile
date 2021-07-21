@@ -1,6 +1,6 @@
 ## Compilers, compiler flags & external libs
 ifeq ($(ENV),INTEL)
-	CXX = icpc
+	CXX = icpx
 	FC = ifort
 	ARCH = -march=native
 	OPT = -O3

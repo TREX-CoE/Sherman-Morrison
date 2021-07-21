@@ -27,9 +27,9 @@ export SMROOT
 case $ENV in
   intel)
 	echo "* SM build environment set to 'intel'"
-	export HDF5_CXX=icpc
-	export HDF5_CXXLINKER=icpc
-	export HDF5_CLINKER=icpc
+	export HDF5_CXX=icpx
+	export HDF5_CXXLINKER=icpx
+	export HDF5_CLINKER=icpx
 	export ENV=INTEL
     ;;
   llvm)
