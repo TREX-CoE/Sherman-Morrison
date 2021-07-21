@@ -2,7 +2,11 @@
 #include "hdf5/serial/hdf5.h"
 
 #include "Helpers.hpp"
+
+extern "C" {
 #include "qmckl.h"
+}
+
 #include "assert.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -86,13 +90,13 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
       // const uint64_t cdim = dim;
       // const uint64_t cnupdates = nupdates;
       // const uint64_t* ccol_update_index = col_update_index;
-      // const double* cu = u; 
+      // const double* cu = u;
       // rc = qmckl_sherman_morrison_c(
-      //   context, 
-      //   cdim, 
-      //   cnupdates, 
-      //   cu, 
-      //   ccol_update_index, 
+      //   context,
+      //   cdim,
+      //   cnupdates,
+      //   cu,
+      //   ccol_update_index,
       //   slater_inverse_nonpersistent);
       const uint64_t Dim = 2;
       const uint64_t N_updates = 2;
