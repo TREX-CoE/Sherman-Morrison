@@ -1,6 +1,6 @@
 ## Compilers, compiler flags & external libs
 ifeq ($(ENV),INTEL)
-	CXX = icpx
+	CXX = icpc
 	FC = ifort
 	ARCH = -march=native
 	OPT = -O3
@@ -51,7 +51,7 @@ DEPS_F = $(DEPS_CXX) \
 		 $(OBJ_DIR)/helpers_mod.o
 
 ## QMCkl includes and linking
-QMCKL_INCLUDE = -I $(SMROOT)/qmckl/build/include/
+QMCKL_INCLUDE = -I $(SMROOT)/qmckl/build/include
 QMCKLLFLAGS = -L$(SMROOT)/qmckl/build/lib -lqmckl
 
 

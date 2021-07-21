@@ -1,11 +1,19 @@
 #include "hdf5/serial/H5Cpp.h"
 #include "hdf5/serial/hdf5.h"
 
+#include "Helpers.hpp"
 #include "qmckl.h"
+#include "assert.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include <math.h>
+#ifndef THRESHOLD
+#define THRESHOLD 1e-3
+#endif
+
 #include "cstring"
 #include "iostream"
-
-#include "Helpers.hpp"
 
 #define PERF
 
@@ -13,25 +21,21 @@
 unsigned int repetition_number;
 #endif
 
-using namespace H5;
-
-// #define DEBUG
-
 const H5std_string FILE_NAME("dataset.hdf5");
 
-void read_int(H5File file, std::string key, uint64_t *data) {
-  DataSet ds = file.openDataSet(key);
-  ds.read(data, PredType::STD_U32LE);
+void read_int(H5::H5File file, std::string key, uint64_t *data) {
+  H5::DataSet ds = file.openDataSet(key);
+  ds.read(data, H5::PredType::STD_U32LE);
   ds.close();
 }
 
-void read_double(H5File file, std::string key, double *data) {
-  DataSet ds = file.openDataSet(key);
-  ds.read(data, PredType::IEEE_F64LE);
+void read_double(H5::H5File file, std::string key, double *data) {
+  H5::DataSet ds = file.openDataSet(key);
+  ds.read(data, H5::PredType::IEEE_F64LE);
   ds.close();
 }
 
-int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
+int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance) {
 
   /* Read the data */
 
@@ -76,14 +80,32 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      qmckl_exit_code sherman_morrison_exit;
       qmckl_context context;
-      sherman_morrison_exit = qmckl_sherman_morrison_c(context,
-        dim,
-        nupdates,
-        u,
-        col_update_index,
-        slater_inverse_nonpersistent);
+      context = qmckl_context_create();
+      qmckl_exit_code rc;
+      // const uint64_t cdim = dim;
+      // const uint64_t cnupdates = nupdates;
+      // const uint64_t* ccol_update_index = col_update_index;
+      // const double* cu = u; 
+      // rc = qmckl_sherman_morrison_c(
+      //   context, 
+      //   cdim, 
+      //   cnupdates, 
+      //   cu, 
+      //   ccol_update_index, 
+      //   slater_inverse_nonpersistent);
+      const uint64_t Dim = 2;
+      const uint64_t N_updates = 2;
+      const uint64_t Updates_index[2] = {0, 0};
+      const double Updates[4] = {0.0, 0.0, 0.0, 0.0};
+      double Slater_inv[4] = {0.0, 0.0, 0.0, 0.0};
+      rc = qmckl_sherman_morrison_c(context,
+            Dim,
+            N_updates,
+            Updates,
+            Updates_index,
+            Slater_inv);
+      assert(rc == QMCKL_SUCCESS);
     }
   }
   else {
@@ -148,7 +170,7 @@ int main(int argc, char **argv) {
   int start_cycle = std::stoi(argv[2]);
   int stop_cycle = std::stoi(argv[3]);
   double tolerance = std::stod(argv[4]);
-  H5File file(FILE_NAME, H5F_ACC_RDONLY);
+  H5::H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
 #ifdef PERF
   repetition_number = std::stoi(argv[5]);
