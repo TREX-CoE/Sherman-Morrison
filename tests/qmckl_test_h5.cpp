@@ -79,12 +79,19 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
       qmckl_context context;
       context = qmckl_context_create();
       qmckl_exit_code rc;
-      const uint64_t cdim = dim;
-      const uint64_t cnupdates = nupdates;
-      const uint64_t* ccol_update_index = col_update_index;
-      const double* cu = u;
-      rc = qmckl_sherman_morrison_c(context, cdim, cnupdates,
-        cu, ccol_update_index, slater_inverse_nonpersistent);
+      rc = qmckl_sherman_morrison_c(context, dim, nupdates,
+        u, col_update_index, slater_inverse_nonpersistent);
+    }
+  }
+  else if (version == "wb2") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      qmckl_context context;
+      context = qmckl_context_create();
+      qmckl_exit_code rc;
+      rc = qmckl_woodbury_2_c(context, dim,
+        u, col_update_index, slater_inverse_nonpersistent);
     }
   }
   else {
@@ -99,12 +106,15 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
     qmckl_context context;
     context = qmckl_context_create();
     qmckl_exit_code rc;
-    const uint64_t cdim = dim;
-    const uint64_t cnupdates = nupdates;
-    const uint64_t* ccol_update_index = col_update_index;
-    const double* cu = u;
-    rc = qmckl_sherman_morrison_c(context, cdim, cnupdates,
-      cu, ccol_update_index, slater_inverse_nonpersistent);
+    rc = qmckl_sherman_morrison_c(context, dim, nupdates,
+      u, col_update_index, slater_inverse);
+  }
+  else if (version == "wb2") {
+    qmckl_context context;
+    context = qmckl_context_create();
+    qmckl_exit_code rc;
+      rc = qmckl_woodbury_2_c(context, dim,
+        u, col_update_index, slater_inverse);
   }
   else {
     std::cerr << "Unknown version " << version << std::endl;
