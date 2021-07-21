@@ -5,16 +5,8 @@
 
 extern "C" {
 #include "qmckl.h"
-}
-
-#include "assert.h"
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 #include <math.h>
-#ifndef THRESHOLD
-#define THRESHOLD 1e-3
-#endif
+}
 
 #include "cstring"
 #include "iostream"
@@ -87,29 +79,12 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
       qmckl_context context;
       context = qmckl_context_create();
       qmckl_exit_code rc;
-      // const uint64_t cdim = dim;
-      // const uint64_t cnupdates = nupdates;
-      // const uint64_t* ccol_update_index = col_update_index;
-      // const double* cu = u;
-      // rc = qmckl_sherman_morrison_c(
-      //   context,
-      //   cdim,
-      //   cnupdates,
-      //   cu,
-      //   ccol_update_index,
-      //   slater_inverse_nonpersistent);
-      const uint64_t Dim = 2;
-      const uint64_t N_updates = 2;
-      const uint64_t Updates_index[2] = {0, 0};
-      const double Updates[4] = {0.0, 0.0, 0.0, 0.0};
-      double Slater_inv[4] = {0.0, 0.0, 0.0, 0.0};
-      rc = qmckl_sherman_morrison_c(context,
-            Dim,
-            N_updates,
-            Updates,
-            Updates_index,
-            Slater_inv);
-      assert(rc == QMCKL_SUCCESS);
+      const uint64_t cdim = dim;
+      const uint64_t cnupdates = nupdates;
+      const uint64_t* ccol_update_index = col_update_index;
+      const double* cu = u;
+      rc = qmckl_sherman_morrison_c(context, cdim, cnupdates,
+        cu, ccol_update_index, slater_inverse_nonpersistent);
     }
   }
   else {
@@ -121,14 +96,15 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
   delete[] slater_inverse_nonpersistent;
 #else //  No performance measurements repetition
   if (version == "sm1") {
-      qmckl_exit_code sherman_morrison_exit;
-      qmckl_context context;
-      sherman_morrison_exit = qmckl_sherman_morrison_c(context,
-        dim,
-        nupdates,
-        u,
-        col_update_index,
-        slater_inverse);
+    qmckl_context context;
+    context = qmckl_context_create();
+    qmckl_exit_code rc;
+    const uint64_t cdim = dim;
+    const uint64_t cnupdates = nupdates;
+    const uint64_t* ccol_update_index = col_update_index;
+    const double* cu = u;
+    rc = qmckl_sherman_morrison_c(context, cdim, cnupdates,
+      cu, ccol_update_index, slater_inverse_nonpersistent);
   }
   else {
     std::cerr << "Unknown version " << version << std::endl;
