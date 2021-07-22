@@ -71,6 +71,7 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
   delete[] updates;
 
 #ifdef PERF
+  std::cout << "# of reps. = " << repetition_number << std::endl;
   double *slater_inverse_nonpersistent = new double[dim * dim];
   if (version == "qmckl_sm1") {
     for (unsigned int i = 0; i < repetition_number; i++) {
@@ -94,6 +95,17 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
         u, col_update_index, slater_inverse_nonpersistent);
     }
   }
+  else if (version == "qmckl_wb3") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      qmckl_context context;
+      context = qmckl_context_create();
+      qmckl_exit_code rc;
+      rc = qmckl_woodbury_3_c(context, dim,
+        u, col_update_index, slater_inverse_nonpersistent);
+    }
+  }
   else {
     std::cerr << "Unknown version " << version << std::endl;
     exit(1);
@@ -114,6 +126,13 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
     context = qmckl_context_create();
     qmckl_exit_code rc;
       rc = qmckl_woodbury_2_c(context, dim,
+        u, col_update_index, slater_inverse);
+  }
+  else if (version == "qmckl_wb3") {
+    qmckl_context context;
+    context = qmckl_context_create();
+    qmckl_exit_code rc;
+      rc = qmckl_woodbury_3_c(context, dim,
         u, col_update_index, slater_inverse);
   }
   else {
