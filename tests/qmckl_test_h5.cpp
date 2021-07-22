@@ -21,7 +21,7 @@ const H5std_string FILE_NAME("dataset.hdf5");
 
 void read_int(H5::H5File file, std::string key, uint64_t *data) {
   H5::DataSet ds = file.openDataSet(key);
-  ds.read(data, H5::PredType::STD_U32LE);
+  ds.read(data, H5::PredType::STD_U64LE);
   ds.close();
 }
 
@@ -72,7 +72,7 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
 
 #ifdef PERF
   double *slater_inverse_nonpersistent = new double[dim * dim];
-  if (version == "sm1") {
+  if (version == "qmckl_sm1") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
@@ -83,7 +83,7 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
         u, col_update_index, slater_inverse_nonpersistent);
     }
   }
-  else if (version == "wb2") {
+  else if (version == "qmckl_wb2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
@@ -102,14 +102,14 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
               dim * dim * sizeof(double));
   delete[] slater_inverse_nonpersistent;
 #else //  No performance measurements repetition
-  if (version == "sm1") {
+  if (version == "qmckl_sm1") {
     qmckl_context context;
     context = qmckl_context_create();
     qmckl_exit_code rc;
     rc = qmckl_sherman_morrison_c(context, dim, nupdates,
       u, col_update_index, slater_inverse);
   }
-  else if (version == "wb2") {
+  else if (version == "qmckl_wb2") {
     qmckl_context context;
     context = qmckl_context_create();
     qmckl_exit_code rc;
