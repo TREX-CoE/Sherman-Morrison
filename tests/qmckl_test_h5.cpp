@@ -2,14 +2,11 @@
 #include "hdf5/serial/hdf5.h"
 
 #include "Helpers.hpp"
-
-extern "C" {
 #include "qmckl.h"
-#include <math.h>
-}
 
-#include "cstring"
-#include "iostream"
+#include <math.h>
+#include <cstring>
+#include <iostream>
 
 #define PERF
 
@@ -31,7 +28,7 @@ void read_double(H5::H5File file, std::string key, double *data) {
   ds.close();
 }
 
-int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance) {
+int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown, double tolerance) {
 
   /* Read the data */
 
@@ -70,40 +67,67 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
   }
   delete[] updates;
 
+  qmckl_context context = qmckl_context_create();
+  qmckl_exit_code rc;
+
 #ifdef PERF
   std::cout << "# of reps. = " << repetition_number << std::endl;
   double *slater_inverse_nonpersistent = new double[dim * dim];
+
   if (version == "qmckl_sm1") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      qmckl_context context;
-      context = qmckl_context_create();
-      qmckl_exit_code rc;
       rc = qmckl_sherman_morrison_c(context, dim, nupdates,
-        u, col_update_index, slater_inverse_nonpersistent);
+        u, col_update_index, breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "qmckl_wb2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      qmckl_context context;
-      context = qmckl_context_create();
-      qmckl_exit_code rc;
       rc = qmckl_woodbury_2_c(context, dim,
-        u, col_update_index, slater_inverse_nonpersistent);
+        u, col_update_index, breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "qmckl_wb3") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      qmckl_context context;
-      context = qmckl_context_create();
-      qmckl_exit_code rc;
       rc = qmckl_woodbury_3_c(context, dim,
-        u, col_update_index, slater_inverse_nonpersistent);
+        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+    }
+  }
+  else if (version == "qmckl_sm2") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      rc = qmckl_sherman_morrison_splitting_c(context, dim, nupdates,
+        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+    }
+  }
+  else if (version == "qmckl_wb2s") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      rc = qmckl_sherman_morrison_smw2s_c(context, dim, nupdates,
+        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+    }
+  }
+  else if (version == "qmckl_wb3s") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      rc = qmckl_sherman_morrison_smw3s_c(context, dim, nupdates,
+        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+    }
+  }
+  else if (version == "qmckl_wb32s") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      rc = qmckl_sherman_morrison_smw32s_c(context, dim, nupdates,
+        u, col_update_index, breakdown, slater_inverse_nonpersistent);
     }
   }
   else {
@@ -119,21 +143,21 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
     context = qmckl_context_create();
     qmckl_exit_code rc;
     rc = qmckl_sherman_morrison_c(context, dim, nupdates,
-      u, col_update_index, slater_inverse);
+      u, col_update_index, breakdown, slater_inverse);
   }
   else if (version == "qmckl_wb2") {
     qmckl_context context;
     context = qmckl_context_create();
     qmckl_exit_code rc;
       rc = qmckl_woodbury_2_c(context, dim,
-        u, col_update_index, slater_inverse);
+        u, col_update_index, breakdown, slater_inverse);
   }
   else if (version == "qmckl_wb3") {
     qmckl_context context;
     context = qmckl_context_create();
     qmckl_exit_code rc;
       rc = qmckl_woodbury_3_c(context, dim,
-        u, col_update_index, slater_inverse);
+        u, col_update_index, breakdown, slater_inverse);
   }
   else {
     std::cerr << "Unknown version " << version << std::endl;
@@ -158,18 +182,18 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double tolerance
 
 int main(int argc, char **argv) {
 #ifdef PERF
-  if (argc != 6) {
+  if (argc != 7) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
-        << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance> <number of reps.>"
+        << "usage: test_h5 <version> <start cycle> <stop cycle> <break-down threshold> <tolerance> <number of reps.>"
         << std::endl;
     return 1;
   }
 #else
-  if (argc != 5) {
+  if (argc != 6) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
-        << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance>"
+        << "usage: test_h5 <version> <start cycle> <stop cycle> <break-down threshold> <tolerance>"
         << std::endl;
     return 1;
   }
@@ -178,16 +202,17 @@ int main(int argc, char **argv) {
   std::string version(argv[1]);
   int start_cycle = std::stoi(argv[2]);
   int stop_cycle = std::stoi(argv[3]);
-  double tolerance = std::stod(argv[4]);
+  double breakdown = std::stod(argv[4]);
+  double tolerance = std::stod(argv[5]);
   H5::H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
 #ifdef PERF
-  repetition_number = std::stoi(argv[5]);
+  repetition_number = std::stoi(argv[6]);
 #endif
 
   bool ok;
   for (int cycle = start_cycle; cycle < stop_cycle + 1; cycle++) {
-    ok = test_cycle(file, cycle, version, tolerance);
+    ok = test_cycle(file, cycle, version, breakdown, tolerance);
     if (ok) {
       std::cerr << "ok -- cycle " << std::to_string(cycle) << std::endl;
     } else {
