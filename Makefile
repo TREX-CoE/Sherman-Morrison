@@ -2,7 +2,7 @@
 ifeq ($(ENV),INTEL)
 	CXX = icpx
 	FC = ifort
-	ARCH = -march=native
+	ARCH = -xCORE-AVX2
 	OPT = -O3
 	DEBUG = -g -debug full
 else ifeq ($(ENV),LLVM)
@@ -14,8 +14,9 @@ else ifeq ($(ENV),LLVM)
 else ifeq ($(ENV),GNU)
 	CXX = g++
 	FC = gfortran
-	ARCH = -mavx
-	OPT = -O3
+	# ARCH = -mavx
+	ARCH =
+	OPT = -O1
 	DEBUG = -g
 else
     $(error No valid compiler environment set in $$ENV. \

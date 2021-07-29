@@ -8,6 +8,9 @@
 #include <mkl_lapacke.h>
 #endif
 
+#include <cstdio>
+
+
 // #define DEBUG
 #ifndef THRESHOLD
 #define THRESHOLD 1e-3
@@ -86,7 +89,8 @@ template <typename T> T *transpose(T *A, unsigned int M) {
   return B;
 }
 
-template <typename T> void matMul(T *A, T *B, T *C, unsigned int M) {
+template <typename T>
+void matMul(T *A, T *B, T *C, unsigned int M) {
   memset(C, 0, M * M * sizeof(T));
   for (unsigned int i = 0; i < M; i++) {
     for (unsigned int j = 0; j < M; j++) {
@@ -263,7 +267,7 @@ template <typename T> T residual_frobenius2(T *A, unsigned int Dim) {
       res += delta * delta;
     }
   }
-  return res;
+  return sqrt(res);
 }
 
 template <typename T> T residual2(T *A, unsigned int Dim) {

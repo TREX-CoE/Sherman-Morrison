@@ -13,31 +13,29 @@
 unsigned int repetition_number;
 #endif
 
-using namespace H5;
-
-// #define DEBUG
-
 const H5std_string FILE_NAME("dataset.hdf5");
 
-void read_int(H5File file, std::string key, unsigned int *data) {
-  DataSet ds = file.openDataSet(key);
-  ds.read(data, PredType::STD_U32LE);
+void read_int(H5::H5File file, std::string key, unsigned int *data) {
+  H5::DataSet ds = file.openDataSet(key);
+  ds.read(data, H5::PredType::STD_U32LE);
   ds.close();
 }
 
-void read_double(H5File file, std::string key, double *data) {
-  DataSet ds = file.openDataSet(key);
-  ds.read(data, PredType::IEEE_F64LE);
+void read_double(H5::H5File file, std::string key, double *data) {
+  H5::DataSet ds = file.openDataSet(key);
+  ds.read(data, H5::PredType::IEEE_F64LE);
   ds.close();
 }
 
-int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
+int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown, double tolerance) {
 
   /* Read the data */
 
   std::string group = "cycle_" + std::to_string(cycle);
 
   unsigned int dim, nupdates, col, i, j;
+
+
   read_int(file, group + "/slater_matrix_dim", &dim);
   read_int(file, group + "/nupdates", &nupdates);
 
@@ -56,9 +54,6 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   double *u = new double[nupdates * dim];
 
   /* Test */
-#ifdef DEBUG2
-  showMatrix(slater_inverse, dim, "OLD Inverse");
-#endif
 
   // Transform replacement updates in 'updates[]' into additive updates in 'u[]'
   for (j = 0; j < nupdates; j++) {
@@ -69,53 +64,78 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
       slater_matrix[i * dim + (col - 1)] = updates[i + j * dim];
     }
   }
-
-#ifdef DEBUG2
-  showMatrix(slater_matrix, dim, "OLD Slater");
-#endif
-
-#ifdef DEBUG2
-  showMatrix(u, dim, "Updates");
-#endif
+  delete[] updates;
 
 #ifdef PERF
   std::cout << "# of reps. = " << repetition_number << std::endl;
   double *slater_inverse_nonpersistent = new double[dim * dim];
-  for (unsigned int i = 0; i < repetition_number; i++) {
-    std::memcpy(slater_inverse_nonpersistent, slater_inverse,
-                dim * dim * sizeof(double));
-    if (version == "maponia3") {
-      MaponiA3(slater_inverse_nonpersistent, dim, nupdates, u,
-               col_update_index);
-    } else if (version == "maponia3s") {
-      MaponiA3S(slater_inverse_nonpersistent, dim, nupdates, u,
-                col_update_index);
-    } else if (version == "sm1") {
-      SM1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "sm2") {
-      SM2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "sm3") {
-      SM3(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "sm4") {
-      SM4(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "wb2") {
-      WB2(slater_inverse_nonpersistent, dim, u, col_update_index);
-    } else if (version == "wb3") {
-      WB3(slater_inverse_nonpersistent, dim, u, col_update_index);
-    } else if (version == "smwb1") {
-      SMWB1(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-    } else if (version == "smwb2") {
-      SMWB2(slater_inverse_nonpersistent, dim, nupdates, u, col_update_index);
-#ifdef MKL
-    } else if (version == "lapack") {
-      memcpy(slater_inverse_nonpersistent, slater_matrix,
-             dim * dim * sizeof(double));
-      inverse(slater_inverse_nonpersistent, dim);
-#endif // MKL
-    } else {
-      std::cerr << "Unknown version " << version << std::endl;
-      exit(1);
+
+  if (version == "sm1") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      SM1(slater_inverse_nonpersistent, dim, nupdates,
+        u, col_update_index, breakdown);
     }
+  }
+  else if (version == "wb2") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      WB2(slater_inverse_nonpersistent, dim,
+        u, col_update_index, breakdown);
+    }
+  }
+  else if (version == "wb3") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      WB3(slater_inverse_nonpersistent, dim,
+        u, col_update_index, breakdown);
+    }
+  }
+  else if (version == "sm2") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      SM2(slater_inverse_nonpersistent, dim, nupdates,
+        u, col_update_index, breakdown);
+    }
+  }
+  else if (version == "wb2s") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      WB2s(slater_inverse_nonpersistent, dim, nupdates,
+        u, col_update_index, breakdown);
+    }
+  }
+  else if (version == "wb3s") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      WB3s(slater_inverse_nonpersistent, dim, nupdates,
+        u, col_update_index, breakdown);
+    }
+  }
+  else if (version == "wb32s") {
+    for (unsigned int i = 0; i < repetition_number; i++) {
+      memcpy(slater_inverse_nonpersistent, slater_inverse,
+                  dim * dim * sizeof(double));
+      WB32s(slater_inverse_nonpersistent, dim, nupdates,
+        u, col_update_index, breakdown);
+    }
+  }
+#ifdef MKL
+  else if (version == "lapack") {
+    memcpy(slater_inverse_nonpersistent, slater_matrix,
+            dim * dim * sizeof(double));
+    inverse(slater_inverse_nonpersistent, dim);
+  }
+#endif // MKL
+  else {
+    std::cerr << "Unknown version " << version << std::endl;
+    exit(1);
   }
   std::memcpy(slater_inverse, slater_inverse_nonpersistent,
               dim * dim * sizeof(double));
@@ -137,10 +157,12 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     WB2(slater_inverse, dim, u, col_update_index);
   } else if (version == "wb3") {
     WB3(slater_inverse, dim, u, col_update_index);
-  } else if (version == "smwb1") {
-    SMWB1(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "smwb4") {
-    SMWB4(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "wb2s") {
+    WB2s(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "wb3s") {
+    WB3s(slater_inverse, dim, nupdates, u, col_update_index);
+  } else if (version == "wb32s") {
+    WB32s(slater_inverse, dim, nupdates, u, col_update_index);
 #ifdef MKL
   } else if (version == "lapack") {
     memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));
@@ -151,17 +173,70 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
     exit(1);
   }
 #endif // PERF
+  delete[] u, col_update_index;
 
-#ifdef DEBUG2
-  showMatrix(slater_matrix, dim, "NEW Slater");
-#endif
-
-#ifdef DEBUG2
-  showMatrix(slater_inverse, dim, "NEW Inverse");
-#endif
-
+  showMatrix(slater_matrix, dim, "Slater Matrix");
+  showMatrix(slater_inverse, dim, "Slater Inverse");
   double *res = new double[dim * dim]{0};
-  matMul(slater_matrix, slater_inverse, res, dim);
+  {
+  for (unsigned int i = 0; i < dim; i++) {
+    for (unsigned int j = 0; j < dim; j++) {
+      for (unsigned int k = 0; k < dim; k++) {
+        res[i * dim + j] += slater_matrix[i * dim + k] * slater_inverse[k * dim + j];
+      }
+    }
+  }
+  }
+
+  //matMul2(slater_matrix, slater_inverse, res, dim, dim, dim);
+  //
+  //
+  for (unsigned int i = 0; i < dim; i++) {
+    printf("[");
+    for (unsigned int j = 0; j < dim; j++) {
+      if (slater_matrix[i * dim + j] >= 0) {
+        printf("  %17.10e,", slater_matrix[i * dim + j]);
+      } else {
+        printf(" %17.10e,", slater_matrix[i * dim + j]);
+      }
+    }
+    printf(" ],\n");
+  }
+  printf("\n\n");
+  //
+  //
+  //
+  //
+  for (unsigned int i = 0; i < dim; i++) {
+    printf("[");
+    for (unsigned int j = 0; j < dim; j++) {
+      if (slater_inverse[i * dim + j] >= 0) {
+        printf("  %17.10e,", slater_inverse[i * dim + j]);
+      } else {
+        printf(" %17.10e,", slater_inverse[i * dim + j]);
+      }
+    }
+    printf(" ],\n");
+  }
+  printf("\n\n");
+  //
+  //
+  //
+  //
+  for (unsigned int i = 0; i < dim; i++) {
+    printf("[");
+    for (unsigned int j = 0; j < dim; j++) {
+      if (res[i * dim + j] >= 0) {
+        printf("  %17.10e,", res[i * dim + j]);
+      } else {
+        printf(" %17.10e,", res[i * dim + j]);
+      }
+    }
+    printf(" ],\n");
+  }
+  printf("\n\n");
+  //
+  //
   bool ok = is_identity(res, dim, tolerance);
   double res_max = residual_max(res, dim);
   double res2 = residual_frobenius2(res, dim);
@@ -173,25 +248,25 @@ int test_cycle(H5File file, int cycle, std::string version, double tolerance) {
   showMatrix(res, dim, "Result");
 #endif
 
-  delete[] res, updates, u, col_update_index, slater_matrix, slater_inverse;
+  delete[] res, slater_matrix, slater_inverse;
 
   return ok;
 }
 
 int main(int argc, char **argv) {
 #ifdef PERF
-  if (argc != 6) {
+  if (argc != 7) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
-        << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance> <number of reps.>"
+        << "usage: test_h5 <version> <start cycle> <stop cycle> <break-down threshold> <tolerance> <number of reps.>"
         << std::endl;
     return 1;
   }
 #else
-  if (argc != 5) {
+  if (argc != 6) {
     std::cerr << "Execute from within 'datasets/'" << std::endl;
     std::cerr
-        << "usage: test_h5 <version> <start cycle> <stop cycle> <tolerance>"
+        << "usage: test_h5 <version> <start cycle> <stop cycle> <break-down threshold> <tolerance>"
         << std::endl;
     return 1;
   }
@@ -200,16 +275,17 @@ int main(int argc, char **argv) {
   std::string version(argv[1]);
   int start_cycle = std::stoi(argv[2]);
   int stop_cycle = std::stoi(argv[3]);
-  double tolerance = std::stod(argv[4]);
-  H5File file(FILE_NAME, H5F_ACC_RDONLY);
+  double breakdown = std::stod(argv[4]);
+  double tolerance = std::stod(argv[5]);
+  H5::H5File file(FILE_NAME, H5F_ACC_RDONLY);
 
 #ifdef PERF
-  repetition_number = std::stoi(argv[5]);
+  repetition_number = std::stoi(argv[6]);
 #endif
 
   bool ok;
   for (int cycle = start_cycle; cycle < stop_cycle + 1; cycle++) {
-    ok = test_cycle(file, cycle, version, tolerance);
+    ok = test_cycle(file, cycle, version, breakdown, tolerance);
     if (ok) {
       std::cerr << "ok -- cycle " << std::to_string(cycle) << std::endl;
     } else {

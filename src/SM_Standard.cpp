@@ -6,8 +6,12 @@
 // #define DEBUG1
 
 // Naïve Sherman Morrison
-void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-         double *Updates, unsigned int *Updates_index) {
+void SM1(double *Slater_inv,
+         unsigned int Dim,
+         unsigned int N_updates,
+         double *Updates, 
+         unsigned int *Updates_index, 
+         const double breakdown) {
 #ifdef DEBUG1
   std::cerr << "Called SM1 with " << N_updates << " updates" << std::endl;
 #endif
@@ -28,7 +32,7 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (std::fabs(den) < threshold()) {
+    if (std::fabs(den) < breakdown) {
 #ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
@@ -51,12 +55,13 @@ void SM1(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     l += 1;
   }
+
 }
 
 // Sherman Morrison, with J. Slagel splitting
 // http://hdl.handle.net/10919/52966
 void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-         double *Updates, unsigned int *Updates_index) {
+         double *Updates, unsigned int *Updates_index, const double breakdown) {
 #ifdef DEBUG1
   std::cerr << "Called SM2 with " << N_updates << " updates" << std::endl;
 #endif
@@ -66,10 +71,10 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   unsigned int later = 0;
 
   SM2star(Slater_inv, Dim, N_updates, Updates, Updates_index, later_updates,
-          later_index, &later);
+          later_index, &later, breakdown);
 
   if (later > 0) {
-    SM2(Slater_inv, Dim, later, later_updates, later_index);
+    SM2(Slater_inv, Dim, later, later_updates, later_index, breakdown);
   }
 }
 
@@ -78,7 +83,7 @@ void SM2(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
              double *Updates, unsigned int *Updates_index,
              double *later_updates, unsigned int *later_index,
-             unsigned int *later) {
+             unsigned int *later, const double breakdown) {
 #ifdef DEBUG1
   std::cerr << "Called SM2* with " << N_updates << " updates" << std::endl;
 #endif
@@ -99,7 +104,7 @@ void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (std::fabs(den) < threshold()) {
+    if (std::fabs(den) < breakdown) {
 #ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
@@ -136,7 +141,7 @@ void SM2star(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
 // Sherman Morrison, leaving zero denominators for later
 void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-         double *Updates, unsigned int *Updates_index) {
+         double *Updates, unsigned int *Updates_index, const double breakdown) {
 #ifdef DEBUG1
   std::cerr << "Called SM3 with " << N_updates << " updates" << std::endl;
 #endif
@@ -161,7 +166,7 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (std::fabs(den) < threshold()) {
+    if (std::fabs(den) < breakdown) {
 #ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
@@ -201,7 +206,7 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   }
   // If some have failed, make a recursive call
   else if (later > 0) {
-    SM3(Slater_inv, Dim, later, later_updates, later_index);
+    SM3(Slater_inv, Dim, later, later_updates, later_index, breakdown);
   }
 }
 
@@ -209,7 +214,7 @@ void SM3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 // Leave zero denominators for later (SM3), and when none are left then split
 // (SM2)
 void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-         double *Updates, unsigned int *Updates_index) {
+         double *Updates, unsigned int *Updates_index, const double breakdown) {
 #ifdef DEBUG1
   std::cerr << "Called SM4 with " << N_updates << " updates" << std::endl;
 #endif
@@ -234,7 +239,7 @@ void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
     // Denominator
     double den = 1 + C[Updates_index[l] - 1];
-    if (std::fabs(den) < threshold()) {
+    if (std::fabs(den) < breakdown) {
 #ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
@@ -266,32 +271,32 @@ void SM4(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 
   // If all the updates have failed, fall back on splitting (SM2)
   if (later == N_updates) {
-    SM2(Slater_inv, Dim, later, later_updates, later_index);
+    SM2(Slater_inv, Dim, later, later_updates, later_index, breakdown);
   }
   // If some have failed, make a recursive call
   else if (later > 0) {
-    SM4(Slater_inv, Dim, later, later_updates, later_index);
+    SM4(Slater_inv, Dim, later, later_updates, later_index, breakdown);
   }
 }
 
 extern "C" {
 void SM1_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
-           double **linUpdates, unsigned int **Updates_index) {
-  SM1(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+           double **linUpdates, unsigned int **Updates_index, const double breakdown) {
+  SM1(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index, breakdown);
 }
 
 void SM2_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
-           double **linUpdates, unsigned int **Updates_index) {
-  SM2(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+           double **linUpdates, unsigned int **Updates_index, const double breakdown) {
+  SM2(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index, breakdown);
 }
 
 void SM3_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
-           double **linUpdates, unsigned int **Updates_index) {
-  SM3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+           double **linUpdates, unsigned int **Updates_index, const double breakdown) {
+  SM3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index, breakdown);
 }
 
 void SM4_f(double **linSlater_inv, unsigned int *Dim, unsigned int *N_updates,
-           double **linUpdates, unsigned int **Updates_index) {
-  SM4(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+           double **linUpdates, unsigned int **Updates_index, const double breakdown) {
+  SM4(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index, breakdown);
 }
 }
