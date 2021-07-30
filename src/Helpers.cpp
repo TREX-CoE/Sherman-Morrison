@@ -1,14 +1,5 @@
 #include "Helpers.hpp"
 
-// Set common break-down threshold
-double threshold() {
-  const double threshold = THRESHOLD;
-#ifdef DEBUG2
-  std::cerr << "Break-down threshold set to: " << threshold << std::endl;
-#endif
-  return threshold;
-}
-
 void Switch(unsigned int *p, unsigned int l, unsigned int lbar) {
   unsigned int tmp = p[l + 1];
   p[l + 1] = p[lbar];

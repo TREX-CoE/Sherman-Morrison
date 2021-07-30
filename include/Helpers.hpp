@@ -10,14 +10,6 @@
 
 #include <cstdio>
 
-
-// #define DEBUG
-#ifndef THRESHOLD
-#define THRESHOLD 1e-3
-#endif
-
-double threshold();
-
 void Switch(unsigned int *p, unsigned int l, unsigned int lbar);
 
 void selectLargestDenominator(unsigned int l, unsigned int N_updates,

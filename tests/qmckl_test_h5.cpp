@@ -53,6 +53,7 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
   for (i = 0; i < nupdates; i++) {
 	  col_update_index[i] = temp[i];
   }
+  delete[] temp;
 
   double *updates = new double[nupdates * dim];
   read_double(file, group + "/updates", updates);
@@ -170,69 +171,10 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
   }
 #endif // PERF
   delete[] u, col_update_index;
+  rc = qmckl_context_destroy(context);
 
-  showMatrix(slater_matrix, dim, "Slater Matrix");
-  showMatrix(slater_inverse, dim, "Slater Inverse");
   double *res = new double[dim * dim]{0};
-  {
-  for (unsigned int i = 0; i < dim; i++) {
-    for (unsigned int j = 0; j < dim; j++) {
-      for (unsigned int k = 0; k < dim; k++) {
-        res[i * dim + j] += slater_matrix[i * dim + k] * slater_inverse[k * dim + j];
-      }
-    }
-  }
-  }
-
-  //matMul2(slater_matrix, slater_inverse, res, dim_32, dim_32, dim_32);
-  //
-  //
-  for (unsigned int i = 0; i < dim; i++) {
-    printf("[");
-    for (unsigned int j = 0; j < dim; j++) {
-      if (slater_matrix[i * dim + j] >= 0) {
-        printf("  %17.10e,", slater_matrix[i * dim + j]);
-      } else {
-        printf(" %17.10e,", slater_matrix[i * dim + j]);
-      }
-    }
-    printf(" ],\n");
-  }
-  printf("\n\n");
-  //
-  //
-  //
-  //
-  for (unsigned int i = 0; i < dim; i++) {
-    printf("[");
-    for (unsigned int j = 0; j < dim; j++) {
-      if (slater_inverse[i * dim + j] >= 0) {
-        printf("  %17.10e,", slater_inverse[i * dim + j]);
-      } else {
-        printf(" %17.10e,", slater_inverse[i * dim + j]);
-      }
-    }
-    printf(" ],\n");
-  }
-  printf("\n\n");
-  //
-  //
-  //
-  //
-  for (unsigned int i = 0; i < dim; i++) {
-    printf("[");
-    for (unsigned int j = 0; j < dim; j++) {
-      if (res[i * dim + j] >= 0) {
-        printf("  %17.10e,", res[i * dim + j]);
-      } else {
-        printf(" %17.10e,", res[i * dim + j]);
-      }
-    }
-    printf(" ],\n");
-  }
-  printf("\n\n");
-  //
-  //
+  matMul2(slater_matrix, slater_inverse, res, dim_32, dim_32, dim_32);
   bool ok = is_identity(res, dim, tolerance);
   double res_max = residual_max(res, dim);
   double res2 = residual_frobenius2(res, dim);

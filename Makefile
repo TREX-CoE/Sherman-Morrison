@@ -16,7 +16,7 @@ else ifeq ($(ENV),GNU)
 	FC = gfortran
 	# ARCH = -mavx
 	ARCH =
-	OPT = -O1
+	OPT = -O0
 	DEBUG = -g
 else
     $(error No valid compiler environment set in $$ENV. \
