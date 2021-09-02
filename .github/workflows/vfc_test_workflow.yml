@@ -21,24 +21,23 @@ jobs:
         with:
             fetch-depth: 0
 
-      - name: Install HDF5 requirements
-        run: |
-          apt update
-          apt install -y wget libhdf5-dev g++
       - name: Run tests
         run: vfc_ci test -g -r
 
       - name: Commit test results
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
+
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
           git checkout vfc_ci_dev
           mkdir -p vfcruns
           mv *.vfcrun.h5 vfcruns
           git add vfcruns/*
           git commit -m "[auto] New test results for commit ${git_hash}"
           git push
+
       - name: Upload raw results as artifacts
         uses: actions/upload-artifact@v2
         with:
