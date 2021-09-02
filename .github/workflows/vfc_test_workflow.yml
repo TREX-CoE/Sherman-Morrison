@@ -21,6 +21,10 @@ jobs:
         with:
             fetch-depth: 0
 
+      - name: Install HDF5 requirements
+        run: |
+          apt update
+          apt install -y wget libhdf5-dev g++
       - name: Run tests
         run: vfc_ci test -g -r
 
