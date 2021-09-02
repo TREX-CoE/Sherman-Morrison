@@ -13,7 +13,7 @@
 #include "Helpers.hpp"
 #include "SM_Maponi.hpp"
 #include "SM_Standard.hpp"
-#include "vfc_probe.h"
+#include <vfc_probes.h>
 
 using namespace H5;
 // #define DEBUG
@@ -140,9 +140,9 @@ int test_cycle(H5File file, int cycle, std::string version,
   showMatrix(res, dim, "Result");
 #endif
 
-  vfc_put_probe(probes, &(zero_padded_group)[0], &("frob2_" + version)[0],
+  vfc_probe(probes, &(zero_padded_group)[0], &("frob2_" + version)[0],
                 frob2);
-  vfc_put_probe(probes, &(zero_padded_group)[0], &("res2_" + version)[0], res2);
+  vfc_probe(probes, &(zero_padded_group)[0], &("res2_" + version)[0], res2);
 
   delete[] res, updates, u, col_update_index, slater_matrix, slater_inverse;
 
