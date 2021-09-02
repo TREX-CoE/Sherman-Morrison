@@ -10,7 +10,7 @@ H5FLAGS = "-I/usr/include/hdf5/serial \
 		   /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_cpp.a \
 		   /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5_hl.a \
 		   /usr/lib/x86_64-linux-gnu/hdf5/serial/libhdf5.a \
-		   -lpthread -lsz -lz -ldl -lm \
+		   -lpthread -lsz -lz -ldl -lm -lvfc_probes \
 		   -Wl,-rpath -Wl,/usr/lib/x86_64-linux-gnu/hdf5/serial"
 CXXFLAGS = -O0 -g $(H5FLAGS)
 ## MKL linker flags
@@ -20,11 +20,11 @@ ifeq ($(MKL),-DMKL)
 	ifeq ($(ENV),INTEL)
 		LFLAGS = -mkl=sequential # implicit
 	else
-		LFLAGS = $(H5LFLAGS) -lvfc_probes
+		LFLAGS = $(H5LFLAGS)
 	endif
 endif
 H5CXXFLAGS = $(CXXFLAGS)
-FFLAGS = $(CXXFLAGS)
+FFLAGS = $(CXXFLAGS) -lvfc_probes_f
 
 INCLUDE = -I $(INC_DIR)/
 DEPS_CXX = $(OBJ_DIR)/SM_Maponi.o \
