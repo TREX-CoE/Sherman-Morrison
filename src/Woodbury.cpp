@@ -15,7 +15,7 @@
 
 // Woodbury 2x2 kernel
 bool WB2(double *Slater_inv, const unsigned int Dim, double *Updates,
-         const unsigned int *Updates_index) {
+         const unsigned int *Updates_index, const double breakdown) {
 /*
     C := S^{-1} * U,    dim x 2
     B := 1 + V * C,     2 x 2
@@ -48,7 +48,7 @@ bool WB2(double *Slater_inv, const unsigned int Dim, double *Updates,
 
   // Check if determinant of inverted matrix is not zero
   double det = B0 * B3 - B1 * B2;
-  if (std::fabs(det) < threshold()) {
+  if (std::fabs(det) < breakdown) {
 #ifdef DEBUG1
     std::cerr << "Determinant too close to zero! No inverse found."
               << std::endl;
@@ -86,7 +86,7 @@ bool WB2(double *Slater_inv, const unsigned int Dim, double *Updates,
 
 // Woodbury 3x3 kernel
 bool WB3(double *Slater_inv, const unsigned int Dim, double *Updates,
-         const unsigned int *Updates_index) {
+         const unsigned int *Updates_index, const double breakdown) {
 /*
     C := S^{-1} * U,    dim x 3
     B := 1 + V * C,     3 x 3
@@ -139,7 +139,7 @@ bool WB3(double *Slater_inv, const unsigned int Dim, double *Updates,
 #ifdef DEBUG2
   std::cerr << "Determinant of B = " << det << std::endl;
 #endif
-  if (std::fabs(det) < threshold()) {
+  if (std::fabs(det) < breakdown) {
 #ifdef DEBUG1
     std::cerr << "Determinant too close to zero! No inverse found."
               << std::endl;
@@ -197,15 +197,15 @@ bool WB3(double *Slater_inv, const unsigned int Dim, double *Updates,
 
 extern "C" {
 bool WB2_f(double **linSlater_inv, unsigned int *Dim, double **linUpdates,
-           unsigned int **Updates_index) {
+           unsigned int **Updates_index, const double breakdown) {
   bool ok;
-  ok = WB2(*linSlater_inv, *Dim, *linUpdates, *Updates_index);
+  ok = WB2(*linSlater_inv, *Dim, *linUpdates, *Updates_index, breakdown);
   return ok;
 }
 bool WB3_f(double **linSlater_inv, unsigned int *Dim, double **linUpdates,
-           unsigned int **Updates_index) {
+           unsigned int **Updates_index, const double breakdown) {
   bool ok;
-  ok = WB3(*linSlater_inv, *Dim, *linUpdates, *Updates_index);
+  ok = WB3(*linSlater_inv, *Dim, *linUpdates, *Updates_index, breakdown);
   return ok;
 }
 }

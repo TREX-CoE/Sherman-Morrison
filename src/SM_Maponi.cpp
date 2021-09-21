@@ -5,7 +5,7 @@
 #include "Helpers.hpp"
 
 void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-              double *Updates, unsigned int *Updates_index) {
+              double *Updates, unsigned int *Updates_index, double breakdown) {
   std::cerr << "Called MaponiA3 with " << N_updates << " updates" << std::endl;
 
   /*
@@ -74,7 +74,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
               << "] = " << beta << std::endl;
     std::cerr << std::endl;
 #endif
-    if (std::fabs(beta) < threshold()) {
+    if (std::fabs(beta) < breakdown) {
 #ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
@@ -135,7 +135,7 @@ void MaponiA3(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
 }
 
 void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
-               double *Updates, unsigned int *Updates_index) {
+               double *Updates, unsigned int *Updates_index, double breakdown) {
   std::cerr << "Called MaponiA3S with " << N_updates << " updates" << std::endl;
 
   /*
@@ -208,7 +208,7 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
               << "] = " << beta << std::endl;
     std::cerr << std::endl;
 #endif
-    if (std::fabs(beta) < threshold()) {
+    if (std::fabs(beta) < breakdown) {
 #ifdef DEBUG1
       std::cerr << "Breakdown condition triggered at " << Updates_index[l]
                 << std::endl;
@@ -275,22 +275,22 @@ void MaponiA3S(double *Slater_inv, unsigned int Dim, unsigned int N_updates,
   delete[] Al, next, p, ylk;
 
   if (later > 0) {
-    MaponiA3S(Slater_inv, Dim, later, later_updates, later_index);
+    MaponiA3S(Slater_inv, Dim, later, later_updates, later_index, breakdown);
   }
 }
 
 extern "C" {
 void MaponiA3_f(double **linSlater_inv, unsigned int *Dim,
                 unsigned int *N_updates, double **linUpdates,
-                unsigned int **Updates_index) {
-  MaponiA3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+                unsigned int **Updates_index, double breakdown) {
+  MaponiA3(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index, breakdown);
 }
 }
 
 extern "C" {
 void MaponiA3S_f(double **linSlater_inv, unsigned int *Dim,
                  unsigned int *N_updates, double **linUpdates,
-                 unsigned int **Updates_index) {
-  MaponiA3S(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index);
+                 unsigned int **Updates_index, double breakdown) {
+  MaponiA3S(*linSlater_inv, *Dim, *N_updates, *linUpdates, *Updates_index, breakdown);
 }
 }

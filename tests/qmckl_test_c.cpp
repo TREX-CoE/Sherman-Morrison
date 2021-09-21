@@ -2,10 +2,10 @@
 #include "hdf5/serial/hdf5.h"
 
 #include "Helpers.hpp"
-#include "SMWB.hpp"
-#include "SM_Maponi.hpp"
-#include "SM_Standard.hpp"
-#include "Woodbury.hpp"
+#include "qmckl.h"
+#include <math.h>
+#include <cstring>
+#include <iostream>
 
 #define PERF
 
@@ -33,10 +33,13 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
 
   std::string group = "cycle_" + std::to_string(cycle);
 
-  unsigned int dim, nupdates, col, i, j;
+  unsigned int col, i, j;
+  unsigned int dim_32, nupdates_32;
+  uint64_t dim, nupdates;
 
-  read_int(file, group + "/slater_matrix_dim", &dim);
-  read_int(file, group + "/nupdates", &nupdates);
+  read_int(file, group + "/slater_matrix_dim", &dim_32);
+  read_int(file, group + "/nupdates", &nupdates_32);
+  dim = dim_32; nupdates = nupdates_32;
 
   double *slater_matrix = new double[dim * dim];
   read_double(file, group + "/slater_matrix", slater_matrix);
@@ -44,8 +47,13 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
   double *slater_inverse = new double[dim * dim];
   read_double(file, group + "/slater_inverse", slater_inverse);
 
-  unsigned int *col_update_index = new unsigned int[nupdates];
-  read_int(file, group + "/col_update_index", col_update_index);
+  unsigned int *temp = new unsigned int[nupdates];
+  uint64_t *col_update_index = new uint64_t[nupdates];
+  read_int(file, group + "/col_update_index", temp);
+  for (i = 0; i < nupdates; i++) {
+	  col_update_index[i] = temp[i];
+  }
+  delete[] temp;
 
   double *updates = new double[nupdates * dim];
   read_double(file, group + "/updates", updates);
@@ -65,6 +73,9 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
   }
   delete[] updates;
 
+  qmckl_context context = qmckl_context_create();
+  qmckl_exit_code rc;
+
 #ifdef PERF
   std::cout << "# of reps. = " << repetition_number << std::endl;
   double *slater_inverse_nonpersistent = new double[dim * dim];
@@ -73,65 +84,42 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      SM1(slater_inverse_nonpersistent, dim, nupdates,
-        u, col_update_index, breakdown);
+      rc = qmckl_sherman_morrison(context, &dim, &nupdates,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "wb2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      WB2(slater_inverse_nonpersistent, dim,
-        u, col_update_index, breakdown);
+      rc = qmckl_woodbury_2(context, &dim,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "wb3") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      WB3(slater_inverse_nonpersistent, dim,
-        u, col_update_index, breakdown);
+      rc = qmckl_woodbury_3(context, &dim,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "sm2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      SM2(slater_inverse_nonpersistent, dim, nupdates,
-        u, col_update_index, breakdown);
-    }
-  }
-  else if (version == "wb2s") {
-    for (unsigned int i = 0; i < repetition_number; i++) {
-      memcpy(slater_inverse_nonpersistent, slater_inverse,
-                  dim * dim * sizeof(double));
-      WB2s(slater_inverse_nonpersistent, dim, nupdates,
-        u, col_update_index, breakdown);
-    }
-  }
-  else if (version == "wb3s") {
-    for (unsigned int i = 0; i < repetition_number; i++) {
-      memcpy(slater_inverse_nonpersistent, slater_inverse,
-                  dim * dim * sizeof(double));
-      WB3s(slater_inverse_nonpersistent, dim, nupdates,
-        u, col_update_index, breakdown);
+      rc = qmckl_sherman_morrison_splitting(context, &dim, &nupdates,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "wb32s") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      WB32s(slater_inverse_nonpersistent, dim, nupdates,
-        u, col_update_index, breakdown);
+      rc = qmckl_sherman_morrison_smw32s(context, &dim, &nupdates,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
-#ifdef MKL
-  else if (version == "lapack") {
-    memcpy(slater_inverse_nonpersistent, slater_matrix,
-            dim * dim * sizeof(double));
-    inverse(slater_inverse_nonpersistent, dim);
-  }
-#endif // MKL
   else {
     std::cerr << "Unknown version " << version << std::endl;
     exit(1);
@@ -139,53 +127,44 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
   std::memcpy(slater_inverse, slater_inverse_nonpersistent,
               dim * dim * sizeof(double));
   delete[] slater_inverse_nonpersistent;
-#else
-  if (version == "maponia3") {
-    MaponiA3(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "maponia3s") {
-    MaponiA3S(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm1") {
-    SM1(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm2") {
-    SM2(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm3") {
-    SM3(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "sm4") {
-    SM4(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "wb2") {
-    WB2(slater_inverse, dim, u, col_update_index);
-  } else if (version == "wb3") {
-    WB3(slater_inverse, dim, u, col_update_index);
-  } else if (version == "wb2s") {
-    WB2s(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "wb3s") {
-    WB3s(slater_inverse, dim, nupdates, u, col_update_index);
-  } else if (version == "wb32s") {
-    WB32s(slater_inverse, dim, nupdates, u, col_update_index);
-#ifdef MKL
-  } else if (version == "lapack") {
-    memcpy(slater_inverse, slater_matrix, dim * dim * sizeof(double));
-    inverse(slater_inverse, dim);
-#endif // MKL
-  } else {
+#else //  No performance measurements repetition
+  if (version == "sm1") {
+    qmckl_context context;
+    context = qmckl_context_create();
+    qmckl_exit_code rc;
+    rc = qmckl_sherman_morrison_c(context, dim, nupdates,
+      u, col_update_index, breakdown, slater_inverse);
+  }
+  else if (version == "wb2") {
+    qmckl_context context;
+    context = qmckl_context_create();
+    qmckl_exit_code rc;
+      rc = qmckl_woodbury_2_c(context, dim,
+        u, col_update_index, breakdown, slater_inverse);
+  }
+  else if (version == "wb3") {
+    qmckl_context context;
+    context = qmckl_context_create();
+    qmckl_exit_code rc;
+      rc = qmckl_woodbury_3_c(context, dim,
+        u, col_update_index, breakdown, slater_inverse);
+  }
+  else {
     std::cerr << "Unknown version " << version << std::endl;
     exit(1);
   }
 #endif // PERF
   delete[] u, col_update_index;
+  rc = qmckl_context_destroy(context);
 
   double *res = new double[dim * dim]{0};
-  matMul2(slater_matrix, slater_inverse, res, dim, dim, dim);
+  matMul2(slater_matrix, slater_inverse, res, dim_32, dim_32, dim_32);
   bool ok = is_identity(res, dim, tolerance);
   double res_max = residual_max(res, dim);
   double res2 = residual_frobenius2(res, dim);
 
   std::cout << "Residual = " << version << " " << cycle << " " << res_max << " "
             << res2 << std::endl;
-
-#ifdef DEBUG2
-  showMatrix(res, dim, "Result");
-#endif
 
   delete[] res, slater_matrix, slater_inverse;
 

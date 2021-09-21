@@ -24,10 +24,18 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       # Runs a single command using the runners shell
       - name: Test compilation
         run: |
-          sudo apt install libhdf5-dev flang-7 clang-7
+          sudo apt install libhdf5-dev flang-7 clang-7 emacs autoconf
           source smvars.sh llvm
+          cd qmckl
+          ./autogen.sh
+          QMCKL_DEVEL=1 ./configure --enable-silent-rules --enable-maintainer-mode
+          make -j 8
+          make -j check
+          cd ..
           make

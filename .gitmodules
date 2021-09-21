@@ -1,0 +1,4 @@
+[submodule "qmckl"]
+	path = qmckl
+	url = https://github.com/fmgjcoppens/qmckl.git
+	branch = sherman-morrison-woodbury
