@@ -84,56 +84,40 @@ int test_cycle(H5::H5File file, int cycle, std::string version, double breakdown
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      rc = qmckl_sherman_morrison_c(context, dim, nupdates,
-        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+      rc = qmckl_sherman_morrison(context, &dim, &nupdates,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "wb2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      rc = qmckl_woodbury_2_c(context, dim,
-        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+      rc = qmckl_woodbury_2(context, &dim,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "wb3") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      rc = qmckl_woodbury_3_c(context, dim,
-        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+      rc = qmckl_woodbury_3(context, &dim,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "sm2") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      rc = qmckl_sherman_morrison_splitting_c(context, dim, nupdates,
-        u, col_update_index, breakdown, slater_inverse_nonpersistent);
-    }
-  }
-  else if (version == "wb2s") {
-    for (unsigned int i = 0; i < repetition_number; i++) {
-      memcpy(slater_inverse_nonpersistent, slater_inverse,
-                  dim * dim * sizeof(double));
-      rc = qmckl_sherman_morrison_smw2s_c(context, dim, nupdates,
-        u, col_update_index, breakdown, slater_inverse_nonpersistent);
-    }
-  }
-  else if (version == "wb3s") {
-    for (unsigned int i = 0; i < repetition_number; i++) {
-      memcpy(slater_inverse_nonpersistent, slater_inverse,
-                  dim * dim * sizeof(double));
-      rc = qmckl_sherman_morrison_smw3s_c(context, dim, nupdates,
-        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+      rc = qmckl_sherman_morrison_splitting(context, &dim, &nupdates,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else if (version == "wb32s") {
     for (unsigned int i = 0; i < repetition_number; i++) {
       memcpy(slater_inverse_nonpersistent, slater_inverse,
                   dim * dim * sizeof(double));
-      rc = qmckl_sherman_morrison_smw32s_c(context, dim, nupdates,
-        u, col_update_index, breakdown, slater_inverse_nonpersistent);
+      rc = qmckl_sherman_morrison_smw32s(context, &dim, &nupdates,
+        u, col_update_index, &breakdown, slater_inverse_nonpersistent);
     }
   }
   else {

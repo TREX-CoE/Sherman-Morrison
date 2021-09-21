@@ -14,7 +14,7 @@ module Helpers
             
             character (len = *), intent(in) :: filename
             integer, intent(inout) :: cycle_id, dim, n_updates
-            integer(c_int), allocatable, intent(inout) :: Updates_index(:)
+            integer, allocatable, intent(inout) :: Updates_index(:)
             real(c_double), allocatable, intent(inout) :: S(:,:), S_inv(:,:)
             real(c_double), allocatable, intent(inout) :: Updates(:,:)
             integer :: i, j
