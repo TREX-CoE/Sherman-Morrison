@@ -11,9 +11,10 @@ int main() {
   unsigned int *Ar_index = new unsigned int[M];
   double *A = new double[M * M]; // The matrix to be inverted
   double *A0 =
-      new double[M * M]; // A diagonal matrix with the digonal elements of A
+  new double[M * M]; // A diagonal matrix with the digonal elements of A
   double *Ar = new double[M * M];     // The update matrix
   double *A0_inv = new double[M * M]; // The inverse
+  double breakdown = 1e-3;
 
   // Fill with zeros
   for (i = 0; i < M; i++) {
@@ -51,7 +52,7 @@ int main() {
 
   // Define pointers dim and n_updates to use in Sherman-Morrison(...) function
   // call
-  MaponiA3(A0_inv, M, M, Ar, Ar_index);
+  MaponiA3(A0_inv, M, M, Ar, Ar_index, breakdown);
   showMatrix(A0_inv, M, "A0_inv");
 
   // Deallocate all vectors and matrices
