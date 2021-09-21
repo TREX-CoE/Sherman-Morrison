@@ -52,8 +52,8 @@ DEPS_F = $(DEPS_CXX) \
 		 $(OBJ_DIR)/helpers_mod.o
 
 ## QMCkl includes and linking
-QMCKL_INCLUDE = -I $(SMROOT)/qmckl/build/include
-QMCKLLFLAGS = -L$(SMROOT)/qmckl/build/lib -lqmckl
+QMCKL_INCLUDE = -I$(SMROOT)/qmckl/include
+QMCKLLFLAGS = -L$(SMROOT)/qmckl/src/.libs -lqmckl
 
 
 ## Directory structure
@@ -66,6 +66,7 @@ BIN_DIR := bin
 EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/test_h5 \
 		$(BIN_DIR)/fnu_test_h5 \
+		$(BIN_DIR)/qmckl_test_c \
 		$(BIN_DIR)/fMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/fMaponiA3_test_4x4_2 \
 		$(BIN_DIR)/QMCChem_dataset_test
@@ -97,7 +98,12 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(INC_DIR)/* | $(OBJ_DIR)
 
 ## HDF5/C++ objects
 $(OBJ_DIR)/%_h5.o: $(TST_DIR)/%_h5.cpp $(INC_DIR)/* | $(OBJ_DIR)
+	$(H5CXX) $(H5CXXFLAGS) $(INCLUDE) -c -o $@ $<
+
+## HDF5/C++ objects
+$(OBJ_DIR)/qmckl_test_c.o: $(TST_DIR)/qmckl_test_c.cpp $(INC_DIR)/* | $(OBJ_DIR)
 	$(H5CXX) $(H5CXXFLAGS) $(INCLUDE) $(QMCKL_INCLUDE) -c -o $@ $<
+
 
 ## Fortran modules
 $(OBJ_DIR)/%_mod.o: $(SRC_DIR)/%_mod.f90 | $(OBJ_DIR)
@@ -122,7 +128,7 @@ $(BIN_DIR)/test_h5: $(OBJ_DIR)/test_h5.o $(DEPS_CXX) | $(BIN_DIR)
 $(BIN_DIR)/fnu_test_h5: $(OBJ_DIR)/fnu_test_h5.o $(DEPS_CXX) | $(BIN_DIR)
 	$(H5CXX) $(H5LFLAGS) -o $@ $^
 
-$(BIN_DIR)/qmckl_test_h5: $(OBJ_DIR)/qmckl_test_h5.o | $(BIN_DIR)
+$(BIN_DIR)/qmckl_test_c: $(OBJ_DIR)/qmckl_test_c.o | $(BIN_DIR)
 	$(H5CXX) $(H5LFLAGS) $(QMCKLLFLAGS) -o $@ $^
 
 $(BIN_DIR)/fMaponiA3_test_3x3_3: $(DEPS_F) $(OBJ_DIR)/fMaponiA3_test_3x3_3.o  | $(BIN_DIR)
