@@ -1,0 +1,46 @@
+#! /bin/octave -qf
+
+if (nargin < 2)
+    printf ("Call with: ./arguments.m ⟨path/to/data/files⟩ ⟨nr of updates⟩\n");
+    return;
+endif
+arg_list = argv ();
+INDIR = arg_list{1};
+INNR = arg_list{2};
+
+FILE_ANTHONY = [INDIR "/" INNR "_anthony.dat"];
+FILE_NAIVE = [INDIR "/" INNR "_naive.dat"];
+FILE_SPLIT = [INDIR "/" INNR "_splitting.dat"];
+FILE_BLOCK = [INDIR "/" INNR "_blocked.dat"];
+
+data_antho=dlmread(FILE_ANTHONY);
+data_naive = dlmread (FILE_NAIVE);
+data_split = dlmread (FILE_SPLIT);
+data_block = dlmread (FILE_BLOCK);
+
+printf ("\n");
+n_cycles = size(data_antho)(1)-2
+printf ("\n");
+
+average_cpucycls_p_upd_antho = mean(data_antho(2:n_cycles+1,10))
+average_cpucycls_p_upd_naive = mean(data_naive(2:n_cycles+1,10))
+average_cpucycls_p_upd_split = mean(data_split(2:n_cycles+1,10))
+average_cpucycls_p_upd_block = mean(data_block(2:n_cycles+1,10))
+printf ("\n");
+
+std_cpucycls_p_upd_antho = std(data_antho(2:n_cycles+1,10))
+std_cpucycls_p_upd_naive = std(data_naive(2:n_cycles+1,10))
+std_cpucycls_p_upd_split = std(data_split(2:n_cycles+1,10))
+std_cpucycls_p_upd_block = std(data_block(2:n_cycles+1,10))
+printf ("\n");
+
+factor_naive = average_cpucycls_p_upd_naive / average_cpucycls_p_upd_antho
+factor_split = average_cpucycls_p_upd_split / average_cpucycls_p_upd_antho
+factor_block = average_cpucycls_p_upd_block / average_cpucycls_p_upd_antho
+printf ("\n");
+
+fail_rate_antho = sum( data_antho(2:n_cycles+1, 5) ) / n_cycles
+fail_rate_naive = sum( data_naive(2:n_cycles+1, 5) ) / n_cycles
+fail_rate_split = sum( data_split(2:n_cycles+1, 5) ) / n_cycles
+fail_rate_block = sum( data_block(2:n_cycles+1, 5) ) / n_cycles
+

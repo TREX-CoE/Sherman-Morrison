@@ -1,0 +1,92 @@
+#include <assert.h>
+#include "data_cm.h"
+#include "meuk.h"
+
+#define REPETITIONS 10000000
+int main(int argc, char **argv) {
+
+  assert(argc == 3);
+  char *version = argv[1];
+  char *number_of_updates = argv[2];
+  const uint64_t Dim = 21;
+  const uint64_t LDS = 24;
+  // const double breakdown = 1e-3;
+  const double breakdown = 1e-9; // this might be too small and cause NIs
+  uint32_t rc;
+
+  const uint64_t *N_updates;
+  const double *Updates;
+  const uint64_t *Updates_index;
+  double *Slater, *Slater_invT;
+  double determinant;
+  if (number_of_updates[0] == '2') { // 2 Updates
+    N_updates = &N_updates2;
+    Updates = &Updates2[0];
+    Updates_index = &Updates_index2[0];
+    Slater = &Slater2[0];
+    Slater_invT = &Slater_invT2[0]; // Slater_inv in QMC=Chem is actually its transpose
+    determinant = determinant2;
+  } else if (number_of_updates[0] == '3') { // 3 Updates
+    N_updates = &N_updates3;
+    Updates = &Updates3[0];
+    Updates_index = &Updates_index3[0];
+    Slater = &Slater3[0];
+    Slater_invT = &Slater_invT3[0];
+    determinant = determinant3;
+  } else if (number_of_updates[0] == '5') { // 5 Updates
+    N_updates = &N_updates5;
+    Updates = &Updates5[0];
+    Updates_index = &Updates_index5[0];
+    Slater = &Slater5[0];
+    Slater_invT = &Slater_invT5[0];
+    determinant = determinant5;
+  } else { // Exit
+    printf("Incorrect number of updates given\n");
+    return 1;
+  }
+  
+  rc = check_residual(LDS, Dim, Slater_invT, Slater);
+  assert(rc == 0 && "check_residual()");
+  rc = test_kernel(version, LDS, Dim, *N_updates, Updates, Updates_index,
+                   breakdown, Slater, Slater_invT, &determinant);
+  assert(rc == 0 && "test_kernel()");
+
+  // EVERYTHING WORKS UP UNTILL HERE
+
+  uint64_t before = rdtsc();
+  if (version[0] == 'a') { // Anthony
+    for (int i = 0; i < REPETITIONS; i++) {
+      const double* Upds;
+      const uint64_t* Ui;
+      for (int j = 0; j < *N_updates; j++) {
+        Upds = &Updates[j*LDS];
+        Ui = &Updates_index[j];
+        detupd(Dim, LDS, Upds, Ui, Slater_invT, &determinant);
+      }
+    }
+  } else if (version[0] == 'n') { // Naive
+    for (int i = 0; i < REPETITIONS; i++) {
+      rc = qmckl_sherman_morrison(LDS, Dim, *N_updates, Updates,
+            Updates_index, breakdown, Slater_invT, &determinant);
+      if (rc != 0) printf("qmckl_sherman_morrison failed\n");
+    }
+  } else if (version[0] == 's') { // Splitting
+    for (int i = 0; i < REPETITIONS; i++) {
+      rc = qmckl_sherman_morrison_splitting(LDS, Dim, *N_updates, Updates,
+            Updates_index, breakdown, Slater_invT, &determinant);
+      if (rc != 0) printf("qmckl_sherman_morrison_splitting failed\n");
+    }
+  } else if (version[0] == 'b') { // Blocked
+    for (int i = 0; i < REPETITIONS; i++) {
+      // rc = qmckl_woodbury_2(LDS, Dim, Updates, Updates_index,
+      //                        breakdown, Slater_inv, &determinant);
+      // rc = qmckl_woodbury_3(LDS, Dim, Updates, Updates_index,
+      //                        breakdown, Slater_inv, &determinant);
+      rc = qmckl_sherman_morrison_smw32s(LDS, Dim, *N_updates, Updates,
+            Updates_index, breakdown, Slater_invT, &determinant);
+      if (rc != 0) printf("qmckl_sherman_morrison_smw32s failed\n");
+    }
+  }
+  uint64_t after = rdtsc();
+  printf("cycles = %f\n", ((double)(after - before) / (double) REPETITIONS));
+}
