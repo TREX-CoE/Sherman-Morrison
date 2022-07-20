@@ -1,11 +1,17 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include "kernels.h"
+
 
 extern uint64_t n_splits;
 extern uint64_t block_fail;
 extern uint64_t recursive_calls;
+
+int min(int a, int b) {
+  return (a > b) ? b : a;
+}
 
 uint32_t qmckl_sherman_morrison(
     const uint64_t vLDS, const uint64_t vDim, const uint64_t N_updates,
@@ -264,6 +270,91 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
 
   return 0;
 }
+
+/*
+COMPUTE S^{-1} - C B^{-1} D : Dim x LDS,
+where S^{-1}                : Dim x LDS,
+      C := S^{-1} U         : Dim x K, dgemm
+      B := 1 + V C          : K x K, copy
+      D := V S^{-1}         : K x LDS, copy
+      U                     : LDS x K,
+      V                     : K x Dim
+      tmp := B^{-1} D       : K x LDS, dgemm
+      S = S - C tmp         : Dim x LDS, dgemm
+*/
+uint32_t qmckl_woodbury_k(const uint64_t vLDS,
+                          const uint64_t vDim,
+                          const uint64_t N_updates,
+                          const double *__restrict __attribute__((aligned(8))) Updates,
+                          const uint64_t *__restrict Updates_index,
+                          const double breakdown,
+                          double *__restrict __attribute__((aligned(8))) Slater_inv,
+                          double *__restrict determinant) {
+
+  const uint32_t Dim = 21;
+  const uint32_t LDS = 24;
+
+  // Compute C = S^{-1} U : Dim x K : standard dgemm
+  double C[Dim * N_updates];
+  double alpha = 1.0, beta = 0.0;
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+              Dim, N_updates, LDS,
+              alpha, Slater_inv, LDS, Updates, LDS,
+              beta, C, N_updates);
+
+  // Construct B = 1 + V C : K x K : selecting and copying row from C into B. Can maybe be off-loaded to GPU by splitting in N_updates tiles of N_updates strides, using PARALLEL and SIMD
+  // Construct D = V S^{-1} : K x LDS
+  double B[N_updates * N_updates], D[N_updates * LDS];
+  for (uint32_t i = 0; i < N_updates; i++) {
+    const uint32_t row = Updates_index[i] - 1;
+    for (uint32_t j = 0; j < N_updates  ; j++) B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
+    for (uint32_t j = 0; j < LDS; j++) D[i * LDS + j] = Slater_inv[row * LDS + j];
+  }
+
+  // Compute determinant by LU decomposition
+  int ipiv[N_updates];
+  lapack_int ret;
+  ret = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
+  if (ret != 0) return ret;
+  double det = 1.0;
+  int j = 0;
+  for (uint32_t i = 0; i < N_updates; i++) {
+    j += min(abs(ipiv[i] - i), 1);
+    det *= B[(N_updates + 1) * i];
+  }
+  if (j & 1 == 0) {
+    det = -det;
+  }
+
+  // Check if determinant of B is not too close to zero
+  if (fabs(det) < breakdown) {
+    return 1;
+  }
+
+  // Update det(Slater) if passed
+  if (determinant) *determinant *= det;
+
+  // Compute B^{-1} with explicit formula for K x K inversion
+  ret = LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, ipiv);
+  if (ret != 0) return ret;
+
+  // tmp = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
+  double tmp[N_updates * LDS];
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+              N_updates, LDS, N_updates,
+              alpha, B, N_updates, D, LDS,
+              beta, tmp, LDS);
+
+  // Compute S^{-1} - C * tmp : Dim x LDS : standard dgemm
+  alpha = -1.0, beta = 1.0;
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+              Dim, LDS, N_updates,
+              alpha, C, N_updates, tmp, LDS,
+              beta, Slater_inv, LDS);
+
+  return 0;
+}
+
 
 uint32_t qmckl_slagel_splitting(
     const uint64_t vLDS, const uint64_t vDim, uint64_t N_updates,

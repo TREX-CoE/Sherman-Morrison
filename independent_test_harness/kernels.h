@@ -1,6 +1,9 @@
 #include <mkl_lapacke.h>
+#include <mkl.h>
 
 lapack_int inverse(double *A, uint64_t Dim, uint64_t LDS);
+
+int min(int a, int b);
 
 uint32_t qmckl_sherman_morrison(
     const uint64_t vLDS, const uint64_t vDim, const uint64_t N_updates,
@@ -30,6 +33,15 @@ uint32_t qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
                           const double breakdown,
                           double *__restrict __attribute__((aligned(8)))
                           Slater_inv,
+                          double *__restrict determinant);
+
+uint32_t qmckl_woodbury_k(const uint64_t vLDS,
+                          const uint64_t vDim,
+                          const uint64_t N_updates,
+                          const double *__restrict __attribute__((aligned(8))) Updates,
+                          const uint64_t *__restrict Updates_index,
+                          const double breakdown,
+                          double *__restrict __attribute__((aligned(8))) Slater_inv,
                           double *__restrict determinant);
 
 uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,

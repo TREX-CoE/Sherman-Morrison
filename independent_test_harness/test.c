@@ -41,10 +41,8 @@ printf("#1\t2\t3\t4\t\t5\t6\t\t7\t\t8\t\t9\t\t10\t\t11\t\t12\t\t13\t\t14\n");
 printf("#CYCLE\tUPDS\tERR_IN\tERR_BREAK\tERR_OUT\tSPLITS\t\tBLK_FAILS\tMAX\t\tFROB\t\tCOND\t\tCPU_CYC\t\tCPU_CYC/UPD\tCUMUL\t\tREC\n");
 printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
   // FOR EACH UPDATE CYCLE DO:
-  for (uint32_t cycles_index = 0; cycles_index < n_cycles; cycles_index++) {
-  // for (uint32_t cycles_index = 0; cycles_index < 1; cycles_index++) {  
-  // for (uint32_t cycles_index = 65; cycles_index < 66; cycles_index++) {
-  // for (uint32_t cycles_index = 8055; cycles_index < 8056; cycles_index++) {
+  // for (uint32_t cycles_index = 0; cycles_index < n_cycles; cycles_index++) {
+  for (uint32_t cycles_index = 40; cycles_index < 41; cycles_index++) {  
     // 1. READ DATA FROM DATASET
     uint32_t cycle = cycles[cycles_index];
     sprintf(nupds_key, "/cycle_%d/nupdates", cycle);
@@ -195,6 +193,21 @@ printf("#-----------------------------------------------------------------------
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
         err_break = qmckl_woodbury_3(LDS, Dim, Updates, Updates_index,
               breakdown, Slater_invT_copy, &determinant);
+
+        // 3. FETCH FINISH TIME
+        uint64_t after = rdtsc();
+
+        // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
+        accumulator += (double)(after - before);
+
+      } else if (version[0] == 'k') { // Woodbury K
+
+        // 1. FETCH START TIME
+        uint64_t before = rdtsc();
+
+        // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
+        err_break = qmckl_woodbury_k(LDS, Dim, N_updates, Updates,
+              Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
         uint64_t after = rdtsc();
