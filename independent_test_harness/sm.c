@@ -322,9 +322,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
     j += min(abs(ipiv[i] - i), 1);
     det *= B[(N_updates + 1) * i];
   }
-  if (j & 1 == 0) {
-    det = -det;
-  }
+  if (j & 1 == 0) det = -det; // multiply det with -1 if j is even
 
   // Check if determinant of B is not too close to zero
   if (fabs(det) < breakdown) {
@@ -368,8 +366,7 @@ uint32_t qmckl_slagel_splitting(
   const uint32_t LDS = 24;
   const uint32_t Dim = 21;
 
-  // double __attribute__((aligned(8))) C[N_updates * Dim];
-  double __attribute__((aligned(8))) C[Dim];
+  double __attribute__((aligned(8))) C[LDS];
   double __attribute__((aligned(8))) D[LDS];
 
   uint32_t l = 0;

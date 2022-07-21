@@ -4,7 +4,7 @@
 
 #define DATASET "dataset_329d_zeropadded_cm.hdf5"
 // #define DATASET "dataset_15784d_zeropadded_cm.hdf5"
-#define REPETITIONS 100000
+#define REPETITIONS 1000000
 
 uint64_t n_splits;
 uint64_t block_fail;
