@@ -1,9 +1,6 @@
 #include <math.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
 #include "kernels.h"
-
 
 extern uint64_t n_splits;
 extern uint64_t block_fail;
@@ -107,17 +104,6 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
       C[i * 2 + 1] += Slater_inv[i * LDS + k] * Updates[LDS + k];
     }
   }
-  // const double alpha = 1.0, beta = 0.0;
-  // const bool TransA = true, TransB = false;
-  // (void) cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-  //                  Dim, 2, LDS, alpha, Slater_inv, LDS, Updates, LDS, beta,
-  //                  C, 2);
-  // (void) qmckl_dgemm(context, CblasNoTrans, CblasTrans,
-  //                  2, Dim, LDS, alpha, Updates, LDS, Slater_inv, LDS, beta,
-  //                  C, 2);
-  // (void) qmckl_dgemm(context, TransA, TransB,
-  //                     2, Dim, LDS, alpha, Updates, LDS, Slater_inv, LDS,
-  //                     beta, C, 2);
 
   // Compute B = 1 + VC : 2 x 2
   const double B0 = C[row1 * 2] + 1;
@@ -204,10 +190,6 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
       C[i * 3 + 2] += Slater_inv[i * LDS + k] * Updates[2 * LDS + k];
     }
   }
-  // double alpha = 1.0, beta = 0.0;
-  // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-  //                  Dim, 3, LDS, alpha, Slater_inv, LDS, Updates, LDS, beta,
-  //                  C, 3);
 
   // Compute B = 1 + VC : 3 x 3
   const double B0 = C[row1 * 3] + 1;
@@ -322,7 +304,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
     j += min(abs(ipiv[i] - i), 1);
     det *= B[(N_updates + 1) * i];
   }
-  if (j & 1 == 0) det = -det; // multiply det with -1 if j is even
+  if ((j & 1) == 0) det = -det; // multiply det with -1 if j is even
 
   // Check if determinant of B is not too close to zero
   if (fabs(det) < breakdown) {
@@ -352,6 +334,104 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
 
   return 0;
 }
+
+#ifdef HAVE_CUBLAS_OFFLOAD
+uint32_t qmckl_woodbury_k_cublas_offload(const uint64_t vLDS,
+          const uint64_t vDim,
+          const uint64_t N_updates,
+          const double *__restrict __attribute__((aligned(8))) Updates,
+          const uint64_t *__restrict Updates_index,
+          const double breakdown,
+          double *__restrict __attribute__((aligned(8))) Slater_inv,
+          double *__restrict determinant) {
+
+  const uint32_t Dim = 21;
+  const uint32_t LDS = 24;
+
+  //cuBLAS initialization
+  cublasHandle_t handle;
+  if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
+    fprintf(stdout, "cuBLAS initialization failed!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  // Compute C = S^{-1} U : Dim x K : standard dgemm
+  double C[Dim * N_updates];
+  double alpha = 1.0, beta = 0.0;
+
+  // #pragma omp target enter data map(to:een_rescaled_e[0:elec_num*elec_num*(cord_num+1)*walk_num], een_rescaled_n[0:M*N*walk_num], tmp_c[0:elec_num*nucl_num*(cord_num+1)*cord_num*walk_num])
+  // #pragma omp target data use_device_ptr(een_rescaled_e,een_rescaled_n,tmp_c)
+  // {
+  //   for (int nw=0; nw < walk_num; ++nw) {
+  //     int cublasError = cublasDgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K, &alpha,
+  //                                     &(een_rescaled_e[nw*(cord_num+1)]),
+  //                                     LDA, af,
+  //                                     &(een_rescaled_n[bf*nw]),
+  //                                     LDB, 0,
+  //                                     &beta,
+  //                                     &(tmp_c[nw*cord_num]),
+  //                                     LDC, cf, cord_num);
+  //   }
+  // }
+  // #pragma omp target exit data map(from:tmp_c[0:elec_num*nucl_num*(cord_num+1)*cord_num*walk_num])
+  cublasDestroy(handle);
+
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+              Dim, N_updates, LDS,
+              alpha, Slater_inv, LDS, Updates, LDS,
+              beta, C, N_updates);
+
+  // Construct B = 1 + V C : K x K : selecting and copying row from C into B. Can maybe be off-loaded to GPU by splitting in N_updates tiles of N_updates strides, using PARALLEL and SIMD
+  // Construct D = V S^{-1} : K x LDS
+  double B[N_updates * N_updates], D[N_updates * LDS];
+  for (uint32_t i = 0; i < N_updates; i++) {
+    const uint32_t row = Updates_index[i] - 1;
+    for (uint32_t j = 0; j < N_updates  ; j++) B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
+    for (uint32_t j = 0; j < LDS; j++) D[i * LDS + j] = Slater_inv[row * LDS + j];
+  }
+
+  // Compute determinant by LU decomposition
+  int ipiv[N_updates];
+  lapack_int ret;
+  ret = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
+  if (ret != 0) return ret;
+  double det = 1.0;
+  int j = 0;
+  for (uint32_t i = 0; i < N_updates; i++) {
+    j += min(abs(ipiv[i] - i), 1);
+    det *= B[(N_updates + 1) * i];
+  }
+  if ((j & 1) == 0) det = -det; // multiply det with -1 if j is even
+
+  // Check if determinant of B is not too close to zero
+  if (fabs(det) < breakdown) {
+    return 1;
+  }
+
+  // Update det(Slater) if passed
+  if (determinant) *determinant *= det;
+
+  // Compute B^{-1} with explicit formula for K x K inversion
+  ret = LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, ipiv);
+  if (ret != 0) return ret;
+
+  // tmp = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
+  double tmp[N_updates * LDS];
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+              N_updates, LDS, N_updates,
+              alpha, B, N_updates, D, LDS,
+              beta, tmp, LDS);
+
+  // Compute S^{-1} - C * tmp : Dim x LDS : standard dgemm
+  alpha = -1.0, beta = 1.0;
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+              Dim, LDS, N_updates,
+              alpha, C, N_updates, tmp, LDS,
+              beta, Slater_inv, LDS);
+
+  return 0;
+}
+#endif
 
 
 uint32_t qmckl_slagel_splitting(
@@ -442,19 +522,26 @@ uint32_t qmckl_sherman_morrison_splitting(
   double __attribute__((aligned(8))) later_updates[LDS * N_updates];
   uint64_t later_index[N_updates];
   uint64_t later = 0;
-  uint32_t rc;
+  // uint32_t rc;
 
-  rc = qmckl_slagel_splitting(LDS, Dim, N_updates, Updates, Updates_index,
+  (void) qmckl_slagel_splitting(LDS, Dim, N_updates, Updates, Updates_index,
                               breakdown, Slater_inv, later_updates, later_index,
                               &later, determinant);
+  // rc = qmckl_slagel_splitting(LDS, Dim, N_updates, Updates, Updates_index,
+  //                             breakdown, Slater_inv, later_updates, later_index,
+  //                             &later, determinant);
   // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SLAGEL_SPLITTING\n");
 
   if (later > 0) {
     recursive_calls++;
     // printf("Later > 0\n");
-    rc = qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
+    (void) qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
                                           later_index, breakdown, Slater_inv,
                                           determinant);
+
+    // rc = qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
+    //                                       later_index, breakdown, Slater_inv,
+    //                                       determinant);
     // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SHERMAN_MORRISON_SPLITTING\n");
   }
 
@@ -507,49 +594,6 @@ uint32_t qmckl_sherman_morrison_smw32s(
     }
     return 0;
   }
-
-  // if (N_updates == 6) { // Special case for 6 rank-1 updates: 2+2+2
-  //   rc = qmckl_woodbury_2(LDS, Dim, Updates, Updates_index,
-  //                 breakdown, Slater_inv, determinant);
-  //   if (rc != 0) { // Send the entire block to slagel_splitting
-  //     block_fail += 1;
-  //     uint64_t l = 0;
-  //     rc = qmckl_slagel_splitting(LDS, Dim, 2, Updates,
-  //                   Updates_index, breakdown, Slater_inv,
-  //                   later_updates + (LDS * later),
-  //                   later_index + later, &l, determinant);
-  //     later += l;
-  //   }
-  //   rc = qmckl_woodbury_2(LDS, Dim, &Updates[2*LDS], &Updates_index[2],
-  //                 breakdown, Slater_inv, determinant);
-  //   if (rc != 0) { // Send the entire block to slagel_splitting
-  //     block_fail += 1;
-  //     uint64_t l = 0;
-  //     rc = qmckl_slagel_splitting(LDS, Dim, 2, &Updates[2*LDS],
-  //                   &Updates_index[2], breakdown, Slater_inv,
-  //                   later_updates + (LDS * later),
-  //                   later_index + later, &l, determinant);
-  //     later += l;
-  //   }
-  //   rc = qmckl_woodbury_2(LDS, Dim, &Updates[4*LDS], &Updates_index[4],
-  //                 breakdown, Slater_inv, determinant);
-  //   if (rc != 0) { // Send the entire block to slagel_splitting
-  //     block_fail += 1;
-  //     uint64_t l = 0;
-  //     rc = qmckl_slagel_splitting(LDS, Dim, 2, &Updates[4*LDS],
-  //                   &Updates_index[4], breakdown, Slater_inv,
-  //                   later_updates + (LDS * later),
-  //                   later_index + later, &l, determinant);
-  //     later += l;
-  //   }
-  //   if (later > 0) {
-  //     recursive_calls++;
-  //     rc = qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
-  //                                           later_index, breakdown, Slater_inv,
-  //                                           determinant);
-  //   }
-  //   return 0;
-  // }
 
   // And for the other cases != 4, 6
   // Apply first 3*n_of_3blocks updates in n_of_3blocks blocks of 3 updates with

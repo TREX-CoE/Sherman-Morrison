@@ -103,47 +103,47 @@ printf("#-----------------------------------------------------------------------
       determinant_copy = determinant;
 
       // ### CHOOSE A KERNEL:
-      if (version[0] == 'a') { // Anthony
-        const double *Upds;
-        const uint64_t *Ui;
-        double determinant_previous;
+      // if (version[0] == 'a') { // Anthony
+      //   const double *Upds;
+      //   const uint64_t *Ui;
+      //   double determinant_previous;
 
-        err_break = 0;
+      //   err_break = 0;
 
-        for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] *= determinant_copy; // Multiply inv(Slater-mat) by det(Slater-mat) to get adj(Slater_mat)
+      //   for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] *= determinant_copy; // Multiply inv(Slater-mat) by det(Slater-mat) to get adj(Slater_mat)
 
-        for (int i = 0; i < N_updates; i++) {
-          Upds = &Updates[i * LDS];
-          Ui = &Updates_index[i];
-          determinant_previous = determinant_copy;
+      //   for (int i = 0; i < N_updates; i++) {
+      //     Upds = &Updates[i * LDS];
+      //     Ui = &Updates_index[i];
+      //     determinant_previous = determinant_copy;
 
-          // 1. FETCH START TIME
-          uint64_t before = rdtsc();
+      //     // 1. FETCH START TIME
+      //     uint64_t before = rdtsc();
 
-          // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-          detupd(Dim, LDS, Upds, Ui, Slater_invT_copy, &determinant_copy);
+      //     // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
+      //     detupd(Dim, LDS, Upds, Ui, Slater_invT_copy, &determinant_copy);
 
-          // 3. FETCH FINISH TIME
-          uint64_t after = rdtsc();
+      //     // 3. FETCH FINISH TIME
+      //     uint64_t after = rdtsc();
 
-          // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
-          accumulator += (double)(after - before);
+      //     // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
+      //     accumulator += (double)(after - before);
 
-          // 5. STOP APPLYING UPDATES IF BREAKDOWN DETECTED
-          double lambda = determinant_copy / determinant_previous; // should be id. to lambda in detupd
-          if (fabs(lambda) < breakdown) {
-            err_break = 1;
-            break;
-          }
-        }
+      //     // 5. STOP APPLYING UPDATES IF BREAKDOWN DETECTED
+      //     double lambda = determinant_copy / determinant_previous; // should be id. to lambda in detupd
+      //     if (fabs(lambda) < breakdown) {
+      //       err_break = 1;
+      //       break;
+      //     }
+      //   }
         
-        if (err_break == 1) { // Divide adj(Slater-mat) by OLD det(Slater-mat) to get inv(Slater_mat) again
-          for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] /= determinant_previous;
-        } else { // Divide adj(Slater-mat) by NEW det(Slater-mat) to get inv(Slater_mat) again
-          for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] /= determinant_copy;
-        }
-      } else if (version[0] == 'n') { // Naive
-
+      //   if (err_break == 1) { // Divide adj(Slater-mat) by OLD det(Slater-mat) to get inv(Slater_mat) again
+      //     for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] /= determinant_previous;
+      //   } else { // Divide adj(Slater-mat) by NEW det(Slater-mat) to get inv(Slater_mat) again
+      //     for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] /= determinant_copy;
+      //   }
+      // } else if (version[0] == 'n') { // Naive
+      if (version[0] == 'n') { // Naive
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
 
@@ -207,6 +207,21 @@ printf("#-----------------------------------------------------------------------
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
         err_break = qmckl_woodbury_k(LDS, Dim, N_updates, Updates,
+              Updates_index, breakdown, Slater_invT_copy, &determinant);
+
+        // 3. FETCH FINISH TIME
+        uint64_t after = rdtsc();
+
+        // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
+        accumulator += (double)(after - before);
+
+      } else if (version[0] == 'c') { // Woodbury K cuBLAS
+
+        // 1. FETCH START TIME
+        uint64_t before = rdtsc();
+
+        // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
+        err_break = qmckl_woodbury_k_cublas_offload(LDS, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME

@@ -126,21 +126,22 @@ uint32_t test_kernel(char *version, const uint64_t LDS, const uint64_t Dim,
                      const uint64_t *Updates_index, const double breakdown, const double tolerance,
                      double *Slater, double *Slater_inv, double *determinant) {
   uint32_t rc = 0;
-  if (version[0] == 'a') { // Anthony
-    const double *Upds;
-    const uint64_t *Ui;
-    for (int i = 0; i < LDS * Dim; i++) Slater_inv[i] *= *determinant;
-    for (int j = 0; j < N_updates; j++) {
-      Upds = &Updates[j * LDS];
-      Ui = &Updates_index[j];
-      detupd(Dim, LDS, Upds, Ui, Slater_inv, determinant);
-      if (determinant == 0) printf("TEST_KERNEL: det_update21 failed\n");
-    }
-    for (int i = 0; i < LDS * Dim; i++) Slater_inv[i] /= *determinant;
-    update_slater_matrix(LDS, Dim, N_updates, Updates, Updates_index, Slater);
-    rc = check_error(LDS, Dim, Slater_inv, Slater, tolerance);
-    if (rc != 0) printf("TEST_KERNEL: check_error failed\n");
-  } else if (version[0] == 'n') { // Naive
+  // if (version[0] == 'a') { // Anthony
+  //   const double *Upds;
+  //   const uint64_t *Ui;
+  //   for (int i = 0; i < LDS * Dim; i++) Slater_inv[i] *= *determinant;
+  //   for (int j = 0; j < N_updates; j++) {
+  //     Upds = &Updates[j * LDS];
+  //     Ui = &Updates_index[j];
+  //     detupd(Dim, LDS, Upds, Ui, Slater_inv, determinant);
+  //     if (determinant == 0) printf("TEST_KERNEL: det_update21 failed\n");
+  //   }
+  //   for (int i = 0; i < LDS * Dim; i++) Slater_inv[i] /= *determinant;
+  //   update_slater_matrix(LDS, Dim, N_updates, Updates, Updates_index, Slater);
+  //   rc = check_error(LDS, Dim, Slater_inv, Slater, tolerance);
+  //   if (rc != 0) printf("TEST_KERNEL: check_error failed\n");
+  // } else if (version[0] == 'n') { // Naive
+  if (version[0] == 'n') { // Naive
     rc = qmckl_sherman_morrison(LDS, Dim, N_updates, Updates, Updates_index,
                                 breakdown, Slater_inv, determinant);
     if (rc != 0) printf("TEST_KERNEL: qmckl_sherman_morrison failed\n");
