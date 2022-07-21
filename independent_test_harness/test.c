@@ -4,7 +4,7 @@
 
 #define DATASET "dataset_329d_zeropadded_cm.hdf5"
 // #define DATASET "dataset_15784d_zeropadded_cm.hdf5"
-#define REPETITIONS 1000000
+#define REPETITIONS 100000
 
 uint64_t n_splits;
 uint64_t block_fail;
@@ -15,8 +15,7 @@ int main(int argc, char **argv) {
   char *version = argv[1];
 
   // SETUP STORAGE AND DATA ACCESS
-  hid_t  file_id, dataset_id;
-  herr_t status;
+  hid_t  file_id;
   file_id = H5Fopen(DATASET, H5F_ACC_RDONLY, H5P_DEFAULT);
   char nupds_key[32];
   char upd_idx_key[32];

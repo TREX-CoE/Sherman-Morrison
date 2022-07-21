@@ -30,7 +30,7 @@ uint32_t qmckl_sherman_morrison(
     for (uint32_t i = 0; i < Dim; i++) {
       C[i] = 0.0;
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       for (uint32_t j = 0; j < LDS; j++) {
         C[i] += Slater_inv[i * LDS + j] * Updates[l * LDS + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
@@ -50,7 +50,7 @@ uint32_t qmckl_sherman_morrison(
       *determinant *= den;
 
     #pragma ivdep
-    #pragma vector aligned, novecremainder
+    #pragma vector aligned
     for (uint32_t j = 0; j < LDS; j++) {
       D[j] = Slater_inv[cui * LDS + j]; // selecting proper column of v_l^T * S_inv
     }
@@ -58,7 +58,7 @@ uint32_t qmckl_sherman_morrison(
     // A^{-1} = A^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       for (uint32_t j = 0; j < LDS; j++) {
         const double update = C[i] * D[j] * iden;
         Slater_inv[i * LDS + j] -= update;
@@ -98,7 +98,7 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
     C[i * 2] = 0;
     C[i * 2 + 1] = 0;
     #pragma ivdep
-    #pragma vector aligned, novecremainder
+    #pragma vector aligned
     for (uint32_t k = 0; k < LDS; k++) {
       C[i * 2]     += Slater_inv[i * LDS + k] * Updates[k];
       C[i * 2 + 1] += Slater_inv[i * LDS + k] * Updates[LDS + k];
@@ -133,7 +133,7 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
   double *__restrict r1dim = &(Slater_inv[row1 * LDS]);
   double *__restrict r2dim = &(Slater_inv[row2 * LDS]);
   #pragma ivdep
-  #pragma vector aligned, novecremainder
+  #pragma vector aligned
   for (uint32_t j = 0; j < LDS; j++) {
     tmp[j]       = Binv[0] * r1dim[j] + Binv[1] * r2dim[j];
     tmp[LDS + j] = Binv[2] * r1dim[j] + Binv[3] * r2dim[j];
@@ -142,7 +142,7 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
   // Compute (S^T)^{-1} - C * tmp : Dim x LDS
   for (uint32_t i = 0; i < Dim; i++) {
     #pragma ivdep
-    #pragma vector aligned, novecremainder
+    #pragma vector aligned
     for (uint32_t j = 0; j < LDS; j++) {
       Slater_inv[i * LDS + j] -= C[i * 2]     * tmp[j];
       Slater_inv[i * LDS + j] -= C[i * 2 + 1] * tmp[LDS + j];
@@ -183,7 +183,7 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
     C[i * 3 + 1] = 0;
     C[i * 3 + 2] = 0;
     #pragma ivdep
-    #pragma vector aligned, novecremainder
+    #pragma vector aligned
     for (uint32_t k = 0; k < LDS; k++) {
       C[i * 3] += Slater_inv[i * LDS + k] * Updates[k];
       C[i * 3 + 1] += Slater_inv[i * LDS + k] * Updates[LDS + k];
@@ -232,7 +232,7 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
   double *__restrict r2dim = &(Slater_inv[row2 * LDS]);
   double *__restrict r3dim = &(Slater_inv[row3 * LDS]);
   #pragma ivdep
-  #pragma vector aligned, novecremainder
+  #pragma vector aligned
   for (uint32_t j = 0; j < LDS; j++) {
     tmp[j]           = Binv[0] * r1dim[j] + Binv[1] * r2dim[j] + Binv[2] * r3dim[j];
     tmp[LDS + j]     = Binv[3] * r1dim[j] + Binv[4] * r2dim[j] + Binv[5] * r3dim[j];
@@ -242,7 +242,7 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
   // Compute (S^T)^{-1} - C * tmp : Dim x LDS
   for (uint32_t i = 0; i < Dim; i++) {
     #pragma ivdep
-    #pragma vector aligned, novecremainder
+    #pragma vector aligned
     for (uint32_t j = 0; j < LDS; j++) {
       Slater_inv[i * LDS + j] -= C[i * 3]     * tmp[j];
       Slater_inv[i * LDS + j] -= C[i * 3 + 1] * tmp[LDS + j];
@@ -301,7 +301,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   double det = 1.0;
   int j = 0;
   for (uint32_t i = 0; i < N_updates; i++) {
-    j += min(abs(ipiv[i] - i), 1);
+    j += min(ipiv[i] - i, 1);
     det *= B[(N_updates + 1) * i];
   }
   if ((j & 1) == 0) det = -det; // multiply det with -1 if j is even
@@ -398,7 +398,7 @@ uint32_t qmckl_woodbury_k_cublas_offload(const uint64_t vLDS,
   double det = 1.0;
   int j = 0;
   for (uint32_t i = 0; i < N_updates; i++) {
-    j += min(abs(ipiv[i] - i), 1);
+    j += min(ipiv[i] - i, 1);
     det *= B[(N_updates + 1) * i];
   }
   if ((j & 1) == 0) det = -det; // multiply det with -1 if j is even
@@ -456,7 +456,7 @@ uint32_t qmckl_slagel_splitting(
     for (uint32_t i = 0; i < Dim; i++) {
       C[i] = 0.0;
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       for (uint32_t j = 0; j < LDS; j++) {
         C[i] += Slater_inv[i * LDS + j] * Updates[l * LDS + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
@@ -473,7 +473,7 @@ uint32_t qmckl_slagel_splitting(
       // U_l = U_l / 2: split the update in 2 equal halves and save the second halve
       // in later_updates
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       for (uint32_t i = 0; i < LDS; i++) {
         later_updates[*later * LDS + i] = Updates[l * LDS + i] / 2.0;
         C[i] /= 2.0;
@@ -489,7 +489,7 @@ uint32_t qmckl_slagel_splitting(
 
     // D = v^T x S^{-1} : 1 x LDS
     #pragma ivdep
-    #pragma vector aligned, novecremainder
+    #pragma vector aligned
     for (uint32_t j = 0; j < LDS; j++) {
       D[j] = Slater_inv[cui * LDS + j];
     }
@@ -497,7 +497,7 @@ uint32_t qmckl_slagel_splitting(
     // S^{-1} = S^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       for (uint32_t j = 0; j < LDS; j++) {
         const double update = C[i] * D[j] * iden;
         Slater_inv[i * LDS + j] -= update;
@@ -692,7 +692,7 @@ uint32_t qmckl_sherman_morrison_later(
     for (uint32_t i = 0; i < Dim; i++) {
       C[i] = 0.0;
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       for (uint32_t j = 0; j < LDS; j++) {
         C[i] += Slater_inv[i * LDS + j] * Updates[l * LDS + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
@@ -703,7 +703,7 @@ uint32_t qmckl_sherman_morrison_later(
     double den = 1.0 + C[cui];
     if (fabs(den) < breakdown) {
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       // for (uint32_t i = 0; i < Dim; i++) {
       for (uint32_t i = 0; i < LDS; i++) {
         later_updates[later * LDS + i] = Updates[l * LDS + i];
@@ -719,7 +719,7 @@ uint32_t qmckl_sherman_morrison_later(
 
     // D = v^T x A^{-1}
     #pragma ivdep
-    #pragma vector aligned, novecremainder
+    #pragma vector aligned
     for (uint32_t j = 0; j < LDS; j++) {
       D[j] = Slater_inv[cui * LDS + j];
     }
@@ -727,7 +727,7 @@ uint32_t qmckl_sherman_morrison_later(
     // S^{-1} = S^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
       #pragma ivdep
-      #pragma vector aligned, novecremainder
+      #pragma vector aligned
       for (uint32_t j = 0; j < LDS; j++) {
         const double update = C[i] * D[j] * iden;
         Slater_inv[i * LDS + j] -= update;

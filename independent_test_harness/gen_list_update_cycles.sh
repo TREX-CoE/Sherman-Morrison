@@ -18,7 +18,7 @@ done
 
 # Generate C-header file
 NELEMENTS=${#SELECTION[@]}
-echo "const uint32_t n_cycles = $NELEMENTS;" > ${NU}_cycles.h
+echo "enum { n_cycles = $NELEMENTS };" > ${NU}_cycles.h
 echo -n "uint32_t cycles[n_cycles] = {" >> ${NU}_cycles.h
 for VAL in "${SELECTION[@]}"
 do
