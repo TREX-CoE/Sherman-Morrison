@@ -16,11 +16,11 @@ uint32_t qmckl_sherman_morrison(
     const uint64_t *__restrict Updates_index, const double breakdown,
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
-      
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
 
-  double __attribute__((aligned(8))) C[Dim];
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
+
+  double __attribute__((aligned(8))) C[DIM];
   double __attribute__((aligned(8))) D[LDS];
 
   uint32_t l = 0;
@@ -31,8 +31,8 @@ uint32_t qmckl_sherman_morrison(
       C[i] = 0.0;
       #pragma ivdep
       #pragma vector aligned
-      for (uint32_t j = 0; j < LDS; j++) {
-        C[i] += Slater_inv[i * LDS + j] * Updates[l * LDS + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
+      for (uint32_t j = 0; j < Lds; j++) {
+        C[i] += Slater_inv[i * Lds + j] * Updates[l * Lds + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
     }
 
@@ -51,17 +51,17 @@ uint32_t qmckl_sherman_morrison(
 
     #pragma ivdep
     #pragma vector aligned
-    for (uint32_t j = 0; j < LDS; j++) {
-      D[j] = Slater_inv[cui * LDS + j]; // selecting proper column of v_l^T * S_inv
+    for (uint32_t j = 0; j < Lds; j++) {
+      D[j] = Slater_inv[cui * Lds + j]; // selecting proper column of v_l^T * S_inv
     }
 
     // A^{-1} = A^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
       #pragma ivdep
       #pragma vector aligned
-      for (uint32_t j = 0; j < LDS; j++) {
+      for (uint32_t j = 0; j < Lds; j++) {
         const double update = C[i] * D[j] * iden;
-        Slater_inv[i * LDS + j] -= update;
+        Slater_inv[i * Lds + j] -= update;
       }
     }
     l += 1;
@@ -69,6 +69,15 @@ uint32_t qmckl_sherman_morrison(
   return 0;
 }
 
+/*
+COMPUTE S^{-1}P - CB^{-1}D  : Dim x LDS,
+where S^{-1}P               : Dim x LDS,
+      C := S^{-1}PP^TU      : Dim x 2,
+      B := 1 + VC           : 2 x 2,
+      D := VS^{-1}P         : 2 x LDS,
+      P^TU                  : LDS x 2,
+      V                     : 2 x Dim
+*/
 uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
                           const double *__restrict __attribute__((aligned(8)))
                           Updates,
@@ -77,31 +86,23 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
                           double *__restrict __attribute__((aligned(8)))
                           Slater_inv,
                           double *__restrict determinant) {
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
-  /*
-  COMPUTE S^{-1}P - CB^{-1}D  : Dim x LDS,
-  where S^{-1}P               : Dim x LDS,
-        C := S^{-1}PP^TU      : Dim x 2,
-        B := 1 + VC           : 2 x 2,
-        D := VS^{-1}P         : 2 x LDS,
-        P^TU                  : LDS x 2,
-        V                     : 2 x Dim
-  */
+
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
   const uint32_t row1 = (Updates_index[0] - 1);
   const uint32_t row2 = (Updates_index[1] - 1);
 
   // Compute C = (S^T)^{-1}U : Dim x 2
-  double __attribute__((aligned(8))) C[2 * Dim];
+  double __attribute__((aligned(8))) C[2 * DIM];
   for (uint32_t i = 0; i < Dim; i++) {
     C[i * 2] = 0;
     C[i * 2 + 1] = 0;
     #pragma ivdep
     #pragma vector aligned
-    for (uint32_t k = 0; k < LDS; k++) {
-      C[i * 2]     += Slater_inv[i * LDS + k] * Updates[k];
-      C[i * 2 + 1] += Slater_inv[i * LDS + k] * Updates[LDS + k];
+    for (uint32_t k = 0; k < Lds; k++) {
+      C[i * 2]     += Slater_inv[i * Lds + k] * Updates[k];
+      C[i * 2 + 1] += Slater_inv[i * Lds + k] * Updates[Lds + k];
     }
   }
 
@@ -130,28 +131,37 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
 
   // tmp = B^{-1}D : 2 x LDS
   double __attribute__((aligned(8))) tmp[2 * LDS];
-  double *__restrict r1dim = &(Slater_inv[row1 * LDS]);
-  double *__restrict r2dim = &(Slater_inv[row2 * LDS]);
+  double *__restrict r1dim = &(Slater_inv[row1 * Lds]);
+  double *__restrict r2dim = &(Slater_inv[row2 * Lds]);
   #pragma ivdep
   #pragma vector aligned
-  for (uint32_t j = 0; j < LDS; j++) {
+  for (uint32_t j = 0; j < Lds; j++) {
     tmp[j]       = Binv[0] * r1dim[j] + Binv[1] * r2dim[j];
-    tmp[LDS + j] = Binv[2] * r1dim[j] + Binv[3] * r2dim[j];
+    tmp[Lds + j] = Binv[2] * r1dim[j] + Binv[3] * r2dim[j];
   }
 
-  // Compute (S^T)^{-1} - C * tmp : Dim x LDS
+  // Compute (S^T)^{-1} - C * tmp : Dim x Lds
   for (uint32_t i = 0; i < Dim; i++) {
     #pragma ivdep
     #pragma vector aligned
-    for (uint32_t j = 0; j < LDS; j++) {
-      Slater_inv[i * LDS + j] -= C[i * 2]     * tmp[j];
-      Slater_inv[i * LDS + j] -= C[i * 2 + 1] * tmp[LDS + j];
+    for (uint32_t j = 0; j < Lds; j++) {
+      Slater_inv[i * Lds + j] -= C[i * 2]     * tmp[j];
+      Slater_inv[i * Lds + j] -= C[i * 2 + 1] * tmp[Lds + j];
     }
   }
 
   return 0;
 }
 
+/*
+COMPUTE (S^T)^{-1} - CB^{-1}D : Dim x LDS,
+where S^T                     : Dim x LDS,
+      C := (S^T)^{-1}U        : Dim x 3,
+      B := 1 + VC             : 3 x 3,
+      D := V(S^T)^{-1}        : 3 x LDS,
+      U                       : LDS x 3,
+      V                       : 3 x Dim
+*/
 uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
                           const double *__restrict __attribute__((aligned(8)))
                           Updates,
@@ -160,34 +170,26 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
                           double *__restrict __attribute__((aligned(8)))
                           Slater_inv,
                           double *__restrict determinant) {
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
-  /*
-  COMPUTE (S^T)^{-1} - CB^{-1}D : Dim x LDS,
-  where S^T                     : Dim x LDS,
-        C := (S^T)^{-1}U        : Dim x 3,
-        B := 1 + VC             : 3 x 3,
-        D := V(S^T)^{-1}        : 3 x LDS,
-        U                       : LDS x 3,
-        V                       : 3 x Dim
-  */
+
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
   const uint32_t row1 = (Updates_index[0] - 1);
   const uint32_t row2 = (Updates_index[1] - 1);
   const uint32_t row3 = (Updates_index[2] - 1);
 
   // Compute C = (S^T)^{-1}U : Dim x 3
-  double __attribute__((aligned(8))) C[3 * Dim];
+  double __attribute__((aligned(8))) C[3 * DIM];
   for (uint32_t i = 0; i < Dim; i++) {
     C[i * 3] = 0;
     C[i * 3 + 1] = 0;
     C[i * 3 + 2] = 0;
     #pragma ivdep
     #pragma vector aligned
-    for (uint32_t k = 0; k < LDS; k++) {
-      C[i * 3] += Slater_inv[i * LDS + k] * Updates[k];
-      C[i * 3 + 1] += Slater_inv[i * LDS + k] * Updates[LDS + k];
-      C[i * 3 + 2] += Slater_inv[i * LDS + k] * Updates[2 * LDS + k];
+    for (uint32_t k = 0; k < Lds; k++) {
+      C[i * 3] += Slater_inv[i * Lds + k] * Updates[k];
+      C[i * 3 + 1] += Slater_inv[i * Lds + k] * Updates[Lds + k];
+      C[i * 3 + 2] += Slater_inv[i * Lds + k] * Updates[2 * Lds + k];
     }
   }
 
@@ -233,20 +235,20 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
   double *__restrict r3dim = &(Slater_inv[row3 * LDS]);
   #pragma ivdep
   #pragma vector aligned
-  for (uint32_t j = 0; j < LDS; j++) {
+  for (uint32_t j = 0; j < Lds; j++) {
     tmp[j]           = Binv[0] * r1dim[j] + Binv[1] * r2dim[j] + Binv[2] * r3dim[j];
-    tmp[LDS + j]     = Binv[3] * r1dim[j] + Binv[4] * r2dim[j] + Binv[5] * r3dim[j];
-    tmp[2 * LDS + j] = Binv[6] * r1dim[j] + Binv[7] * r2dim[j] + Binv[8] * r3dim[j];
+    tmp[Lds + j]     = Binv[3] * r1dim[j] + Binv[4] * r2dim[j] + Binv[5] * r3dim[j];
+    tmp[2 * Lds + j] = Binv[6] * r1dim[j] + Binv[7] * r2dim[j] + Binv[8] * r3dim[j];
   }
 
-  // Compute (S^T)^{-1} - C * tmp : Dim x LDS
+  // Compute (S^T)^{-1} - C * tmp : Dim x Lds
   for (uint32_t i = 0; i < Dim; i++) {
     #pragma ivdep
     #pragma vector aligned
-    for (uint32_t j = 0; j < LDS; j++) {
-      Slater_inv[i * LDS + j] -= C[i * 3]     * tmp[j];
-      Slater_inv[i * LDS + j] -= C[i * 3 + 1] * tmp[LDS + j];
-      Slater_inv[i * LDS + j] -= C[i * 3 + 2] * tmp[2 * LDS + j];
+    for (uint32_t j = 0; j < Lds; j++) {
+      Slater_inv[i * Lds + j] -= C[i * 3]     * tmp[j];
+      Slater_inv[i * Lds + j] -= C[i * 3 + 1] * tmp[Lds + j];
+      Slater_inv[i * Lds + j] -= C[i * 3 + 2] * tmp[2 * Lds + j];
     }
   }
 
@@ -273,15 +275,15 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
                           double *__restrict __attribute__((aligned(8))) Slater_inv,
                           double *__restrict determinant) {
 
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
   // Compute C = S^{-1} U : Dim x K : standard dgemm
-  double C[Dim * N_updates];
+  double C[DIM * N_updates];
   double alpha = 1.0, beta = 0.0;
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-              Dim, N_updates, LDS,
-              alpha, Slater_inv, LDS, Updates, LDS,
+              Dim, N_updates, Lds,
+              alpha, Slater_inv, Lds, Updates, Lds,
               beta, C, N_updates);
 
   // Construct B = 1 + V C : K x K : selecting and copying row from C into B. Can maybe be off-loaded to GPU by splitting in N_updates tiles of N_updates strides, using PARALLEL and SIMD
@@ -290,7 +292,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   for (uint32_t i = 0; i < N_updates; i++) {
     const uint32_t row = Updates_index[i] - 1;
     for (uint32_t j = 0; j < N_updates  ; j++) B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
-    for (uint32_t j = 0; j < LDS; j++) D[i * LDS + j] = Slater_inv[row * LDS + j];
+    for (uint32_t j = 0; j < Lds; j++) D[i * Lds + j] = Slater_inv[row * Lds + j];
   }
 
   // Compute determinant by LU decomposition
@@ -345,41 +347,34 @@ uint32_t qmckl_woodbury_k_cublas_offload(const uint64_t vLDS,
           double *__restrict __attribute__((aligned(8))) Slater_inv,
           double *__restrict determinant) {
 
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
+  // Compute C = S^{-1} U : Dim x K : standard dgemm
+  // double C[Dim * N_updates];
+  double *C = malloc(DIM * N_updates * sizeof(double));
+  double alpha = 1.0, beta = 0.0;
+  // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+  //             Dim, N_updates, Lds,
+  //             alpha, Slater_inv, Lds, Updates, Lds,
+  //             beta, C, N_updates);
   //cuBLAS initialization
   cublasHandle_t handle;
   if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
     fprintf(stdout, "cuBLAS initialization failed!\n");
     exit(EXIT_FAILURE);
   }
-
-  // Compute C = S^{-1} U : Dim x K : standard dgemm
-  double C[Dim * N_updates];
-  double alpha = 1.0, beta = 0.0;
-
-  // #pragma omp target enter data map(to:een_rescaled_e[0:elec_num*elec_num*(cord_num+1)*walk_num], een_rescaled_n[0:M*N*walk_num], tmp_c[0:elec_num*nucl_num*(cord_num+1)*cord_num*walk_num])
-  // #pragma omp target data use_device_ptr(een_rescaled_e,een_rescaled_n,tmp_c)
-  // {
-  //   for (int nw=0; nw < walk_num; ++nw) {
-  //     int cublasError = cublasDgemmStridedBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K, &alpha,
-  //                                     &(een_rescaled_e[nw*(cord_num+1)]),
-  //                                     LDA, af,
-  //                                     &(een_rescaled_n[bf*nw]),
-  //                                     LDB, 0,
-  //                                     &beta,
-  //                                     &(tmp_c[nw*cord_num]),
-  //                                     LDC, cf, cord_num);
-  //   }
-  // }
-  // #pragma omp target exit data map(from:tmp_c[0:elec_num*nucl_num*(cord_num+1)*cord_num*walk_num])
+  #pragma omp target enter data map(to:Slater_inv, Updates, C)
+  #pragma omp target data use_device_ptr(Slater_inv, Updates, C)
+  {
+    int cublasError = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N,
+                          Dim, N_updates, Lds,
+                          &alpha, Slater_inv, Lds, Updates, Lds,
+                          &beta, C, N_updates);
+  }
+  #pragma omp target exit data map(from:C)
   cublasDestroy(handle);
 
-  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-              Dim, N_updates, LDS,
-              alpha, Slater_inv, LDS, Updates, LDS,
-              beta, C, N_updates);
 
   // Construct B = 1 + V C : K x K : selecting and copying row from C into B. Can maybe be off-loaded to GPU by splitting in N_updates tiles of N_updates strides, using PARALLEL and SIMD
   // Construct D = V S^{-1} : K x LDS
@@ -387,7 +382,7 @@ uint32_t qmckl_woodbury_k_cublas_offload(const uint64_t vLDS,
   for (uint32_t i = 0; i < N_updates; i++) {
     const uint32_t row = Updates_index[i] - 1;
     for (uint32_t j = 0; j < N_updates  ; j++) B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
-    for (uint32_t j = 0; j < LDS; j++) D[i * LDS + j] = Slater_inv[row * LDS + j];
+    for (uint32_t j = 0; j < Lds; j++) D[i * Lds + j] = Slater_inv[row * Lds + j];
   }
 
   // Compute determinant by LU decomposition
@@ -443,8 +438,8 @@ uint32_t qmckl_slagel_splitting(
     uint64_t *__restrict later_index, uint64_t *__restrict later,
     double *__restrict determinant) {
 
-  const uint32_t LDS = 24;
-  const uint32_t Dim = 21;
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
   double __attribute__((aligned(8))) C[LDS];
   double __attribute__((aligned(8))) D[LDS];
@@ -457,8 +452,8 @@ uint32_t qmckl_slagel_splitting(
       C[i] = 0.0;
       #pragma ivdep
       #pragma vector aligned
-      for (uint32_t j = 0; j < LDS; j++) {
-        C[i] += Slater_inv[i * LDS + j] * Updates[l * LDS + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
+      for (uint32_t j = 0; j < Lds; j++) {
+        C[i] += Slater_inv[i * Lds + j] * Updates[l * Lds + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
     }
 
@@ -474,8 +469,8 @@ uint32_t qmckl_slagel_splitting(
       // in later_updates
       #pragma ivdep
       #pragma vector aligned
-      for (uint32_t i = 0; i < LDS; i++) {
-        later_updates[*later * LDS + i] = Updates[l * LDS + i] / 2.0;
+      for (uint32_t i = 0; i < Lds; i++) {
+        later_updates[*later * Lds + i] = Updates[l * Lds + i] / 2.0;
         C[i] /= 2.0;
       }
       later_index[*later] = Updates_index[l];
@@ -490,17 +485,17 @@ uint32_t qmckl_slagel_splitting(
     // D = v^T x S^{-1} : 1 x LDS
     #pragma ivdep
     #pragma vector aligned
-    for (uint32_t j = 0; j < LDS; j++) {
-      D[j] = Slater_inv[cui * LDS + j];
+    for (uint32_t j = 0; j < Lds; j++) {
+      D[j] = Slater_inv[cui * Lds + j];
     }
 
     // S^{-1} = S^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
       #pragma ivdep
       #pragma vector aligned
-      for (uint32_t j = 0; j < LDS; j++) {
+      for (uint32_t j = 0; j < Lds; j++) {
         const double update = C[i] * D[j] * iden;
-        Slater_inv[i * LDS + j] -= update;
+        Slater_inv[i * Lds + j] -= update;
       }
     }
     l += 1;
@@ -516,18 +511,18 @@ uint32_t qmckl_sherman_morrison_splitting(
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
 
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
   double __attribute__((aligned(8))) later_updates[LDS * N_updates];
   uint64_t later_index[N_updates];
   uint64_t later = 0;
   // uint32_t rc;
 
-  (void) qmckl_slagel_splitting(LDS, Dim, N_updates, Updates, Updates_index,
+  (void) qmckl_slagel_splitting(Lds, Dim, N_updates, Updates, Updates_index,
                               breakdown, Slater_inv, later_updates, later_index,
                               &later, determinant);
-  // rc = qmckl_slagel_splitting(LDS, Dim, N_updates, Updates, Updates_index,
+  // rc = qmckl_slagel_splitting(Lds, Dim, N_updates, Updates, Updates_index,
   //                             breakdown, Slater_inv, later_updates, later_index,
   //                             &later, determinant);
   // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SLAGEL_SPLITTING\n");
@@ -535,11 +530,11 @@ uint32_t qmckl_sherman_morrison_splitting(
   if (later > 0) {
     recursive_calls++;
     // printf("Later > 0\n");
-    (void) qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
+    (void) qmckl_sherman_morrison_splitting(Lds, Dim, later, later_updates,
                                           later_index, breakdown, Slater_inv,
                                           determinant);
 
-    // rc = qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
+    // rc = qmckl_sherman_morrison_splitting(Lds, Dim, later, later_updates,
     //                                       later_index, breakdown, Slater_inv,
     //                                       determinant);
     // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SHERMAN_MORRISON_SPLITTING\n");
@@ -555,8 +550,8 @@ uint32_t qmckl_sherman_morrison_smw32s(
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
 
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
   double __attribute__((aligned(8))) later_updates[LDS * N_updates];
   uint64_t later_index[N_updates];
@@ -564,31 +559,31 @@ uint32_t qmckl_sherman_morrison_smw32s(
   uint32_t rc;
 
   if (N_updates == 4) { // Special case for 4 rank-1 updates: 2+2
-    rc = qmckl_woodbury_2(LDS, Dim, Updates, Updates_index,
+    rc = qmckl_woodbury_2(Lds, Dim, Updates, Updates_index,
                   breakdown, Slater_inv, determinant);
     if (rc != 0) { // Send the entire block to slagel_splitting
       block_fail += 1;
       uint64_t l = 0;
-      rc = qmckl_slagel_splitting(LDS, Dim, 2, Updates,
+      rc = qmckl_slagel_splitting(Lds, Dim, 2, Updates,
                     Updates_index, breakdown, Slater_inv,
-                    later_updates + (LDS * later),
+                    later_updates + (Lds * later),
                     later_index + later, &l, determinant);
       later += l;
     }
-    rc = qmckl_woodbury_2(LDS, Dim, &Updates[2*LDS], &Updates_index[2],
+    rc = qmckl_woodbury_2(Lds, Dim, &Updates[2*Lds], &Updates_index[2],
                   breakdown, Slater_inv, determinant);
     if (rc != 0) { // Send the entire block to slagel_splitting
       block_fail += 1;
       uint64_t l = 0;
-      rc = qmckl_slagel_splitting(LDS, Dim, 2, &Updates[2*LDS],
+      rc = qmckl_slagel_splitting(Lds, Dim, 2, &Updates[2*Lds],
                     &Updates_index[2], breakdown, Slater_inv,
-                    later_updates + (LDS * later),
+                    later_updates + (Lds * later),
                     later_index + later, &l, determinant);
       later += l;
     }
     if (later > 0) {
       recursive_calls++;
-      rc = qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
+      rc = qmckl_sherman_morrison_splitting(Lds, Dim, later, later_updates,
                                             later_index, breakdown, Slater_inv,
                                             determinant);
     }
@@ -600,21 +595,21 @@ uint32_t qmckl_sherman_morrison_smw32s(
   // Woodbury 3x3 kernel  
   uint32_t n_of_3blocks = N_updates / 3;
   uint32_t remainder = N_updates % 3;
-  uint32_t length_3block = 3 * LDS;
+  uint32_t length_3block = 3 * Lds;
 
   if (n_of_3blocks > 0) {
     for (uint32_t i = 0; i < n_of_3blocks; i++) {
       const double *Updates_3block = &Updates[i * length_3block];
       const uint64_t *Updates_index_3block = &Updates_index[i * 3];
-      rc = qmckl_woodbury_3(LDS, Dim, Updates_3block, Updates_index_3block,
+      rc = qmckl_woodbury_3(Lds, Dim, Updates_3block, Updates_index_3block,
                             breakdown, Slater_inv, determinant);
       if (rc != 0) { // Send the entire block to slagel_splitting
         // printf("QMCKL_WOODBURY_3 failed. Sending to QMCKL_SLAGEL_SPLITTING\n");
         block_fail += 1;
         uint64_t l = 0;
-        rc = qmckl_slagel_splitting(LDS, Dim, 3, Updates_3block,
+        rc = qmckl_slagel_splitting(Lds, Dim, 3, Updates_3block,
                                     Updates_index_3block, breakdown, Slater_inv,
-                                    later_updates + (LDS * later),
+                                    later_updates + (Lds * later),
                                     later_index + later, &l, determinant);
         // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SLAGEL_SPLITTING\n");
         later += l;
@@ -626,15 +621,15 @@ uint32_t qmckl_sherman_morrison_smw32s(
   if (remainder == 2) {
     const double *Updates_2block = &Updates[n_of_3blocks * length_3block];
     const uint64_t *Updates_index_2block = &Updates_index[3 * n_of_3blocks];
-    rc = qmckl_woodbury_2(LDS, Dim, Updates_2block, Updates_index_2block,
+    rc = qmckl_woodbury_2(Lds, Dim, Updates_2block, Updates_index_2block,
                           breakdown, Slater_inv, determinant);
     if (rc != 0) { // Send the entire block to slagel_splitting
       // printf("QMCKL_WOODBURY_2 failed. Sending to QMCKL_SLAGEL_SPLITTING\n");
       block_fail += 1;
       uint64_t l = 0;
-      rc = qmckl_slagel_splitting(LDS, Dim, 2, Updates_2block,
+      rc = qmckl_slagel_splitting(Lds, Dim, 2, Updates_2block,
                                   Updates_index_2block, breakdown, Slater_inv,
-                                  later_updates + (LDS * later),
+                                  later_updates + (Lds * later),
                                   later_index + later, &l, determinant);
       // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SLAGEL_SPLITTING\n");
       later += l;
@@ -647,9 +642,9 @@ uint32_t qmckl_sherman_morrison_smw32s(
     const double *Updates_1block = &Updates[n_of_3blocks * length_3block];
     const uint64_t *Updates_index_1block = &Updates_index[3 * n_of_3blocks];
     uint64_t l = 0;
-    rc = qmckl_slagel_splitting(LDS, Dim, 1, Updates_1block,
+    rc = qmckl_slagel_splitting(Lds, Dim, 1, Updates_1block,
                                 Updates_index_1block, breakdown, Slater_inv,
-                                later_updates + (LDS * later),
+                                later_updates + (Lds * later),
                                 later_index + later, &l, determinant);
     // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SLAGEL_SPLITTING\n");
     later += l;
@@ -658,7 +653,7 @@ uint32_t qmckl_sherman_morrison_smw32s(
   if (later > 0) {
     recursive_calls++;
     // printf("Sending remaining updates to QMCKL_SHERMAN_MORRISON_SPLITTING\n");
-    rc = qmckl_sherman_morrison_splitting(LDS, Dim, later, later_updates,
+    rc = qmckl_sherman_morrison_splitting(Lds, Dim, later, later_updates,
                                           later_index, breakdown, Slater_inv,
                                           determinant);
     // if (rc != 0) printf("Something when catastrophically wrong in QMCKL_SHERMAN_MORRISON_SPLITTING\n");
@@ -674,10 +669,10 @@ uint32_t qmckl_sherman_morrison_later(
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
 
-  const uint32_t Dim = 21;
-  const uint32_t LDS = 24;
+  const uint32_t Dim = DIM;
+  const uint32_t Lds = LDS;
 
-  double __attribute__((aligned(8))) C[Dim];
+  double __attribute__((aligned(8))) C[DIM];
   double __attribute__((aligned(8))) D[LDS];
 
   double __attribute__((aligned(8))) later_updates[LDS * N_updates];
@@ -693,8 +688,8 @@ uint32_t qmckl_sherman_morrison_later(
       C[i] = 0.0;
       #pragma ivdep
       #pragma vector aligned
-      for (uint32_t j = 0; j < LDS; j++) {
-        C[i] += Slater_inv[i * LDS + j] * Updates[l * LDS + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
+      for (uint32_t j = 0; j < Lds; j++) {
+        C[i] += Slater_inv[i * Lds + j] * Updates[l * Lds + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
     }
 
@@ -705,8 +700,8 @@ uint32_t qmckl_sherman_morrison_later(
       #pragma ivdep
       #pragma vector aligned
       // for (uint32_t i = 0; i < Dim; i++) {
-      for (uint32_t i = 0; i < LDS; i++) {
-        later_updates[later * LDS + i] = Updates[l * LDS + i];
+      for (uint32_t i = 0; i < Lds; i++) {
+        later_updates[later * Lds + i] = Updates[l * Lds + i];
       }
       later_index[later] = Updates_index[l];
       later++;
@@ -720,17 +715,17 @@ uint32_t qmckl_sherman_morrison_later(
     // D = v^T x A^{-1}
     #pragma ivdep
     #pragma vector aligned
-    for (uint32_t j = 0; j < LDS; j++) {
-      D[j] = Slater_inv[cui * LDS + j];
+    for (uint32_t j = 0; j < Lds; j++) {
+      D[j] = Slater_inv[cui * Lds + j];
     }
 
     // S^{-1} = S^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
       #pragma ivdep
       #pragma vector aligned
-      for (uint32_t j = 0; j < LDS; j++) {
+      for (uint32_t j = 0; j < Lds; j++) {
         const double update = C[i] * D[j] * iden;
-        Slater_inv[i * LDS + j] -= update;
+        Slater_inv[i * Lds + j] -= update;
       }
     }
     l += 1;
@@ -741,7 +736,7 @@ uint32_t qmckl_sherman_morrison_later(
   }
   else if (later > 0) { // If some have failed, make a recursive call
     recursive_calls++;
-    (void) qmckl_sherman_morrison_later(LDS, Dim, later, later_updates,
+    (void) qmckl_sherman_morrison_later(Lds, Dim, later, later_updates,
                       later_index, breakdown, Slater_inv, determinant);
   }
 

@@ -1,6 +1,8 @@
 #include <mkl_lapacke.h>
 #include <mkl.h>
 
+#define DIM 21 
+#define LDS 24   
 #define HAVE_CUBLAS_OFFLOAD
 
 #ifdef HAVE_CUBLAS_OFFLOAD
@@ -9,7 +11,7 @@
 #include <cublas_v2.h>
 #endif
 
-lapack_int inverse(double *A, uint64_t Dim, uint64_t LDS);
+lapack_int inverse(double *A, uint64_t Dim, uint64_t Lds);
 
 int min(int a, int b);
 
@@ -72,7 +74,7 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
                           Slater_inv,
                           double *__restrict determinant);
 
-void detupd(const uint64_t Dim, const uint64_t LDS,
+void detupd(const uint64_t Dim, const uint64_t Lds,
             const double *__restrict __attribute__((aligned(8))) Updates,
             const uint64_t *__restrict Updates_index, 
             double *__restrict __attribute__((aligned(8))) Slater_inv,
@@ -84,4 +86,3 @@ uint32_t qmckl_sherman_morrison_later(
     const uint64_t *__restrict Updates_index, const double breakdown,
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant);
-            

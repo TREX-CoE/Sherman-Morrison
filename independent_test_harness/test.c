@@ -1,6 +1,6 @@
+#include <stdint.h>
 #include "meuk.h"
 #include "cycles.h"
-#include <stdint.h>
 
 #define DATASET "dataset_329d_zeropadded_cm.hdf5"
 // #define DATASET "dataset_15784d_zeropadded_cm.hdf5"
@@ -23,11 +23,11 @@ int main(int argc, char **argv) {
   char slater_key[32];
   char slater_inv_key[32];
   char det_key[32];
-  const uint64_t Dim = 21;
-  const uint64_t LDS = 24;
+  const uint64_t Dim = DIM;
+  const uint64_t Lds = LDS;
   uint64_t N_updates;
-  double Slater[LDS * Dim ], SlaterT[LDS * Dim];
-  double Slater_invT[LDS * Dim], Slater_invT_copy[LDS * Dim];
+  double Slater[LDS * DIM ], SlaterT[LDS * DIM];
+  double Slater_invT[LDS * DIM], Slater_invT_copy[LDS * DIM];
   double determinant, determinant_copy;
 
   // SETUP TEST PARAMETERS
@@ -52,7 +52,7 @@ printf("#-----------------------------------------------------------------------
     sprintf(det_key, "/cycle_%d/determinant", cycle);
     read_uint(file_id, nupds_key, &N_updates);
     uint64_t *Updates_index = malloc(N_updates * sizeof(uint64_t));
-    double *Updates = malloc(LDS * N_updates * sizeof(double));
+    double *Updates = malloc(Lds * N_updates * sizeof(double));
     read_uint(file_id, upd_idx_key, Updates_index);
     read_double(file_id, upds_key, Updates);
     read_double(file_id, slater_key, Slater);
@@ -60,28 +60,28 @@ printf("#-----------------------------------------------------------------------
     read_double(file_id, det_key, &determinant);
 
     // Compute transpose of S. ST: 24 x 21
-    for (int i = 0; i < LDS; i++) {
+    for (int i = 0; i < Lds; i++) {
       for (int j = 0; j < Dim; j++) {
-        SlaterT[i * Dim + j] = Slater[j * LDS + i];
+        SlaterT[i * Dim + j] = Slater[j * Lds + i];
       }
     }
 
     // Convert repl. upds into additive upds.
     for (int i = 0; i < N_updates; i++) {
       int col = Updates_index[i] - 1;
-      for (int j = 0; j < LDS; j++) {
-        Updates[i * LDS + j] -= SlaterT[col + j * Dim];
+      for (int j = 0; j < Lds; j++) {
+        Updates[i * Lds + j] -= SlaterT[col + j * Dim];
       }
     }
 
     // 2. CHECK ERROR ON THE INPUT DATA AND RECORD RESULT: ERR_INPUT
-    uint32_t err_inp = check_error(LDS, Dim, Slater_invT, SlaterT, tolerance);
+    uint32_t err_inp = check_error(Lds, Dim, Slater_invT, SlaterT, tolerance);
 
     // Update Slater matrix
     for (int i = 0; i < N_updates; i++) {
       int col = Updates_index[i] - 1;
       for (int j = 0; j < Dim; j++) {
-        SlaterT[col + j * Dim] += Updates[i * LDS + j];
+        SlaterT[col + j * Dim] += Updates[i * Lds + j];
       }
     } // A this point SlaterT, Updates & the updated SlaterT are correct. Checked in GDB
 
@@ -98,7 +98,7 @@ printf("#-----------------------------------------------------------------------
     for (int rep = 0; rep < REPETITIONS; rep++) {
 
       // 1. MAKE A FRESH COPY OF THE SLATER INVERSE AND DETERMINANT AND USE THE COPY
-      memcpy(Slater_invT_copy, Slater_invT, LDS * Dim * sizeof(double));
+      memcpy(Slater_invT_copy, Slater_invT, Lds * Dim * sizeof(double));
       determinant_copy = determinant;
 
       // ### CHOOSE A KERNEL:
@@ -109,10 +109,10 @@ printf("#-----------------------------------------------------------------------
 
       //   err_break = 0;
 
-      //   for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] *= determinant_copy; // Multiply inv(Slater-mat) by det(Slater-mat) to get adj(Slater_mat)
+      //   for (int i = 0; i < Lds * Dim; i++) Slater_invT_copy[i] *= determinant_copy; // Multiply inv(Slater-mat) by det(Slater-mat) to get adj(Slater_mat)
 
       //   for (int i = 0; i < N_updates; i++) {
-      //     Upds = &Updates[i * LDS];
+      //     Upds = &Updates[i * Lds];
       //     Ui = &Updates_index[i];
       //     determinant_previous = determinant_copy;
 
@@ -120,7 +120,7 @@ printf("#-----------------------------------------------------------------------
       //     uint64_t before = rdtsc();
 
       //     // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-      //     detupd(Dim, LDS, Upds, Ui, Slater_invT_copy, &determinant_copy);
+      //     detupd(Dim, Lds, Upds, Ui, Slater_invT_copy, &determinant_copy);
 
       //     // 3. FETCH FINISH TIME
       //     uint64_t after = rdtsc();
@@ -137,9 +137,9 @@ printf("#-----------------------------------------------------------------------
       //   }
         
       //   if (err_break == 1) { // Divide adj(Slater-mat) by OLD det(Slater-mat) to get inv(Slater_mat) again
-      //     for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] /= determinant_previous;
+      //     for (int i = 0; i < Lds * Dim; i++) Slater_invT_copy[i] /= determinant_previous;
       //   } else { // Divide adj(Slater-mat) by NEW det(Slater-mat) to get inv(Slater_mat) again
-      //     for (int i = 0; i < LDS * Dim; i++) Slater_invT_copy[i] /= determinant_copy;
+      //     for (int i = 0; i < Lds * Dim; i++) Slater_invT_copy[i] /= determinant_copy;
       //   }
       // } else if (version[0] == 'n') { // Naive
       if (version[0] == 'n') { // Naive
@@ -147,7 +147,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_sherman_morrison(LDS, Dim, N_updates, Updates,
+        err_break = qmckl_sherman_morrison(Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -161,7 +161,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_sherman_morrison_later(LDS, Dim, N_updates, Updates,
+        err_break = qmckl_sherman_morrison_later(Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -175,7 +175,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_woodbury_2(LDS, Dim, Updates, Updates_index,
+        err_break = qmckl_woodbury_2(Lds, Dim, Updates, Updates_index,
               breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -190,7 +190,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_woodbury_3(LDS, Dim, Updates, Updates_index,
+        err_break = qmckl_woodbury_3(Lds, Dim, Updates, Updates_index,
               breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -205,7 +205,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_woodbury_k(LDS, Dim, N_updates, Updates,
+        err_break = qmckl_woodbury_k(Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -220,7 +220,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_woodbury_k_cublas_offload(LDS, Dim, N_updates, Updates,
+        err_break = qmckl_woodbury_k_cublas_offload(Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -235,7 +235,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_sherman_morrison_splitting(LDS, Dim, N_updates, Updates,
+        err_break = qmckl_sherman_morrison_splitting(Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -249,7 +249,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_sherman_morrison_smw32s(LDS, Dim, N_updates, Updates,
+        err_break = qmckl_sherman_morrison_smw32s(Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -260,7 +260,7 @@ printf("#-----------------------------------------------------------------------
       } else if (version[0] == 'm') { // LAPACK/MKL
 
         // Only send upper Dim x Dim part of matrix to lapack
-        double tmp[Dim*Dim];
+        double tmp[DIM *DIM];
         memcpy(tmp, SlaterT, Dim*Dim*sizeof(double));
 
         // 1. FETCH START TIME
@@ -274,9 +274,9 @@ printf("#-----------------------------------------------------------------------
 
         // Copy elements of inverse back, adding 0-padding in "correct" place
         for (uint32_t i = 0; i < Dim; i++) {
-          for (uint32_t j = 0; j < LDS; j++) {
-            if (j < Dim) Slater_invT_copy[i * LDS + j] = tmp[i * Dim + j];
-            else Slater_invT_copy[i * LDS + j] = 0.0;
+          for (uint32_t j = 0; j < Lds; j++) {
+            if (j < Dim) Slater_invT_copy[i * Lds + j] = tmp[i * Dim + j];
+            else Slater_invT_copy[i * Lds + j] = 0.0;
           }
         }
 
@@ -290,7 +290,7 @@ printf("#-----------------------------------------------------------------------
     } // END OF REPETITIONS LOOP
 
     // 4. COPY RESULT BACK TO ORIGINAL 
-    memcpy(Slater_invT, Slater_invT_copy, LDS * Dim * sizeof(double));
+    memcpy(Slater_invT, Slater_invT_copy, Lds * Dim * sizeof(double));
     determinant = determinant_copy;
     // At this point Slater_invT contains the correct inverse matrix
 
@@ -306,20 +306,20 @@ printf("#-----------------------------------------------------------------------
     // CUMULATIVE RESULT FOR THE ENTIRE DATASET
     cumulative += accumulator;
 
-    double SSi[Dim * Dim];
-    matmul(SlaterT, Slater_invT, SSi, LDS, Dim);
-    double Res[Dim * Dim];
+    double SSi[DIM * DIM];
+    matmul(SlaterT, Slater_invT, SSi, Lds, Dim);
+    double Res[DIM * DIM];
     residual(SSi, Res, Dim);
     const double max = max_norm(Res, Dim, Dim);
 
     // 7. CHECK ERRROR ON THE UPDATED DATA AND RECORD THE RESULT: ERR_OUT
-    uint32_t err_out = check_error(LDS, Dim, Slater_invT, SlaterT, tolerance);
+    uint32_t err_out = check_error(Lds, Dim, Slater_invT, SlaterT, tolerance);
     // int32_t err_out = check_error_better(max, tolerance);
 
     // if (err_out == 1) printf("cycle index %d: cycle %d with %lu upds failed!\n", cycles_index, cycle, N_updates);
 
     // 8. COMPUTE CONDITION NUMBER
-    const double condnr = condition_number(Slater, Slater_invT, LDS, Dim);
+    const double condnr = condition_number(Slater, Slater_invT, Lds, Dim);
     const double frob = frobenius_norm(Res, Dim, Dim);
 
 
