@@ -34,7 +34,7 @@ jobs:
           source smvars.sh llvm
           cd qmckl
           ./autogen.sh
-          QMCKL_DEVEL=1 ./configure --enable-silent-rules --enable-maintainer-mode
+          QMCKL_DEVEL=1 ./configure --enable-silent-rules --enable-maintainer-mode --without-trexio
           make -j 8
           make -j check
           cd ..
