@@ -66,10 +66,10 @@ BIN_DIR := bin
 EXEC := $(BIN_DIR)/cMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/test_h5 \
 		$(BIN_DIR)/fnu_test_h5 \
-		$(BIN_DIR)/qmckl_test_c \
 		$(BIN_DIR)/fMaponiA3_test_3x3_3 \
 		$(BIN_DIR)/fMaponiA3_test_4x4_2 \
 		$(BIN_DIR)/QMCChem_dataset_test
+		#$(BIN_DIR)/qmckl_test_c \
 
 ## Build tagets
 .PHONY: all clean distclean
