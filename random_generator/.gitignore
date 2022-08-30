@@ -1,0 +1,14 @@
+
+
+# Common build directories
+[bB]uild
+[dD]ebug
+[rR]elease
+# This one is often used by intellij ide
+cmake-*
+
+# IDE related
+.idea
+.vscode
+
+
