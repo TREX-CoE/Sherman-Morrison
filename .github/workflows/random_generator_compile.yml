@@ -1,0 +1,33 @@
+name: Compiles
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -yq g++-10 cmake libomp-dev liblapacke-dev libhdf5-dev libblas-dev libopenblas-dev
+
+
+      - name: Configure CMake
+        run: |
+          cmake -B ${{github.workspace}}/random_generator/build ${{github.workspace}}/random_generator \
+            -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_C_COMPILER=gcc-10
+
+      - name: Build
+        # Build your program with the given configuration
+        run: |
+          cmake --build ${{github.workspace}}/random_generator/build --config ${{env.BUILD_TYPE}}
