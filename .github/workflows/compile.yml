@@ -32,10 +32,10 @@ jobs:
         run: |
           sudo apt install libhdf5-dev flang-7 clang-7 emacs autoconf
           source smvars.sh llvm
-          cd qmckl
-          ./autogen.sh
-          QMCKL_DEVEL=1 ./configure --enable-silent-rules --enable-maintainer-mode --without-trexio
-          make -j 8
-          make -j check
-          cd ..
+          #cd qmckl
+          #./autogen.sh
+          #QMCKL_DEVEL=1 ./configure --enable-silent-rules --enable-maintainer-mode --without-trexio
+          #make -j 8
+          #make -j check
+          #cd ..
           make
