@@ -1,4 +1,4 @@
-name: Compiles
+name: "Random Generator Build CI"
 
 on:
   push:
