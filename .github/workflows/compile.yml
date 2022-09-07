@@ -1,6 +1,6 @@
 # This is a basic workflow to test compilation
 
-name: CI
+name: "Sherman-Morrison Build CI"
 
 # Controls when the action will run.
 on:
@@ -28,7 +28,7 @@ jobs:
           submodules: recursive
 
       # Runs a single command using the runners shell
-      - name: Test compilation
+      - name: Build and test
         run: |
           sudo apt install libhdf5-dev flang-7 clang-7 emacs autoconf
           source smvars.sh llvm

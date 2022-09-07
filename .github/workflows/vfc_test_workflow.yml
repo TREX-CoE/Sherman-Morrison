@@ -1,7 +1,7 @@
 # This workflow will be executed when dev is updated:
 # it will run the configured tests and upload the results on vfc_ci_dev.
 
-name: "Verificarlo CI (dev)"
+name: "Verificarlo CI"
 
 on:
   # Triggers the workflow when dev is updated
@@ -17,7 +17,7 @@ jobs:
     container: verificarlo/verificarlo
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
             fetch-depth: 0
 
