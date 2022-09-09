@@ -2,13 +2,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-void print_matrix(double *A, const uint64_t Lds, const uint64_t Dim) {
-  for (uint64_t i = 0; i < Lds * Dim; i++) {
-    printf("%f\n", A[i]);
-  }
-  printf("\n");
-}
-
 double frobenius_norm2(double *A, const uint64_t Lds, const uint64_t Dim) {
   double sum2 = 0;
   for (uint64_t i = 0; i < Lds * Dim; i++) sum2 += A[i] * A[i];

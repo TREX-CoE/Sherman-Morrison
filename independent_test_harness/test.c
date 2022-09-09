@@ -4,7 +4,7 @@
 
 #define DATASET "dataset_329d_zeropadded_cm.hdf5"
 // #define DATASET "dataset_15784d_zeropadded_cm.hdf5"
-#define REPETITIONS 100000
+#define REPETITIONS 1
 
 uint64_t n_splits;
 uint64_t block_fail;
@@ -13,6 +13,15 @@ uint64_t recursive_calls;
 int main(int argc, char **argv) {
   assert(argc == 2);
   char *version = argv[1];
+
+#ifdef HAVE_CUBLAS_OFFLOAD
+  cublasHandle_t handle;
+  if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
+    fprintf(stdout, "cuBLAS initialization failed!\n");
+    exit(EXIT_FAILURE);
+  }
+#endif
+
 
   // SETUP STORAGE AND DATA ACCESS
   hid_t  file_id;
@@ -214,13 +223,14 @@ printf("#-----------------------------------------------------------------------
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
 
+#ifdef HAVE_CUBLAS_OFFLOAD
       } else if (version[0] == 'c') { // Woodbury K cuBLAS
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_woodbury_k_cublas_offload(Lds, Dim, N_updates, Updates,
+        err_break = qmckl_woodbury_k_cublas_offload(handle, Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -228,7 +238,7 @@ printf("#-----------------------------------------------------------------------
 
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
-
+#endif
       } else if (version[0] == 's') { // Splitting
 
         // 1. FETCH START TIME
@@ -283,7 +293,7 @@ printf("#-----------------------------------------------------------------------
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
 
-      } else {                        // Exit
+      } else { // Exit
         printf("Version '%c' not implemented.\n", version[0]);
         return 1;
       }
@@ -336,4 +346,8 @@ printf("#-----------------------------------------------------------------------
   printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
   (void) H5Fclose(file_id);
+
+#ifdef HAVE_CUBLAS_OFFLOAD  
+  cublasDestroy(handle);
+#endif
 }

@@ -55,7 +55,8 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
                           double *__restrict determinant);
 
 #ifdef HAVE_CUBLAS_OFFLOAD
-uint32_t qmckl_woodbury_k_cublas_offload(const uint64_t vLDS,
+uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
+          const uint64_t vLDS,
           const uint64_t vDim,
           const uint64_t N_updates,
           const double *__restrict __attribute__((aligned(8))) Updates,

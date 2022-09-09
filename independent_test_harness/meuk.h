@@ -15,7 +15,6 @@ typedef struct Error {
 void matmul(double *a, double *b, double *prod, const uint64_t Lds, const uint64_t Dim);
 void residual(double *a, double *res, const uint64_t Dim);
 double frobenius_norm2(double *A, const uint64_t Lds, const uint64_t Dim);
-void print_matrix(double *A, const uint64_t Lds, const uint64_t Dim);
 double frobenius_norm(double *A, const uint64_t Lds, const uint64_t Dim);
 double max_norm(double *A, const uint64_t Lds, const uint64_t Dim);
 double condition_number(double *A, double *Ainv, const uint64_t Lds, const uint64_t Dim);
