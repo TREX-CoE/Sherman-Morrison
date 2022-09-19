@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project("TREX - Scherman-Morrison random generator" VERSION "0.1.0")
 
+set(MKL_DIR $ENV{MKLROOT}/lib/cmake/mkl)
+
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/headers)
 set(GLOBAL_BIN_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(GLOBAL_LIB_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
@@ -14,8 +16,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/versioning.h.in" "${PROJECT_BINA
 include_directories(${PROJECT_BINARY_DIR})
 
 find_package(HDF5 REQUIRED)
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
+find_package(MKL REQUIRED)
+message(STATUS "Imported Intel oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 find_package(OpenMP REQUIRED)
 
 add_subdirectory(src)

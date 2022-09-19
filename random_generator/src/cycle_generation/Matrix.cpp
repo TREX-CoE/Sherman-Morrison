@@ -1,6 +1,7 @@
 
 #include "cycle_generation/Matrix.hpp"
-#include <lapacke.h>
+// #include <lapacke.h>
+#include <mkl_lapacke.h>
 
 namespace randomgen {
 

@@ -11,4 +11,4 @@ add_library(cycle_generation
         CApi.cpp)
 target_include_directories(cycle_generation PUBLIC ${CURRENT_INCLUDE_DIR} ${HDF5_INCLUDE_DIRS})
 target_link_libraries(cycle_generation PUBLIC update_generation ${HDF5_LIBRARIES}
-        m ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} lapacke)
+	m ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} MKL::MKL)
