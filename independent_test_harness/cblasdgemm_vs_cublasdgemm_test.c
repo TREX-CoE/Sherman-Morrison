@@ -1,18 +1,21 @@
 /*
 Compile with:
 
-nvc -L${MKLROOT}/lib/intel64 \
-    -lmkl_intel_lp64 \
-    -lmkl_sequential \
-    -lmkl_core \
-    -lpthread \
-    -lm \
-    -ldl \
-    -lcublas \
-    -mp \
-    -target=gpu \
-    cblasdgemm_vs_cublasdgemm_test.c \
-    -o cblasdgemm_vs_cublasdgemm_test
+nvc \
+-I$NV_CUDA_MATH_PATH/11.7/include \
+-L$NV_CUDA_MATH_PATH/11.7/lib64 \
+-L${MKLROOT}/lib/intel64 \
+-lmkl_intel_lp64 \
+-lmkl_sequential \
+-lmkl_core \
+-lpthread \
+-lm \
+-ldl \
+-lcublas \
+-mp \
+-target=gpu \
+cblasdgemm_vs_cublasdgemm_test.c \
+-o cblasdgemm_vs_cublasdgemm_test
 
 */
 

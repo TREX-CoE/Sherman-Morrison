@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include "hdf5.h"
+#include <hdf5/serial/hdf5.h>
 #include "kernels.h"
 
 typedef struct Error {

@@ -299,9 +299,8 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
 
   // Compute determinant by LU decomposition
   int ipiv[N_updates];
-  lapack_int ret;
-  ret = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
-  if (ret != 0) return ret;
+  (void) LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
+
   double det = 1.0;
   int j = 0;
   for (uint32_t i = 0; i < N_updates; i++) {
@@ -319,8 +318,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   if (determinant) *determinant *= det;
 
   // Compute B^{-1} with explicit formula for K x K inversion
-  ret = LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, ipiv);
-  if (ret != 0) return ret;
+  (void) LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, ipiv);
 
   // tmp1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
   double tmp1[N_updates * LDS];
@@ -328,173 +326,146 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
               N_updates, LDS, N_updates,
               alpha, B, N_updates, D, LDS,
               beta, tmp1, LDS);
-  print_m(tmp1, N_updates, LDS, LDS, "tmp1_cblas");
 
   // Compute S^{-1} - C * tmp1 : Dim x LDS : standard dgemm
-  // alpha = -1.0, beta = 1.0;
-  // cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-  //             Dim, LDS, N_updates,
-  //             alpha, C, N_updates, tmp1, LDS,
-  //             beta, Slater_inv, LDS);
-
-  double *tmp2 = calloc(1, DIM * LDS * sizeof(double));
-  cblas_dgemm(CblasRowMajor,
-              CblasNoTrans, CblasNoTrans,
+  alpha = -1.0, beta = 1.0;
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
               Dim, LDS, N_updates,
               alpha, C, N_updates, tmp1, LDS,
-              beta, tmp2, LDS);
-  print_m(tmp2, DIM, LDS, LDS, "tmp2_cblas");
-
-  double *tmp3 = calloc(1, DIM * LDS * sizeof(double));
-  for(int i = 0; i < DIM * LDS; ++i)
-  {
-    tmp3[i] = Slater_inv[i] - tmp2[i];
-  }
-  print_m(tmp3, DIM, LDS, LDS, "tmp3_cblas");
-
-  for(int i = 0; i < DIM * LDS; ++i)
-  {
-    Slater_inv[i] = tmp3[i];
-  }
-
-  free(tmp2);
-  free(tmp3);
+              beta, Slater_inv, LDS);
 
   return 0;
 }
 
 #ifdef HAVE_CUBLAS_OFFLOAD
 uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
-          const uint64_t vLDS,
-          const uint64_t vDim,
-          const uint64_t N_updates,
-          const double *__restrict __attribute__((aligned(8))) Updates,
-          const uint64_t *__restrict Updates_index,
-          const double breakdown,
-          double *__restrict __attribute__((aligned(8))) Slater_inv,
-          double *__restrict determinant) {
-
+                                         const uint64_t vLDS,
+                                         const uint64_t vDim,
+                                         const uint64_t N_updates,
+                                         const double* Updates,
+                                         const uint64_t* Updates_index,
+                                         const double breakdown,
+                                         double* Slater_inv,
+                                         double* determinant)
+{
   const uint32_t Dim = DIM;
   const uint32_t Lds = LDS;
 
-  // Compute C = S^{-1} U : Dim x K : standard dgemm
-  double *C = calloc(1, DIM * N_updates * sizeof(double));
-  double alpha = 1.0f, beta = 0.0f;
-  #pragma omp target enter data map(to:Slater_inv[0:DIM*LDS], Updates[0:LDS*N_updates], C[0:DIM*N_updates])
-  #pragma omp target data use_device_ptr(Slater_inv, Updates, C)
-  {
-    int cublasError = cublasDgemm(handle,
-                                  CUBLAS_OP_T, CUBLAS_OP_N,
-                                  15, 21, 24,
-                                  &alpha, Updates, 24, Slater_inv, 24, 
-                                  &beta, C, 15);
-  }
-  #pragma omp target exit data map(from:C[0:DIM*N_updates])
+  double alpha, beta;
+  int* ipiv = calloc(1, sizeof *ipiv * N_updates);
+  double* C  = calloc(1, sizeof *C * Dim * N_updates);
+  double* B  = calloc(1, sizeof *B * N_updates * N_updates);
+  double* D  = calloc(1, sizeof *D * N_updates * Lds);
+  double* T1 = calloc(1, sizeof *T1 * N_updates * Lds);
+  double* T2 = calloc(1, sizeof *T2 * Dim * Lds);
 
-  // Construct B = 1 + V C : K x K : selecting and copying row from C into B. Can maybe be off-loaded to GPU by splitting in N_updates tiles of N_updates strides, using PARALLEL and SIMD
-  // Construct D = V S^{-1} : K x LDS
-  double *B = calloc(1, N_updates * N_updates * sizeof(double));
-  double *D = calloc(1, N_updates * LDS * sizeof(double));
-  for (uint32_t i = 0; i < N_updates; i++) {
-    const uint32_t row = Updates_index[i] - 1;
-    for (uint32_t j = 0; j < N_updates  ; j++) B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
-    for (uint32_t j = 0; j < Lds; j++) D[i * Lds + j] = Slater_inv[row * Lds + j];
+  #pragma omp target enter data map(to:    Updates[0:Lds*N_updates], \
+                                           Updates_index[0:N_updates], \
+                                           Slater_inv[0:Dim*Lds]) \
+                                map(alloc: B[0:N_updates*N_updates], \
+                                           C[0:Dim*N_updates], \
+                                           D[0:N_updates*Lds], \
+                                           T1[0:N_updates*Lds], \
+                                           T2[0:Dim*Lds], \
+                                           ipiv[0:N_updates])
+
+  #pragma omp target data use_device_ptr(Slater_inv, Updates, C) // compute C ON DEVICE
+  {
+    alpha = 1.0f, beta = 0.0f;
+    (void) cublasDgemm(handle,
+                      CUBLAS_OP_T, CUBLAS_OP_N,
+                      N_updates, Dim, Lds,
+                      &alpha, Updates, Lds, Slater_inv, Lds,
+                      &beta, C, N_updates);
   }
+
+  // Construct B = 1 + V C : K x K
+  // Construct D = V S^{-1} : K x LDS
+  #pragma omp target teams distribute parallel for // compute B, D ON DEVICE
+  for (uint32_t i = 0; i < N_updates; i++)
+  {
+    const uint32_t row = Updates_index[i] - 1;
+    for (uint32_t j = 0; j < N_updates  ; j++)
+    {
+      B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
+    }
+    for (uint32_t j = 0; j < Lds; j++)
+    {
+      D[i * Lds + j] = Slater_inv[row * Lds + j];
+    }
+  }
+  #pragma omp target update from(B[0:N_updates*N_updates]) // Update B ON HOST
 
   // Compute determinant by LU decomposition
-  int ipiv[N_updates];
-  lapack_int ret;
-  ret = LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
-  if (ret != 0) return ret;
-  double det = 1.0;
-  int j = 0;
-  for (uint32_t i = 0; i < N_updates; i++) {
+  (void) LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
+  #pragma omp target update to(B[0:N_updates*N_updates], ipiv[0:N_updates]) // Update B ON DEVICE
+
+  double det = 1.0f; uint32_t j = 0;
+  #pragma omp target teams distribute parallel for // compute det ON DEVICE
+  for (uint32_t i = 0; i < N_updates; i++)
+  {
     j += min(ipiv[i] - i, 1);
     det *= B[(N_updates + 1) * i]; // update determinant
   }
   if ((j & 1) == 0) det = -det; // multiply det with -1 if j is even
 
   // Check if determinant of B is not too close to zero
-  if (fabs(det) < breakdown) {
-    return 1;
-  }
+  if (fabs(det) < breakdown) return det;
 
   // Update det(Slater) if passed
   if (determinant) *determinant *= det;
 
-  // Compute B^{-1} with explicit formula for K x K inversion
-  ret = LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, ipiv);
-  if (ret != 0) return ret;
+  // Compute B^{-1}
+  (void) LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, ipiv); // compute B^-1 ON HOST
+  #pragma omp target update to(B[:N_updates*N_updates]) // Update B^-1 TO DEVICE
 
-  // tmp1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
-  double *tmp1 = calloc(1, N_updates * LDS * sizeof(double));
-  #pragma omp target enter data map(to:D[0:N_updates*LDS], B[0:N_updates*N_updates], tmp1[0:N_updates*LDS])
-  #pragma omp target data use_device_ptr(D, B, tmp1)
+  // T1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
+  #pragma omp target data use_device_ptr(D, B, T1) // compute T1 ON DEVICE
   {
-    int cublasError = cublasDgemm(handle,
-                                  CUBLAS_OP_N, CUBLAS_OP_N,
-                                  LDS, N_updates, N_updates,
-                                  &alpha, D, LDS, B, N_updates, 
-                                  &beta, tmp1, LDS);
-  }
-  #pragma omp target exit data map(from:tmp1[0:N_updates*LDS])
-  print_m(tmp1, N_updates, LDS, LDS, "tmp1_cublas");
-
-  // Compute tmp2 = C * tmp1 : Dim x LDS
-  double *tmp2 = calloc(1, DIM * LDS * sizeof(double));
-  #pragma omp target enter data map(to:tmp1[0:N_updates*LDS], C[0:DIM*N_updates], tmp2[0:DIM*LDS])
-  #pragma omp target data use_device_ptr(tmp1, C, tmp2)
-  {
-    int cublasError = cublasDgemm(handle,
-                                  CUBLAS_OP_N, CUBLAS_OP_N,
-                                  LDS, Dim, N_updates,
-                                  &alpha, tmp1, LDS, C, N_updates,
-                                  &beta, tmp2, LDS);
-  }
-  #pragma omp target exit data map(from:tmp2[0:DIM*LDS])
-  print_m(tmp2, DIM, LDS, LDS, "tmp2_cublas");
-
-  // Compute tmp3 = S^{-1} - tmp2
-  double *tmp3 = calloc(1, DIM * LDS * sizeof(double)); 
-  beta = -1.0f;
-  #pragma omp target enter data map(to:Slater_inv[0:DIM*LDS], tmp2[0:DIM*LDS], tmp3[0:DIM*LDS])
-  #pragma omp target data use_device_ptr(Slater_inv, tmp2, tmp3)
-  {
-    int cublasError = cublasDgeam(handle,
-                                  CUBLAS_OP_N, CUBLAS_OP_N,
-                                  DIM, LDS,
-                                  &alpha, Slater_inv, LDS,
-                                  &beta, tmp2, LDS,
-                                  tmp3, LDS);
-  }
-  #pragma omp target exit data map(from:tmp3[0:DIM*LDS])
-  print_m(tmp3, DIM, LDS, LDS, "tmp3_cublas");
-  for(int i = 0; i < DIM * LDS; ++i)
-  {
-    Slater_inv[i] = tmp3[i];
+    alpha = 1.0, beta = 0.0;
+    (void) cublasDgemm(handle,
+                      CUBLAS_OP_N, CUBLAS_OP_N,
+                      Lds, N_updates, N_updates,
+                      &alpha, D, Lds, B, N_updates,
+                      &beta, T1, Lds);
   }
 
-  // // Compute S^{-1} <- S^{-1} - tmp2
-  // beta = -1.0f;
-  // #pragma omp target enter data map(to:Slater_inv[0:DIM*LDS], tmp2[0:DIM*LDS])
-  // #pragma omp target data use_device_ptr(Slater_inv, tmp2)
-  // {
-  //   int cublasError = cublasDgeam(handle,
-  //                                 CUBLAS_OP_N, CUBLAS_OP_N,
-  //                                 DIM, LDS,
-  //                                 &alpha, Slater_inv, LDS,
-  //                                 &beta, tmp2, LDS,
-  //                                 Slater_inv, LDS);
-  // }
-  // #pragma omp target exit data map(from:Slater_inv[0:DIM*LDS])
+  // Compute T2 <- C * T1 : Dim x LDS : standard dgemm
+  #pragma omp target data use_device_ptr(T1, C, T2) // compute T2 ONM DEVICE
+  {
+    alpha = 1.0f, beta = 0.0f;
+    (void) cublasDgemm(handle,
+                      CUBLAS_OP_N, CUBLAS_OP_N,
+                      Dim, Lds, N_updates,
+                      &alpha, T1, Lds, C, N_updates,
+                      &beta, T2, Lds);
+  }
 
-  
+  // Compute S^{-1} <- S^{-1} - T2 : Dim x LDS : standard dgemm
+  #pragma omp target teams distribute parallel for // compute S^-1 ON DEVICE
+  for (uint32_t i = 0; i < Dim * Lds; i++)
+  {
+    Slater_inv[i] = Slater_inv[i] - T2[i];
+  }
+  #pragma omp target update from(Slater_inv[0:Dim*Lds]) // update S^-1 ON HOST
+
+  #pragma omp target exit data map(delete: Updates[0:Lds*N_updates], \
+                                           Updates_index[0:N_updates], \
+                                           Slater_inv[0:Dim*Lds], \
+                                           B[0:N_updates*N_updates], \
+                                           C[0:Dim*N_updates], \
+                                           D[0:N_updates*Lds], \
+                                           T1[0:N_updates*Lds], \
+                                           T2[0:Dim*Lds], \
+                                           ipiv[0:N_updates])
+
+//  free(ipiv);
   free(B);
   free(C);
   free(D);
-  free(tmp1);
-  free(tmp2);
-  // free(tmp3);
+  free(T1);
+  free(T2);
+
   return 0;
 }
 #endif
@@ -529,7 +500,7 @@ uint32_t qmckl_slagel_splitting(
 
     // Denominator
     const int cui = Updates_index[l] - 1;
-    double den = 1.0 + C[cui];    
+    double den = 1.0 + C[cui];
     // printf("test breakdown = %f, den = %f, C[cui] = %f, cui = %d\n", breakdown, fabs(den), C[cui], cui);
     if (fabs(den) < breakdown) { // Here is decided to split the update, or not.
       // printf("Split! breakdown = %f\n", breakdown);
@@ -662,7 +633,7 @@ uint32_t qmckl_sherman_morrison_smw32s(
 
   // And for the other cases != 4, 6
   // Apply first 3*n_of_3blocks updates in n_of_3blocks blocks of 3 updates with
-  // Woodbury 3x3 kernel  
+  // Woodbury 3x3 kernel
   uint32_t n_of_3blocks = N_updates / 3;
   uint32_t remainder = N_updates % 3;
   uint32_t length_3block = 3 * Lds;
@@ -799,7 +770,7 @@ uint32_t qmckl_sherman_morrison_later(
       }
     }
     l += 1;
-  } 
+  }
 
   if (later == N_updates) { // If all the updates have failed, exit early with an error
     return 1;

@@ -7,8 +7,9 @@
 
 #ifdef HAVE_CUBLAS_OFFLOAD
 #include <stdio.h>
-#include <cuda_runtime.h>
+#include <omp.h>
 #include <cublas_v2.h>
+#include <cuda_runtime_api.h>
 #endif
 
 lapack_int inverse(double *A, uint64_t Dim, uint64_t Lds);

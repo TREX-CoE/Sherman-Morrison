@@ -1,11 +1,15 @@
-FC = ifx
-CC = nvc
+#FC = ifx
+#CC = nvc
 
 CFLAGS=-std=c99 -O3 -Wall -g -mp -target=gpu
 
-LDFLAGS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_hl
+INCLUDE=-I$(NVHPC_ROOT)/math_libs/include
+
+LDFLAGS=-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5 -lhdf5_hl
 LDFLAGS+=-L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-LDFLAGS+=-lcublas -mp -target=gpu
+LDFLAGS+=-L$(NVHPC_ROOT)/math_libs/lib64 -lcublas -mp -target=gpu
+
+all: test
 
 ## Link with icc
 # test: sm.o test.o detupdate21.o meuk.o
