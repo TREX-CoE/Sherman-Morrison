@@ -298,7 +298,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   }
 
   // Compute determinant by LU decomposition
-  int ipiv[N_updates];
+  int* ipiv  = calloc(1, sizeof *ipiv * N_updates);
   (void) LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
 
   double det = 1.0;
@@ -334,11 +334,12 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
               alpha, C, N_updates, tmp1, LDS,
               beta, Slater_inv, LDS);
 
+  free(ipiv);
   return 0;
 }
 
 #ifdef HAVE_CUBLAS_OFFLOAD
-uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
+uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHandle_t s_handle,
                                          const uint64_t vLDS,
                                          const uint64_t vDim,
                                          const uint64_t N_updates,
@@ -352,12 +353,17 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
   const uint32_t Lds = LDS;
 
   double alpha, beta;
-  int* ipiv = calloc(1, sizeof *ipiv * N_updates);
+  int* ipiv  = calloc(1, sizeof *ipiv * N_updates);
   double* C  = calloc(1, sizeof *C * Dim * N_updates);
   double* B  = calloc(1, sizeof *B * N_updates * N_updates);
   double* D  = calloc(1, sizeof *D * N_updates * Lds);
   double* T1 = calloc(1, sizeof *T1 * N_updates * Lds);
   double* T2 = calloc(1, sizeof *T2 * Dim * Lds);
+
+  int lwork = 0, *info = NULL; double* d_work = NULL;
+  cusolverDnDgetrf_bufferSize(s_handle, N_updates, N_updates, B, N_updates, &lwork);
+  printf("Size of lwork = %d\n", lwork);
+  d_work = calloc(1, sizeof *d_work * lwork);
 
   #pragma omp target enter data map(to:    Updates[0:Lds*N_updates], \
                                            Updates_index[0:N_updates], \
@@ -367,12 +373,13 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
                                            D[0:N_updates*Lds], \
                                            T1[0:N_updates*Lds], \
                                            T2[0:Dim*Lds], \
-                                           ipiv[0:N_updates])
+                                           ipiv[0:N_updates], \
+                                           d_work[0:lwork])
 
   #pragma omp target data use_device_ptr(Slater_inv, Updates, C) // compute C ON DEVICE
   {
     alpha = 1.0f, beta = 0.0f;
-    (void) cublasDgemm(handle,
+    (void) cublasDgemm(b_handle,
                       CUBLAS_OP_T, CUBLAS_OP_N,
                       N_updates, Dim, Lds,
                       &alpha, Updates, Lds, Slater_inv, Lds,
@@ -387,24 +394,26 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
     const uint32_t row = Updates_index[i] - 1;
     for (uint32_t j = 0; j < N_updates  ; j++)
     {
-      B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
+      B[j * N_updates + i] = C[row * N_updates + j] + (i == j); // B NEEDS TO BE IN COL-MAJ FOR cusolverDnDgetrf !
     }
     for (uint32_t j = 0; j < Lds; j++)
     {
       D[i * Lds + j] = Slater_inv[row * Lds + j];
     }
   }
-  #pragma omp target update from(B[0:N_updates*N_updates]) // Update B ON HOST
 
   // Compute determinant by LU decomposition
-  (void) LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, ipiv);
-  #pragma omp target update to(B[0:N_updates*N_updates], ipiv[0:N_updates]) // Update B ON DEVICE
+  #pragma omp target data use_device_ptr(B, d_work, ipiv) // compute C ON DEVICE
+  {
+    (void) cusolverDnDgetrf(s_handle, N_updates, N_updates, B, N_updates, d_work, ipiv, info);
+  }
 
   double det = 1.0f; uint32_t j = 0;
   #pragma omp target teams distribute parallel for // compute det ON DEVICE
   for (uint32_t i = 0; i < N_updates; i++)
   {
-    j += min(ipiv[i] - i, 1);
+    int row = ipiv[i] - i;
+    j += min(row, 1);
     det *= B[(N_updates + 1) * i]; // update determinant
   }
   if ((j & 1) == 0) det = -det; // multiply det with -1 if j is even
@@ -416,15 +425,16 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
   if (determinant) *determinant *= det;
 
   // Compute B^{-1}
-  (void) LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, ipiv); // compute B^-1 ON HOST
+  #pragma omp target update from(B[0:N_updates*N_updates], ipiv[0:N_updates])
+  (void) LAPACKE_dgetri(LAPACK_COL_MAJOR, N_updates, B, N_updates, ipiv); // compute B^-1 ON HOST
   #pragma omp target update to(B[:N_updates*N_updates]) // Update B^-1 TO DEVICE
 
   // T1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
   #pragma omp target data use_device_ptr(D, B, T1) // compute T1 ON DEVICE
   {
     alpha = 1.0, beta = 0.0;
-    (void) cublasDgemm(handle,
-                      CUBLAS_OP_N, CUBLAS_OP_N,
+    (void) cublasDgemm(b_handle,
+                      CUBLAS_OP_N, CUBLAS_OP_T, // REMEMBER THIS IS TMP TRANSPOSED BECAUSE OF LAPACKE CALL ON l429 !!!
                       Lds, N_updates, N_updates,
                       &alpha, D, Lds, B, N_updates,
                       &beta, T1, Lds);
@@ -434,7 +444,7 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
   #pragma omp target data use_device_ptr(T1, C, T2) // compute T2 ONM DEVICE
   {
     alpha = 1.0f, beta = 0.0f;
-    (void) cublasDgemm(handle,
+    (void) cublasDgemm(b_handle,
                       CUBLAS_OP_N, CUBLAS_OP_N,
                       Dim, Lds, N_updates,
                       &alpha, T1, Lds, C, N_updates,

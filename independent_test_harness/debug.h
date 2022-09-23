@@ -37,7 +37,7 @@ void print_m_t(const double* mat, uint16_t m, uint16_t n, uint16_t ldm, char* na
   {
     for (uint16_t j = 0; j < n; ++j)
     {
-      printf("%11.5f ", mat[j * ldm + i]);
+      printf("%9.3f ", mat[j * ldm + i]);
     }
     printf("\n");
   }

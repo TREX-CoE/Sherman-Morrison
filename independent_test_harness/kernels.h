@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <omp.h>
 #include <cublas_v2.h>
+#include <cusolverDn.h>
+#include <cusolver_common.h>
 #include <cuda_runtime_api.h>
 #endif
 
@@ -56,7 +58,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
                           double *__restrict determinant);
 
 #ifdef HAVE_CUBLAS_OFFLOAD
-uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t handle,
+uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHandle_t s_handle,
           const uint64_t vLDS,
           const uint64_t vDim,
           const uint64_t N_updates,

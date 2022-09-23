@@ -7,7 +7,7 @@ INCLUDE=-I$(NVHPC_ROOT)/math_libs/include
 
 LDFLAGS=-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5 -lhdf5_hl
 LDFLAGS+=-L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
-LDFLAGS+=-L$(NVHPC_ROOT)/math_libs/lib64 -lcublas -mp -target=gpu
+LDFLAGS+=-L$(NVHPC_ROOT)/math_libs/lib64 -lcublas -lcusolver -mp -target=gpu
 
 all: test
 

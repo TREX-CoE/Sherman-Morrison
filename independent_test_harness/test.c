@@ -1,4 +1,4 @@
-#include <stdint.h>
+  #include <stdint.h>
 #include "meuk.h"
 #include "cycles.h"
 
@@ -16,8 +16,13 @@ int main(int argc, char **argv) {
 
 #ifdef HAVE_CUBLAS_OFFLOAD
   cublasHandle_t handle;
+  cusolverDnHandle_t s_handle;
   if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
     fprintf(stdout, "cuBLAS initialization failed!\n");
+    exit(EXIT_FAILURE);
+  }
+  if (cusolverDnCreate(&s_handle) != CUSOLVER_STATUS_SUCCESS) {
+    fprintf(stdout, "cuSOLVER initialization failed!\n");
     exit(EXIT_FAILURE);
   }
 #endif
@@ -230,7 +235,7 @@ printf("#-----------------------------------------------------------------------
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_woodbury_k_cublas_offload(handle, Lds, Dim, N_updates, Updates,
+        err_break = qmckl_woodbury_k_cublas_offload(handle, s_handle, Lds, Dim, N_updates, Updates,
               Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
@@ -349,5 +354,6 @@ printf("#-----------------------------------------------------------------------
 
 #ifdef HAVE_CUBLAS_OFFLOAD  
   cublasDestroy(handle);
+  cusolverDnDestroy(s_handle);
 #endif
 }
