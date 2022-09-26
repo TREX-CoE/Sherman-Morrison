@@ -7,7 +7,6 @@
 
 #ifdef HAVE_CUBLAS_OFFLOAD
 #include <stdio.h>
-#include <omp.h>
 #include <cublas_v2.h>
 #include <cusolverDn.h>
 #include <cusolver_common.h>

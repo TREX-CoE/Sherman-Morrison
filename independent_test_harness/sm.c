@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "kernels.h"
 #include "debug.h"
 
@@ -30,8 +31,8 @@ uint32_t qmckl_sherman_morrison(
     // C = S^{-1} x u_l
     for (uint32_t i = 0; i < Dim; i++) {
       C[i] = 0.0;
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       for (uint32_t j = 0; j < Lds; j++) {
         C[i] += Slater_inv[i * Lds + j] * Updates[l * Lds + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
@@ -50,16 +51,16 @@ uint32_t qmckl_sherman_morrison(
     if (!determinant)
       *determinant *= den;
 
-    #pragma ivdep
-    #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
     for (uint32_t j = 0; j < Lds; j++) {
       D[j] = Slater_inv[cui * Lds + j]; // selecting proper column of v_l^T * S_inv
     }
 
     // A^{-1} = A^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       for (uint32_t j = 0; j < Lds; j++) {
         const double update = C[i] * D[j] * iden;
         Slater_inv[i * Lds + j] -= update;
@@ -99,8 +100,8 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
   for (uint32_t i = 0; i < Dim; i++) {
     C[i * 2] = 0;
     C[i * 2 + 1] = 0;
-    #pragma ivdep
-    #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
     for (uint32_t k = 0; k < Lds; k++) {
       C[i * 2]     += Slater_inv[i * Lds + k] * Updates[k];
       C[i * 2 + 1] += Slater_inv[i * Lds + k] * Updates[Lds + k];
@@ -134,8 +135,8 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
   double __attribute__((aligned(8))) tmp[2 * LDS];
   double *__restrict r1dim = &(Slater_inv[row1 * Lds]);
   double *__restrict r2dim = &(Slater_inv[row2 * Lds]);
-  #pragma ivdep
-  #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
   for (uint32_t j = 0; j < Lds; j++) {
     tmp[j]       = Binv[0] * r1dim[j] + Binv[1] * r2dim[j];
     tmp[Lds + j] = Binv[2] * r1dim[j] + Binv[3] * r2dim[j];
@@ -143,8 +144,8 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
 
   // Compute (S^T)^{-1} - C * tmp : Dim x Lds
   for (uint32_t i = 0; i < Dim; i++) {
-    #pragma ivdep
-    #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
     for (uint32_t j = 0; j < Lds; j++) {
       Slater_inv[i * Lds + j] -= C[i * 2]     * tmp[j];
       Slater_inv[i * Lds + j] -= C[i * 2 + 1] * tmp[Lds + j];
@@ -164,13 +165,13 @@ where S^T                     : Dim x LDS,
       V                       : 3 x Dim
 */
 uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
-                          const double *__restrict __attribute__((aligned(8)))
-                          Updates,
-                          const uint64_t *__restrict Updates_index,
-                          const double breakdown,
-                          double *__restrict __attribute__((aligned(8)))
-                          Slater_inv,
-                          double *__restrict determinant) {
+                           const double *__restrict __attribute__((aligned(8)))
+                           Updates,
+                           const uint64_t *__restrict Updates_index,
+                           const double breakdown,
+                           double *__restrict __attribute__((aligned(8)))
+                           Slater_inv,
+                           double *__restrict determinant) {
 
   const uint32_t Dim = DIM;
   const uint32_t Lds = LDS;
@@ -185,8 +186,8 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
     C[i * 3] = 0;
     C[i * 3 + 1] = 0;
     C[i * 3 + 2] = 0;
-    #pragma ivdep
-    #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
     for (uint32_t k = 0; k < Lds; k++) {
       C[i * 3] += Slater_inv[i * Lds + k] * Updates[k];
       C[i * 3 + 1] += Slater_inv[i * Lds + k] * Updates[Lds + k];
@@ -234,8 +235,8 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
   double *__restrict r1dim = &(Slater_inv[row1 * LDS]);
   double *__restrict r2dim = &(Slater_inv[row2 * LDS]);
   double *__restrict r3dim = &(Slater_inv[row3 * LDS]);
-  #pragma ivdep
-  #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
   for (uint32_t j = 0; j < Lds; j++) {
     tmp[j]           = Binv[0] * r1dim[j] + Binv[1] * r2dim[j] + Binv[2] * r3dim[j];
     tmp[Lds + j]     = Binv[3] * r1dim[j] + Binv[4] * r2dim[j] + Binv[5] * r3dim[j];
@@ -244,8 +245,8 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
 
   // Compute (S^T)^{-1} - C * tmp : Dim x Lds
   for (uint32_t i = 0; i < Dim; i++) {
-    #pragma ivdep
-    #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
     for (uint32_t j = 0; j < Lds; j++) {
       Slater_inv[i * Lds + j] -= C[i * 3]     * tmp[j];
       Slater_inv[i * Lds + j] -= C[i * 3 + 1] * tmp[Lds + j];
@@ -353,22 +354,23 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   const uint32_t Lds = LDS;
 
   double alpha, beta;
-  int* ipiv  = calloc(1, sizeof *ipiv * N_updates);
-  double* C  = calloc(1, sizeof *C * Dim * N_updates);
-  double* B  = calloc(1, sizeof *B * N_updates * N_updates);
-  double* D  = calloc(1, sizeof *D * N_updates * Lds);
-  double* T1 = calloc(1, sizeof *T1 * N_updates * Lds);
-  double* T2 = calloc(1, sizeof *T2 * Dim * Lds);
+  int* ipiv    = calloc(1, sizeof *ipiv * N_updates);
+  double* C    = calloc(1, sizeof *C * Dim * N_updates);
+  double* B    = calloc(1, sizeof *B * N_updates * N_updates);
+  double* Binv = calloc(1, sizeof *Binv * N_updates * N_updates);
+  double* D    = calloc(1, sizeof *D * N_updates * Lds);
+  double* T1   = calloc(1, sizeof *T1 * N_updates * Lds);
+  double* T2   = calloc(1, sizeof *T2 * Dim * Lds);
 
   int lwork = 0, *info = NULL; double* d_work = NULL;
   cusolverDnDgetrf_bufferSize(s_handle, N_updates, N_updates, B, N_updates, &lwork);
-  printf("Size of lwork = %d\n", lwork);
   d_work = calloc(1, sizeof *d_work * lwork);
 
   #pragma omp target enter data map(to:    Updates[0:Lds*N_updates], \
                                            Updates_index[0:N_updates], \
                                            Slater_inv[0:Dim*Lds]) \
                                 map(alloc: B[0:N_updates*N_updates], \
+                                           Binv[0:N_updates*N_updates], \
                                            C[0:Dim*N_updates], \
                                            D[0:N_updates*Lds], \
                                            T1[0:N_updates*Lds], \
@@ -380,10 +382,10 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   {
     alpha = 1.0f, beta = 0.0f;
     (void) cublasDgemm(b_handle,
-                      CUBLAS_OP_T, CUBLAS_OP_N,
-                      N_updates, Dim, Lds,
-                      &alpha, Updates, Lds, Slater_inv, Lds,
-                      &beta, C, N_updates);
+                       CUBLAS_OP_T, CUBLAS_OP_N,
+                       N_updates, Dim, Lds,
+                       &alpha, Updates, Lds, Slater_inv, Lds,
+                       &beta, C, N_updates);
   }
 
   // Construct B = 1 + V C : K x K
@@ -408,36 +410,40 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
     (void) cusolverDnDgetrf(s_handle, N_updates, N_updates, B, N_updates, d_work, ipiv, info);
   }
 
-  double det = 1.0f; uint32_t j = 0;
-  #pragma omp target teams distribute parallel for // compute det ON DEVICE
+  bool swap = false; uint32_t j = 0; double det = 1.0f;
+  #pragma omp target teams distribute parallel for reduction(+: j) reduction(*: det)
   for (uint32_t i = 0; i < N_updates; i++)
   {
-    int row = ipiv[i] - i;
-    j += min(row, 1);
-    det *= B[(N_updates + 1) * i]; // update determinant
+    swap = (bool)(ipiv[i] - (i + 1));        // swap = {0->false: no swap, >0->true: swap}
+    j += (uint32_t)swap;                     // count # of swaps
+    det *= B[i * (N_updates + 1)];           // prod. of diag elm. of B
   }
-  if ((j & 1) == 0) det = -det; // multiply det with -1 if j is even
+  if (fabs(det) < breakdown) return det;  // check if determinant of B is too close to zero. If so, exit early.
+  if ((j & 1) != 0) det = -det;              // multiply det with -1 if # of swaps is odd
 
-  // Check if determinant of B is not too close to zero
-  if (fabs(det) < breakdown) return det;
-
-  // Update det(Slater) if passed
-  if (determinant) *determinant *= det;
-
+  if (determinant) *determinant *= det;      // update det(Slater) if determinant!=NULL
   // Compute B^{-1}
-  #pragma omp target update from(B[0:N_updates*N_updates], ipiv[0:N_updates])
-  (void) LAPACKE_dgetri(LAPACK_COL_MAJOR, N_updates, B, N_updates, ipiv); // compute B^-1 ON HOST
-  #pragma omp target update to(B[:N_updates*N_updates]) // Update B^-1 TO DEVICE
+  #pragma omp target teams distribute parallel for
+  for (int i = 0; i < N_updates; ++i) {
+    for (int j = 0; j < N_updates; ++j) {
+      Binv[i * N_updates + j] = (i == j);
+    }
+  }
+
+  #pragma omp target data use_device_ptr(B, ipiv, Binv) // correct result Binv, but in CM!
+  {
+    (void) cusolverDnDgetrs(s_handle, CUBLAS_OP_N, N_updates, N_updates, B, N_updates, ipiv, Binv, N_updates, info);
+  }
 
   // T1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
-  #pragma omp target data use_device_ptr(D, B, T1) // compute T1 ON DEVICE
+  #pragma omp target data use_device_ptr(D, Binv, T1) // compute T1 ON DEVICE
   {
     alpha = 1.0, beta = 0.0;
     (void) cublasDgemm(b_handle,
-                      CUBLAS_OP_N, CUBLAS_OP_T, // REMEMBER THIS IS TMP TRANSPOSED BECAUSE OF LAPACKE CALL ON l429 !!!
-                      Lds, N_updates, N_updates,
-                      &alpha, D, Lds, B, N_updates,
-                      &beta, T1, Lds);
+                       CUBLAS_OP_N, CUBLAS_OP_T, // REMEMBER THIS IS TMP TRANSPOSED BECAUSE OF LAPACKE CALL ON l429 !!!
+                       Lds, N_updates, N_updates,
+                       &alpha, D, Lds, Binv, N_updates,
+                       &beta, T1, Lds);
   }
 
   // Compute T2 <- C * T1 : Dim x LDS : standard dgemm
@@ -445,10 +451,10 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   {
     alpha = 1.0f, beta = 0.0f;
     (void) cublasDgemm(b_handle,
-                      CUBLAS_OP_N, CUBLAS_OP_N,
-                      Dim, Lds, N_updates,
-                      &alpha, T1, Lds, C, N_updates,
-                      &beta, T2, Lds);
+                       CUBLAS_OP_N, CUBLAS_OP_N,
+                       Dim, Lds, N_updates,
+                       &alpha, T1, Lds, C, N_updates,
+                       &beta, T2, Lds);
   }
 
   // Compute S^{-1} <- S^{-1} - T2 : Dim x LDS : standard dgemm
@@ -463,14 +469,16 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
                                            Updates_index[0:N_updates], \
                                            Slater_inv[0:Dim*Lds], \
                                            B[0:N_updates*N_updates], \
+                                           Binv[0:N_updates*N_updates], \
                                            C[0:Dim*N_updates], \
                                            D[0:N_updates*Lds], \
                                            T1[0:N_updates*Lds], \
                                            T2[0:Dim*Lds], \
                                            ipiv[0:N_updates])
 
-//  free(ipiv);
+  free(ipiv);
   free(B);
+  free(Binv);
   free(C);
   free(D);
   free(T1);
@@ -501,8 +509,8 @@ uint32_t qmckl_slagel_splitting(
     // C = S^{-1} x U_l
     for (uint32_t i = 0; i < Dim; i++) {
       C[i] = 0.0;
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       for (uint32_t j = 0; j < Lds; j++) {
         C[i] += Slater_inv[i * Lds + j] * Updates[l * Lds + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
@@ -518,8 +526,8 @@ uint32_t qmckl_slagel_splitting(
 
       // U_l = U_l / 2: split the update in 2 equal halves and save the second halve
       // in later_updates
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       for (uint32_t i = 0; i < Lds; i++) {
         later_updates[*later * Lds + i] = Updates[l * Lds + i] / 2.0;
         C[i] /= 2.0;
@@ -534,16 +542,16 @@ uint32_t qmckl_slagel_splitting(
     if (!determinant) *determinant *= den;
 
     // D = v^T x S^{-1} : 1 x LDS
-    #pragma ivdep
-    #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
     for (uint32_t j = 0; j < Lds; j++) {
       D[j] = Slater_inv[cui * Lds + j];
     }
 
     // S^{-1} = S^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       for (uint32_t j = 0; j < Lds; j++) {
         const double update = C[i] * D[j] * iden;
         Slater_inv[i * Lds + j] -= update;
@@ -571,8 +579,8 @@ uint32_t qmckl_sherman_morrison_splitting(
   // uint32_t rc;
 
   (void) qmckl_slagel_splitting(Lds, Dim, N_updates, Updates, Updates_index,
-                              breakdown, Slater_inv, later_updates, later_index,
-                              &later, determinant);
+                                breakdown, Slater_inv, later_updates, later_index,
+                                &later, determinant);
   // rc = qmckl_slagel_splitting(Lds, Dim, N_updates, Updates, Updates_index,
   //                             breakdown, Slater_inv, later_updates, later_index,
   //                             &later, determinant);
@@ -582,8 +590,8 @@ uint32_t qmckl_sherman_morrison_splitting(
     recursive_calls++;
     // printf("Later > 0\n");
     (void) qmckl_sherman_morrison_splitting(Lds, Dim, later, later_updates,
-                                          later_index, breakdown, Slater_inv,
-                                          determinant);
+                                            later_index, breakdown, Slater_inv,
+                                            determinant);
 
     // rc = qmckl_sherman_morrison_splitting(Lds, Dim, later, later_updates,
     //                                       later_index, breakdown, Slater_inv,
@@ -611,25 +619,25 @@ uint32_t qmckl_sherman_morrison_smw32s(
 
   if (N_updates == 4) { // Special case for 4 rank-1 updates: 2+2
     rc = qmckl_woodbury_2(Lds, Dim, Updates, Updates_index,
-                  breakdown, Slater_inv, determinant);
+                          breakdown, Slater_inv, determinant);
     if (rc != 0) { // Send the entire block to slagel_splitting
       block_fail += 1;
       uint64_t l = 0;
       rc = qmckl_slagel_splitting(Lds, Dim, 2, Updates,
-                    Updates_index, breakdown, Slater_inv,
-                    later_updates + (Lds * later),
-                    later_index + later, &l, determinant);
+                                  Updates_index, breakdown, Slater_inv,
+                                  later_updates + (Lds * later),
+                                  later_index + later, &l, determinant);
       later += l;
     }
     rc = qmckl_woodbury_2(Lds, Dim, &Updates[2*Lds], &Updates_index[2],
-                  breakdown, Slater_inv, determinant);
+                          breakdown, Slater_inv, determinant);
     if (rc != 0) { // Send the entire block to slagel_splitting
       block_fail += 1;
       uint64_t l = 0;
       rc = qmckl_slagel_splitting(Lds, Dim, 2, &Updates[2*Lds],
-                    &Updates_index[2], breakdown, Slater_inv,
-                    later_updates + (Lds * later),
-                    later_index + later, &l, determinant);
+                                  &Updates_index[2], breakdown, Slater_inv,
+                                  later_updates + (Lds * later),
+                                  later_index + later, &l, determinant);
       later += l;
     }
     if (later > 0) {
@@ -737,8 +745,8 @@ uint32_t qmckl_sherman_morrison_later(
     // C = A^{-1} x U_l
     for (uint32_t i = 0; i < Dim; i++) {
       C[i] = 0.0;
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       for (uint32_t j = 0; j < Lds; j++) {
         C[i] += Slater_inv[i * Lds + j] * Updates[l * Lds + j]; // regular mat-vec product, but actually working on S_inv^T * U_l.
       }
@@ -748,8 +756,8 @@ uint32_t qmckl_sherman_morrison_later(
     const int cui = Updates_index[l] - 1;
     double den = 1.0 + C[cui];
     if (fabs(den) < breakdown) {
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       // for (uint32_t i = 0; i < Dim; i++) {
       for (uint32_t i = 0; i < Lds; i++) {
         later_updates[later * Lds + i] = Updates[l * Lds + i];
@@ -764,16 +772,16 @@ uint32_t qmckl_sherman_morrison_later(
     if (!determinant) *determinant *= den;
 
     // D = v^T x A^{-1}
-    #pragma ivdep
-    #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
     for (uint32_t j = 0; j < Lds; j++) {
       D[j] = Slater_inv[cui * Lds + j];
     }
 
     // S^{-1} = S^{-1} - C x D / den
     for (uint32_t i = 0; i < Dim; i++) {
-      #pragma ivdep
-      #pragma vector aligned
+#pragma ivdep
+#pragma vector aligned
       for (uint32_t j = 0; j < Lds; j++) {
         const double update = C[i] * D[j] * iden;
         Slater_inv[i * Lds + j] -= update;
@@ -788,7 +796,7 @@ uint32_t qmckl_sherman_morrison_later(
   else if (later > 0) { // If some have failed, make a recursive call
     recursive_calls++;
     (void) qmckl_sherman_morrison_later(Lds, Dim, later, later_updates,
-                      later_index, breakdown, Slater_inv, determinant);
+                                        later_index, breakdown, Slater_inv, determinant);
   }
 
   return 0;
