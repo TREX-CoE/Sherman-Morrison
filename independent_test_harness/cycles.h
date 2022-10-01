@@ -1,1 +1,1 @@
-cycles_329_dets/all_cycles.h
+bench_cycles/1_cycle.h

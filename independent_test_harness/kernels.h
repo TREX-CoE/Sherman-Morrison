@@ -1,8 +1,6 @@
 #include <mkl_lapacke.h>
 #include <mkl.h>
 
-#define DIM 21 
-#define LDS 24   
 #define HAVE_CUBLAS_OFFLOAD
 
 #ifdef HAVE_CUBLAS_OFFLOAD

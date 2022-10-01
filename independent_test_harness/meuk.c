@@ -2,6 +2,89 @@
 #include <stdint.h>
 #include <assert.h>
 
+void copy(double* Slater_invT_copy, uint64_t Lds, double* tmp, uint64_t Dim) {
+  for (uint32_t i = 0; i < Dim; i++) {
+    for (uint32_t j = 0; j < Lds; j++) {
+      if (j < Dim) Slater_invT_copy[i * Lds + j] = tmp[i * Dim + j];
+      else Slater_invT_copy[i * Lds + j] = 0.0;
+    }
+  }
+}
+
+void update(double* slaterT,double* upds, uint64_t* ui, uint64_t nupds,uint64_t Dim, u_int64_t Lds) {
+  for (int i = 0; i < nupds; i++) {
+    int col = ui[i] - 1;
+    for (int j = 0; j < Dim; j++) {
+      slaterT[col + j * Dim] += upds[i * Lds + j];
+    }
+  }
+}
+
+void convert(double* upds, uint64_t nupds, uint64_t* ui, double* slaterT, uint64_t Dim, u_int64_t Lds) {
+  for (int i = 0; i < nupds; i++) {
+    int col = ui[i] - 1;
+    for (int j = 0; j < Lds; j++) {
+      upds[i * Lds + j] -= slaterT[col + j * Dim];
+    }
+  }
+}
+
+double get_determinant(uint32_t cycle, hid_t file_id) {
+  char det_key[32];
+  sprintf(det_key, "/cycle_%d/determinant", cycle);
+  double determinant;
+  read_double(file_id, det_key, &determinant);
+  return determinant;
+}
+
+double* get_slater_inv(uint32_t cycle, hid_t file_id, uint64_t Dim, u_int64_t Lds) {
+  char slater_inv_key[32];
+  sprintf(slater_inv_key, "/cycle_%d/slater_inverse_t", cycle);
+  double *slater_inv = malloc(sizeof *slater_inv * Dim * Lds);
+  read_double(file_id, slater_inv_key, slater_inv);
+  return slater_inv;
+}
+
+double* get_slater(uint32_t cycle, hid_t file_id, uint64_t Dim, u_int64_t Lds) {
+  char slater_key[32];
+  sprintf(slater_key, "/cycle_%d/slater_matrix", cycle);
+  double *slater = malloc(sizeof *slater * Dim * Lds);
+  read_double(file_id, slater_key, slater);
+  return slater;
+}
+
+double* get_upds(uint32_t cycle, hid_t file_id, uint64_t nupds, u_int64_t Lds) {
+  char upds_key[32];
+  sprintf(upds_key, "/cycle_%d/updates", cycle);
+  double *upds = malloc(sizeof *upds * Lds * nupds);
+  read_double(file_id, upds_key, upds);
+  return upds;
+}
+
+uint64_t* get_upd_idcs(uint32_t cycle, hid_t file_id, uint64_t nupds) {
+  char upd_idx_key[32];
+  sprintf(upd_idx_key, "/cycle_%d/col_update_index", cycle);
+  uint64_t* uis = malloc(sizeof *uis * nupds);
+  read_uint(file_id, upd_idx_key, uis);
+  return uis;
+}
+
+uint64_t get_dim(uint32_t cycle, hid_t file_id) {
+  char dim_key[32];
+  sprintf(dim_key, "/cycle_%d/slater_matrix_dim", cycle);
+  uint64_t Dim;
+  read_uint(file_id, dim_key, &Dim);
+  return Dim;
+}
+
+uint64_t get_nupdates(uint32_t cycle, hid_t file_id) {
+  char nupds_key[32];
+  sprintf(nupds_key, "/cycle_%d/nupdates", cycle);
+  uint64_t N_updates;
+  read_uint(file_id, nupds_key, &N_updates);
+  return N_updates;
+}
+
 double frobenius_norm2(double *A, const uint64_t Lds, const uint64_t Dim) {
   double sum2 = 0;
   for (uint64_t i = 0; i < Lds * Dim; i++) sum2 += A[i] * A[i];
@@ -65,16 +148,12 @@ void update_slater_matrix(const uint64_t Lds, const uint64_t Dim,
 uint32_t check_error(const uint64_t Lds, const uint64_t Dim, double *Slater_invT,
                         double *Slater, const double tolerance) {
 
-  double res[Dim*Dim];
-
-  for (uint32_t i = 0; i < Dim; i++) {
-    for (uint32_t j = 0; j < Dim; j++) {
-      res[i * Dim + j] = 0;
-      for (uint32_t k = 0; k < Dim; k++) {
-        res[i * Dim + j] += Slater[i * Dim + k] * Slater_invT[k * Lds + j];
-      }
-    }
-  }
+  double* res = malloc(sizeof *res * Dim * Dim);
+  double alpha = 1.0, beta = 0.0;
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+              Dim, Dim, Dim,
+              alpha, Slater, Dim, Slater_invT, Lds,
+              beta, res, Dim);
 
   for (uint32_t i = 0; i < Dim; i++) {
     for (uint32_t j = 0; j < Dim; j++) {
@@ -84,20 +163,20 @@ uint32_t check_error(const uint64_t Lds, const uint64_t Dim, double *Slater_invT
       if (i != j && fabs(elm) > tolerance) return 1;
     }
   }
-
+  free(res);
   return 0;
 }
 
-void matmul(double *a, double *b, double *prod, const uint64_t Lds, const uint64_t Dim) {
-  for (uint32_t i = 0; i < Dim; i++) {
-    for (uint32_t j = 0; j < Dim; j++) {
-      prod[i * Dim + j] = 0;
-      for (uint32_t k = 0; k < Dim; k++) {
-        prod[i * Dim + j] += a[i * Dim + k] * b[k * Lds + j];
-      }
-    }
-  }
-}
+//void matmul(double *a, double *b, double *prod, const uint64_t Lds, const uint64_t Dim) {
+//  for (uint32_t i = 0; i < Dim; i++) {
+//    for (uint32_t j = 0; j < Dim; j++) {
+//      prod[i * Dim + j] = 0;
+//      for (uint32_t k = 0; k < Dim; k++) {
+//        prod[i * Dim + j] += a[i * Dim + k] * b[k * Lds + j];
+//      }
+//    }
+//  }
+//}
 
 int32_t check_error_better(const double max, const double tolerance) {
   if (max < 0) return -1; // When max was a NaN
@@ -119,21 +198,7 @@ uint32_t test_kernel(char *version, const uint64_t Lds, const uint64_t Dim,
                      const uint64_t *Updates_index, const double breakdown, const double tolerance,
                      double *Slater, double *Slater_inv, double *determinant) {
   uint32_t rc = 0;
-  // if (version[0] == 'a') { // Anthony
-  //   const double *Upds;
-  //   const uint64_t *Ui;
-  //   for (int i = 0; i < Lds * Dim; i++) Slater_inv[i] *= *determinant;
-  //   for (int j = 0; j < N_updates; j++) {
-  //     Upds = &Updates[j * Lds];
-  //     Ui = &Updates_index[j];
-  //     detupd(Dim, Lds, Upds, Ui, Slater_inv, determinant);
-  //     if (determinant == 0) printf("TEST_KERNEL: det_update21 failed\n");
-  //   }
-  //   for (int i = 0; i < Lds * Dim; i++) Slater_inv[i] /= *determinant;
-  //   update_slater_matrix(Lds, Dim, N_updates, Updates, Updates_index, Slater);
-  //   rc = check_error(Lds, Dim, Slater_inv, Slater, tolerance);
-  //   if (rc != 0) printf("TEST_KERNEL: check_error failed\n");
-  // } else if (version[0] == 'n') { // Naive
+
   if (version[0] == 'n') { // Naive
     rc = qmckl_sherman_morrison(Lds, Dim, N_updates, Updates, Updates_index,
                                 breakdown, Slater_inv, determinant);

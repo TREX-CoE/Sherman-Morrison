@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <hdf5/serial/hdf5.h>
+
 #include "kernels.h"
 
 typedef struct Error {
@@ -12,7 +13,18 @@ typedef struct Error {
   uint64_t error;
 } Error;
 
-void matmul(double *a, double *b, double *prod, const uint64_t Lds, const uint64_t Dim);
+void copy(double* Slater_invT_copy, uint64_t Lds, double* tmp, uint64_t Dim);
+void update(double* slaterT,double* upds, uint64_t* ui, uint64_t nupds,uint64_t Dim, u_int64_t Lds);
+void convert(double* upds, uint64_t nupds, uint64_t* ui, double* slaterT, uint64_t Dim, u_int64_t Lds);
+double get_determinant(uint32_t cycle, hid_t file_id);
+double* get_slater_inv(uint32_t cycle, hid_t file_id, uint64_t Dim, u_int64_t Lds);
+double* get_slater(uint32_t cycle, hid_t file_id, uint64_t Dim, u_int64_t Lds);
+double* get_upds(uint32_t cycle, hid_t file_id, uint64_t nupds, u_int64_t Lds);
+uint64_t* get_upd_idcs(uint32_t cycle, hid_t file_id, uint64_t nupds);
+uint64_t get_dim(uint32_t cycle, hid_t file_id);
+uint64_t get_nupdates(uint32_t cycle, hid_t file_id);
+
+//void matmul(double *a, double *b, double *prod, const uint64_t Lds, const uint64_t Dim);
 void residual(double *a, double *res, const uint64_t Dim);
 double frobenius_norm2(double *A, const uint64_t Lds, const uint64_t Dim);
 double frobenius_norm(double *A, const uint64_t Lds, const uint64_t Dim);

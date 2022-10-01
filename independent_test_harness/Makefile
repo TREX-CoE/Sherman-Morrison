@@ -1,6 +1,7 @@
 #FC = ifx
 #CC = nvc
 
+#CFLAGS=-std=c99 -O0 -Wall -g -mp -target=gpu
 CFLAGS=-std=c99 -O3 -Wall -g -mp -target=gpu
 
 INCLUDE=-I$(NVHPC_ROOT)/math_libs/include

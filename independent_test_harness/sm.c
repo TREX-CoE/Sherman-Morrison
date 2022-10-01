@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "kernels.h"
-#include "debug.h"
+//#include "debug.h"
 
 extern uint64_t n_splits;
 extern uint64_t block_fail;
@@ -19,11 +19,11 @@ uint32_t qmckl_sherman_morrison(
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
-  double __attribute__((aligned(8))) C[DIM];
-  double __attribute__((aligned(8))) D[LDS];
+  double __attribute__((aligned(8))) C[Dim];
+  double __attribute__((aligned(8))) D[Lds];
 
   uint32_t l = 0;
   // For each update
@@ -48,7 +48,7 @@ uint32_t qmckl_sherman_morrison(
     double iden = 1.0 / den;
 
     // Update det(A)
-    if (!determinant)
+    if (determinant)
       *determinant *= den;
 
 #pragma ivdep
@@ -89,14 +89,14 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
                           Slater_inv,
                           double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
   const uint32_t row1 = (Updates_index[0] - 1);
   const uint32_t row2 = (Updates_index[1] - 1);
 
   // Compute C = (S^T)^{-1}U : Dim x 2
-  double __attribute__((aligned(8))) C[2 * DIM];
+  double __attribute__((aligned(8))) C[2 * Dim];
   for (uint32_t i = 0; i < Dim; i++) {
     C[i * 2] = 0;
     C[i * 2 + 1] = 0;
@@ -132,7 +132,7 @@ uint32_t qmckl_woodbury_2(const uint64_t vLDS, const uint64_t vDim,
   Binv[3] = idet * B0;
 
   // tmp = B^{-1}D : 2 x LDS
-  double __attribute__((aligned(8))) tmp[2 * LDS];
+  double __attribute__((aligned(8))) tmp[2 * Lds];
   double *__restrict r1dim = &(Slater_inv[row1 * Lds]);
   double *__restrict r2dim = &(Slater_inv[row2 * Lds]);
 #pragma ivdep
@@ -173,15 +173,15 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
                            Slater_inv,
                            double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
   const uint32_t row1 = (Updates_index[0] - 1);
   const uint32_t row2 = (Updates_index[1] - 1);
   const uint32_t row3 = (Updates_index[2] - 1);
 
   // Compute C = (S^T)^{-1}U : Dim x 3
-  double __attribute__((aligned(8))) C[3 * DIM];
+  double __attribute__((aligned(8))) C[3 * Dim];
   for (uint32_t i = 0; i < Dim; i++) {
     C[i * 3] = 0;
     C[i * 3 + 1] = 0;
@@ -231,10 +231,10 @@ uint32_t  qmckl_woodbury_3(const uint64_t vLDS, const uint64_t vDim,
   Binv[8] =  (B0 * B4 - B3 * B1) * idet;
 
   // tmp = B^{-1}D : 3 x LDS
-  double __attribute__((aligned(8))) tmp[3 * LDS];
-  double *__restrict r1dim = &(Slater_inv[row1 * LDS]);
-  double *__restrict r2dim = &(Slater_inv[row2 * LDS]);
-  double *__restrict r3dim = &(Slater_inv[row3 * LDS]);
+  double __attribute__((aligned(8))) tmp[3 * Lds];
+  double *__restrict r1dim = &(Slater_inv[row1 * Lds]);
+  double *__restrict r2dim = &(Slater_inv[row2 * Lds]);
+  double *__restrict r3dim = &(Slater_inv[row3 * Lds]);
 #pragma ivdep
 #pragma vector aligned
   for (uint32_t j = 0; j < Lds; j++) {
@@ -277,11 +277,11 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
                           double *__restrict __attribute__((aligned(8))) Slater_inv,
                           double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
   // Compute C = S^{-1} U : Dim x K : standard dgemm
-  double *C = calloc(1, DIM * N_updates * sizeof(double));
+  double *C = calloc(1, Dim * N_updates * sizeof(double));
   double alpha = 1.0, beta = 0.0;
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
               Dim, N_updates, Lds,
@@ -289,7 +289,8 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
               beta, C, N_updates);
 
   // Construct B = 1 + V C : K x K, construct D = V S^{-1} : K x LDS
-  double B[N_updates * N_updates], D[N_updates * LDS];
+  double* B = calloc(1, sizeof *B * N_updates * N_updates);
+  double* D = calloc(1, sizeof *D * N_updates * Lds);
   for (uint32_t i = 0; i < N_updates; i++) {
     const uint32_t row = Updates_index[i] - 1;
     for (uint32_t j = 0; j < N_updates  ; j++) B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
@@ -316,19 +317,23 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   (void) LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, pivot);
 
   // tmp1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
-  double tmp1[N_updates * LDS];
+  double* tmp1 = calloc(1, sizeof *tmp1 * N_updates * Lds);
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-              N_updates, LDS, N_updates,
-              alpha, B, N_updates, D, LDS,
-              beta, tmp1, LDS);
+              N_updates, Lds, N_updates,
+              alpha, B, N_updates, D, Lds,
+              beta, tmp1, Lds);
 
   // Compute S^{-1} - C * tmp1 : Dim x LDS : standard dgemm
   alpha = -1.0, beta = 1.0;
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-              Dim, LDS, N_updates,
-              alpha, C, N_updates, tmp1, LDS,
-              beta, Slater_inv, LDS);
+              Dim, Lds, N_updates,
+              alpha, C, N_updates, tmp1, Lds,
+              beta, Slater_inv, Lds);
 
+  free(C);
+  free(B);
+  free(D);
+  free(tmp1);
   free(pivot);
   return 0;
 }
@@ -344,10 +349,12 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
                                          double* Slater_inv,
                                          double* determinant)
 {
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
-  double alpha, beta;
+  bool swap;
+  uint32_t j;
+  double alpha, beta, det;
   int* pivot   = calloc(1, sizeof *pivot * N_updates);
   double* C    = calloc(1, sizeof *C * Dim * N_updates);
   double* B    = calloc(1, sizeof *B * N_updates * N_updates);
@@ -396,19 +403,22 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
 
     // Compute determinant by LU decomposition
     (void) cusolverDnDgetrf(s_handle, N_updates, N_updates, B, N_updates, workspace, pivot, info);
-    bool swap = false; uint32_t j = 0; double det = 1.0f;
+    swap = false; j = 0; det = 1.0f;
     #pragma omp target teams distribute parallel for reduction(+: j) reduction(*: det)
     for (uint32_t i = 0; i < N_updates; i++) {
       swap = (bool)(pivot[i] - (i + 1));     // swap = {0->false: no swap, >0->true: swap}
       j += (uint32_t)swap;                   // count # of swaps
       det *= B[i * (N_updates + 1)];         // prod. of diag elm. of B
     }
-    if (fabs(det) < breakdown) return 1;  // check if determinant of B is too close to zero. If so, exit early.
+  }
+    if (fabs(det) < breakdown) return 1;     // check if determinant of B is too close to zero. If so, exit early.
     if (determinant) {                       // update det(Slater) if determinant != NULL
       if ((j & 1) != 0) det = -det;          // multiply det with -1 if # of swaps is odd
       *determinant *= det;
     }
-
+  
+  #pragma omp target data use_device_ptr(Slater_inv, Updates, C, B, workspace, pivot, Binv, D, T1, T2)
+  {
     // Compute B^{-1} : initialise as I for solving BX=I
     #pragma omp target teams distribute parallel for
     for (int i = 0; i < N_updates; ++i) {
@@ -471,11 +481,11 @@ uint32_t qmckl_slagel_splitting(
     uint64_t *__restrict later_index, uint64_t *__restrict later,
     double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
-  double __attribute__((aligned(8))) C[LDS];
-  double __attribute__((aligned(8))) D[LDS];
+  double __attribute__((aligned(8))) C[Lds];
+  double __attribute__((aligned(8))) D[Lds];
 
   uint32_t l = 0;
   // For each update
@@ -513,7 +523,7 @@ uint32_t qmckl_slagel_splitting(
     } // From here onwards we continue with applying the first halve of the update to Slater_inv
     double iden = 1.0 / den;
 
-    if (!determinant) *determinant *= den;
+    if (determinant) *determinant *= den;
 
     // D = v^T x S^{-1} : 1 x LDS
 #pragma ivdep
@@ -544,10 +554,10 @@ uint32_t qmckl_sherman_morrison_splitting(
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
-  double __attribute__((aligned(8))) later_updates[LDS * N_updates];
+  double __attribute__((aligned(8))) later_updates[Lds * N_updates];
   uint64_t later_index[N_updates];
   uint64_t later = 0;
   // uint32_t rc;
@@ -583,10 +593,10 @@ uint32_t qmckl_sherman_morrison_smw32s(
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
-  double __attribute__((aligned(8))) later_updates[LDS * N_updates];
+  double __attribute__((aligned(8))) later_updates[Lds * N_updates];
   uint64_t later_index[N_updates];
   uint64_t later = 0;
   uint32_t rc;
@@ -702,13 +712,13 @@ uint32_t qmckl_sherman_morrison_later(
     double *__restrict __attribute__((aligned(8))) Slater_inv,
     double *__restrict determinant) {
 
-  const uint32_t Dim = DIM;
-  const uint32_t Lds = LDS;
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
 
-  double __attribute__((aligned(8))) C[DIM];
-  double __attribute__((aligned(8))) D[LDS];
+  double __attribute__((aligned(8))) C[Dim];
+  double __attribute__((aligned(8))) D[Lds];
 
-  double __attribute__((aligned(8))) later_updates[LDS * N_updates];
+  double __attribute__((aligned(8))) later_updates[Lds * N_updates];
   uint64_t later_index[N_updates];
   uint64_t later = 0;
 
@@ -743,7 +753,7 @@ uint32_t qmckl_sherman_morrison_later(
     }
     double iden = 1.0 / den;
 
-    if (!determinant) *determinant *= den;
+    if (determinant) *determinant *= den;
 
     // D = v^T x A^{-1}
 #pragma ivdep
