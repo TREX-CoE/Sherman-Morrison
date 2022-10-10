@@ -13,6 +13,11 @@ typedef struct Error {
   uint64_t error;
 } Error;
 
+#ifdef HAVE_CUBLAS_OFFLOAD
+  cublasHandle_t init_cublas();
+  cusolverDnHandle_t init_cusolver();
+#endif
+
 void copy(double* Slater_invT_copy, uint64_t Lds, double* tmp, uint64_t Dim);
 void update(double* slaterT,double* upds, uint64_t* ui, uint64_t nupds,uint64_t Dim, u_int64_t Lds);
 void convert(double* upds, uint64_t nupds, uint64_t* ui, double* slaterT, uint64_t Dim, u_int64_t Lds);

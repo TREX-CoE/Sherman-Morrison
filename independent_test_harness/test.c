@@ -15,16 +15,8 @@ int main(int argc, char **argv) {
   char *version = argv[1];
 
 #ifdef HAVE_CUBLAS_OFFLOAD
-  cublasHandle_t handle;
-  cusolverDnHandle_t s_handle;
-  if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
-    fprintf(stdout, "cuBLAS initialization failed!\n");
-    exit(EXIT_FAILURE);
-  }
-  if (cusolverDnCreate(&s_handle) != CUSOLVER_STATUS_SUCCESS) {
-    fprintf(stdout, "cuSOLVER initialization failed!\n");
-    exit(EXIT_FAILURE);
-  }
+  cublasHandle_t handle = init_cublas();
+  cusolverDnHandle_t s_handle = init_cusolver();
 #endif
 
   // SETUP STORAGE AND DATA ACCESS

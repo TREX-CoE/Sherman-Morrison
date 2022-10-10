@@ -1,14 +1,14 @@
 #include <mkl_lapacke.h>
 #include <mkl.h>
 
-#define HAVE_CUBLAS_OFFLOAD
+//#define HAVE_CUBLAS_OFFLOAD
 
 #ifdef HAVE_CUBLAS_OFFLOAD
-#include <stdio.h>
-#include <cublas_v2.h>
-#include <cusolverDn.h>
-#include <cusolver_common.h>
-#include <cuda_runtime_api.h>
+  #include <stdio.h>
+  #include <cublas_v2.h>
+  #include <cusolverDn.h>
+  #include <cusolver_common.h>
+  #include <cuda_runtime_api.h>
 #endif
 
 lapack_int inverse(double *A, uint64_t Dim, uint64_t Lds);

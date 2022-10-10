@@ -2,6 +2,26 @@
 #include <stdint.h>
 #include <assert.h>
 
+#ifdef HAVE_CUBLAS_OFFLOAD
+  cublasHandle_t init_cublas() {
+    cublasHandle_t handle;
+    if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
+      fprintf(stdout, "cuBLAS initialization failed!\n");
+      exit(EXIT_FAILURE);
+    }
+    return handle;
+  }
+
+  cusolverDnHandle_t init_cusolver() {
+    cusolverDnHandle_t handle;
+    if (cusolverDnCreate(&handle) != CUSOLVER_STATUS_SUCCESS) {
+      fprintf(stdout, "cuSOLVER initialization failed!\n");
+      exit(EXIT_FAILURE);
+    }
+    return handle;
+  }
+#endif
+
 void copy(double* Slater_invT_copy, uint64_t Lds, double* tmp, uint64_t Dim) {
   for (uint32_t i = 0; i < Dim; i++) {
     for (uint32_t j = 0; j < Lds; j++) {
