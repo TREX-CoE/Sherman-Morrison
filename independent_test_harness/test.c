@@ -18,13 +18,16 @@ int main(int argc, char **argv) {
   cusolverDnHandle_t s_handle = init_cusolver();
 #endif
 
-  // SETUP STORAGE AND DATA ACCESS
+  // SETUP DATA ACCESS
   hid_t  file_id = H5Fopen(DATASET, H5F_ACC_RDONLY, H5P_DEFAULT);
 
   printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
   printf("#1\t2\t3\t4\t\t5\t6\t\t7\t\t8\t\t9\t\t10\t\t11\t\t12\t\t13\t\t14\n");
   printf("#CYCLE\tUPDS\tERR_IN\tERR_BREAK\tERR_OUT\tSPLITS\t\tBLK_FAILS\tMAX\t\tFROB\t\tCOND\t\tCPU_CYC\t\tCPU_CYC/UPD\tCUMUL\t\tREC\n");
   printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+
+
+
   // FOR EACH UPDATE CYCLE DO:
   // for (uint32_t cycles_index = 0; cycles_index < n_cycles; cycles_index++) {
   for (uint32_t cycles_index = 0; cycles_index < 1; cycles_index++) {
@@ -44,7 +47,7 @@ int main(int argc, char **argv) {
     double* Updates = get_upds(cycle, file_id, N_updates, Lds);
     double* Slater = get_slater(cycle, file_id, Dim, Lds);
     double* Slater_invT = get_slater_inv(cycle, file_id, Dim, Lds);
-    double *Slater_invT_copy = calloc(1, sizeof *Slater_invT_copy * Dim * Lds);
+    double* Slater_invT_copy = calloc(1, sizeof *Slater_invT_copy * Dim * Lds);
     double determinant = get_determinant(cycle, file_id), determinant_copy;
 
     // Compute transpose of S. ST: 24 x 21
@@ -78,6 +81,7 @@ int main(int argc, char **argv) {
 
       // ### CHOOSE A KERNEL:
       if (version[0] == 'n') { // Naive
+
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
 
@@ -90,7 +94,8 @@ int main(int argc, char **argv) {
 
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
-      } else if (version[0] == 'l') { // Later
+      }
+      else if (version[0] == 'l') { // Later
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
@@ -104,7 +109,8 @@ int main(int argc, char **argv) {
 
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
-      } else if (version[0] == '2') { // by twos
+      }
+      else if (version[0] == '2') { // by twos
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
@@ -119,7 +125,8 @@ int main(int argc, char **argv) {
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
 
-      } else if (version[0] == '3') { // by threes
+      }
+      else if (version[0] == '3') { // by threes
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
@@ -134,7 +141,8 @@ int main(int argc, char **argv) {
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
 
-      } else if (version[0] == 'k') { // Woodbury K
+      }
+      else if (version[0] == 'k') { // Woodbury K
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
@@ -147,10 +155,10 @@ int main(int argc, char **argv) {
         uint64_t after = rdtsc();
 
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
-        accumulator += (double)(after - before);
-
-#ifdef HAVE_CUBLAS_OFFLOAD
-      } else if (version[0] == 'c') { // Woodbury K cuBLAS
+        accumulator += (double) (after - before);
+      }
+      #ifdef HAVE_CUBLAS_OFFLOAD
+      else if (version[0] == 'c') { // Woodbury K cuBLAS
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
@@ -163,9 +171,10 @@ int main(int argc, char **argv) {
         uint64_t after = rdtsc();
 
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
-        accumulator += (double)(after - before);
-#endif
-      } else if (version[0] == 's') { // Splitting
+        accumulator += (double) (after - before);
+      }
+      #endif
+      else if (version[0] == 's') { // Splitting
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
@@ -179,7 +188,8 @@ int main(int argc, char **argv) {
 
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
-      } else if (version[0] == 'b') { // Blocked
+      }
+      else if (version[0] == 'b') { // Blocked
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
@@ -193,7 +203,8 @@ int main(int argc, char **argv) {
 
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
-      } else if (version[0] == 'm') { // LAPACK/MKL
+      }
+      else if (version[0] == 'm') { // LAPACK/MKL
 
         // Only send upper Dim x Dim part of matrix to lapack
         double *tmp = malloc(sizeof *tmp * Dim * Dim);
@@ -215,11 +226,11 @@ int main(int argc, char **argv) {
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double)(after - before);
 
-      } else { // Exit
+      }
+      else { // Exit
         printf("Version '%c' not implemented.\n", version[0]);
         return 1;
       }
-
     } // END OF REPETITIONS LOOP
 
     // 4. COPY RESULT BACK TO ORIGINAL
@@ -255,7 +266,6 @@ int main(int argc, char **argv) {
 
     // 7. CHECK ERRROR ON THE UPDATED DATA AND RECORD THE RESULT: ERR_OUT
     uint32_t err_out = check_error(Lds, Dim, Slater_invT, SlaterT, tolerance);
-    // int32_t err_out = check_error_better(max, tolerance);
 
     // if (err_out == 1) printf("cycle index %d: cycle %d with %lu upds failed!\n", cycles_index, cycle, N_updates);
 
@@ -282,7 +292,7 @@ int main(int argc, char **argv) {
   (void) H5Fclose(file_id);
 
 #ifdef HAVE_CUBLAS_OFFLOAD
-  cublasDestroy(handle);
+  cublasDestroy_v2(handle);
   cusolverDnDestroy(s_handle);
 #endif
 }
