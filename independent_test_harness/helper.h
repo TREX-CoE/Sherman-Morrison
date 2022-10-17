@@ -1,3 +1,5 @@
+#pragma once
+
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -21,6 +23,7 @@ typedef struct Error {
 void copy(double* Slater_invT_copy, uint64_t Lds, double* tmp, uint64_t Dim);
 void update(double* slaterT,double* upds, uint64_t* ui, uint64_t nupds,uint64_t Dim, u_int64_t Lds);
 void convert(double* upds, uint64_t nupds, uint64_t* ui, double* slaterT, uint64_t Dim, u_int64_t Lds);
+void transpose(double* a, uint16_t lda, double *b, uint16_t ldb, uint16_t m, uint16_t n);
 double get_determinant(uint32_t cycle, hid_t file_id);
 double* get_slater_inv(uint32_t cycle, hid_t file_id, uint64_t Dim, u_int64_t Lds);
 double* get_slater(uint32_t cycle, hid_t file_id, uint64_t Dim, u_int64_t Lds);

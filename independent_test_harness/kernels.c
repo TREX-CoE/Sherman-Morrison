@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "kernels.h"
-//#include "debug.h"
+#include "nvtx.h"
 
 extern uint64_t n_splits;
 extern uint64_t block_fail;
@@ -366,16 +366,19 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   int workspace_size = 0, *info = NULL;
   double* workspace = NULL;
   cusolverDnDgetrf_bufferSize(s_handle, N_updates, N_updates, B, N_updates, &workspace_size);
-  printf("SIZE OF CUSOLVER WORKSPACE: %d doubles of %lu byte = %lu byte\n", workspace_size, sizeof *workspace, sizeof *workspace * workspace_size);
+//  printf("SIZE OF CUSOLVER WORKSPACE: %d doubles of %lu byte = %lu byte\n", workspace_size, sizeof *workspace, sizeof *workspace * workspace_size);
   workspace = malloc(sizeof *workspace * workspace_size);
 
+  PUSH_RANGE("Transfer data TO GPU", 2)
   #pragma omp target enter data map(to: Updates[0:Lds*N_updates], \
                                         Updates_index[0:N_updates], \
                                         Slater_inv[0:Dim*Lds])
+  POP_RANGE
 
   // Compute C <- S^{-1} U : Dim x K : standard dgemm
   alpha = 1.0f, beta = 0.0f;
   #pragma omp target enter data map(alloc: C[0:Dim*N_updates])
+  PUSH_RANGE("Compute C = S^{-1} U", 3)
   #pragma omp target data use_device_ptr(Slater_inv, Updates, C)
   {
     (void) cublasDgemm_v2(b_handle,
@@ -385,31 +388,38 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
                           &beta, C, N_updates);
   }
   #pragma omp target exit data map(delete: Updates[0:Lds*N_updates])
+  POP_RANGE
 
   // Construct B <- 1 + V C : K x K
   #pragma omp target enter data map(alloc: B[0:N_updates*N_updates])
-  #pragma omp target teams distribute parallel for
-  for (uint32_t i = 0; i < N_updates; i++) {
-    const uint32_t row = Updates_index[i] - 1;
-    for (uint32_t j = 0; j < N_updates  ; j++) {
-      B[j * N_updates + i] = C[row * N_updates + j] + (i == j); // B NEEDS TO BE IN COL-MAJ FOR cusolverDnDgetrf !
+  PUSH_RANGE("Construct B = 1 + V C", 4)
+  #pragma omp target teams distribute parallel for collapse(2)
+  for (int i = 0; i < N_updates; ++i) {
+    for (int j = 0; j < N_updates; ++j) {
+      const uint32_t row = Updates_index[i] - 1;
+      B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
     }
   }
+  POP_RANGE
 
   // Compute det(B) via LU(B)
   #pragma omp target enter data map(alloc: workspace[0:workspace_size], pivot[0:N_updates])
+  PUSH_RANGE("Compute LU(B)", 3)
   #pragma omp target data use_device_ptr(B, workspace, pivot)
   {
-    (void) cusolverDnDgetrf(s_handle, N_updates, N_updates, B, N_updates, workspace, pivot, info);
+    (void) cusolverDnDgetrf(s_handle, N_updates, N_updates, B, N_updates, workspace, pivot, info); // col-maj enforced, so res. is LU(B)^T
   }
+  POP_RANGE
   #pragma omp target exit data map(delete: workspace[0:workspace_size])
   swap = false; j = 0; det = 1.0f;
+  PUSH_RANGE("Test det(B) and count LU swaps", 4)
   #pragma omp target teams distribute parallel for reduction(+: j) reduction(*: det)
   for (uint32_t i = 0; i < N_updates; i++) {
     swap = (bool)(pivot[i] - (i + 1));     // swap = {0->false: no swap, >0->true: swap}
     j += (uint32_t)swap;                   // count # of swaps
     det *= B[i * (N_updates + 1)];         // prod. of diag elm. of B
   }
+  POP_RANGE
   if (fabs(det) < breakdown) return 1;  // check if determinant of B is too close to zero. If so, exit early.
   if (determinant) {                       // update det(Slater) if determinant != NULL
     if ((j & 1) != 0) det = -det;          // multiply det with -1 if # of swaps is odd
@@ -417,63 +427,89 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   }
   
   // Compute B^{-1} : initialise as I for solving BX=I
+  PUSH_RANGE("Allocate Binv ON GPU", 2)
   #pragma omp target enter data map(alloc: Binv[0:N_updates*N_updates])
+  POP_RANGE
+  PUSH_RANGE("Construct B^{-1}=I", 4)
   #pragma omp target teams distribute parallel for collapse(2)
   for (int i = 0; i < N_updates; ++i) {
     for (int j = 0; j < N_updates; ++j) {
       Binv[i * N_updates + j] = (i == j);
     }
   }
+  POP_RANGE
+
   #pragma omp target data use_device_ptr(B, pivot, Binv)
   {
-    (void) cusolverDnDgetrs(s_handle, CUBLAS_OP_N, N_updates, N_updates, B, N_updates, pivot, Binv, N_updates, info);
+    PUSH_RANGE("Compute B^{-1}", 3)
+    (void) cusolverDnDgetrs(s_handle, CUBLAS_OP_T, N_updates, N_updates, B, N_updates, pivot, Binv, N_updates, info); // Needs op(B) = B^T because of line 403
+    POP_RANGE
   }
+  PUSH_RANGE("Deallocate B, pivot ON GPU", 2)
   #pragma omp target exit data map(delete: B[0:N_updates*N_updates], pivot[0:N_updates])
+  POP_RANGE
 
   // Construct D = V S^{-1} : K x LDS
+  PUSH_RANGE("Allocate D ON GPU", 2)
   #pragma omp target enter data map(alloc: D[0:N_updates*Lds])
-  #pragma omp target teams distribute parallel for
-  for (uint32_t i = 0; i < N_updates; i++) {
-    const uint32_t row = Updates_index[i] - 1;
-    for (uint32_t j = 0; j < Lds; j++) {
+  POP_RANGE
+  PUSH_RANGE("Construct D = V S^{-1}", 4)
+  #pragma omp target teams distribute parallel for collapse(2)
+  for (uint32_t i = 0; i < N_updates; ++i) {
+    for (uint32_t j = 0; j < Lds; ++j) {
+      const uint32_t row = Updates_index[i] - 1;
       D[i * Lds + j] = Slater_inv[row * Lds + j];
     }
   }
+  POP_RANGE
+  PUSH_RANGE("Deallocate Updates_index ON GPU", 2)
   #pragma omp target exit data map(delete: Updates_index[0:N_updates])
+  POP_RANGE
 
   // T1 <- B^{-1} D : KxLDS : standard dgemm
+  PUSH_RANGE("Allocate T1 ON GPU", 2)
   #pragma omp target enter data map(alloc: T1[0:N_updates*Lds])
+  POP_RANGE
   #pragma omp target data use_device_ptr(D, Binv, T1)
   {
+    PUSH_RANGE("Compute T1 <- B^{-1} D", 3)
     (void) cublasDgemm_v2(b_handle,
                           CUBLAS_OP_N,
                           CUBLAS_OP_T, // REMEMBER THIS IS Binv TRANSPOSED  because of cusolverDnDgetrs CALL ON l.434 !!!
                           Lds, N_updates, N_updates,
                           &alpha, D, Lds, Binv, N_updates,
                           &beta, T1, Lds);
+    POP_RANGE
   }
-  #pragma omp target exit data map(delete: D[0:N_updates*Lds], Binv[0:N_updates*N_updates])
 
-  // Compute T2 <- C * T1 : Dim x LDS : standard dgemm
-  #pragma omp target enter data map(alloc: T2[0:Dim*Lds])
-  #pragma omp target data use_device_ptr(T1, C, T2)
+  PUSH_RANGE("Deallocate D, Binv ON GPU", 2)
+  #pragma omp target exit data map(delete: D[0:N_updates*Lds], Binv[0:N_updates*N_updates])
+  POP_RANGE
+
+  // Compute S^{-1} <- S^{-1} - C * T1 : Dim x LDS : standard dgemm
+  alpha = -1.0f, beta = 1.0f;
+  #pragma omp target data use_device_ptr(T1, C, Slater_inv)
   {
+    PUSH_RANGE("Compute S^{-1} <- S^{-1} - C * T1", 3)
     (void) cublasDgemm_v2(b_handle,
                           CUBLAS_OP_N, CUBLAS_OP_N,
                           Dim, Lds, N_updates,
                           &alpha, T1, Lds, C, N_updates,
-                          &beta, T2, Lds);
+                          &beta, Slater_inv, Lds);
+    POP_RANGE
   }
+
+  PUSH_RANGE("Deallocate T1, C ON GPU", 2)
   #pragma omp target exit data map(delete: T1[0:N_updates*Lds], C[0:Dim*N_updates])
+  POP_RANGE
 
-  // Compute S^{-1} <- S^{-1} - T2 : Dim x LDS
-  #pragma omp target teams distribute parallel for
-  for (uint32_t i = 0; i < Dim * Lds; i++) {
-    Slater_inv[i] = Slater_inv[i] - T2[i];
-  }
-
+  PUSH_RANGE("Update Slater_inv FROM GPU", 2)
   #pragma omp target update from(Slater_inv[0:Dim*Lds])
-  #pragma omp target exit data map(delete: Slater_inv[0:Dim*Lds], T2[0:Dim*Lds])
+  POP_RANGE
+
+  PUSH_RANGE("Deallocate Slater_inv ON GPU", 2)
+  #pragma omp target exit data map(delete: Slater_inv[0:Dim*Lds])
+  POP_RANGE
 
   free(pivot);
   free(B);
@@ -481,7 +517,7 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   free(C);
   free(D);
   free(T1);
-  free(T2);
+
   return 0;
 }
 #endif

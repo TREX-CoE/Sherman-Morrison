@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,15 +44,4 @@ void print_m_t(const double* mat, uint16_t m, uint16_t n, uint16_t ldm, char* na
     printf("\n");
   }
   printf("\n");
-}
-
-void transpose(double* a, uint16_t lda, double *b, uint16_t ldb, uint16_t m, uint16_t n)
-{
-  for(uint16_t i = 0; i < m; i++)
-  {
-    for( uint16_t j = 0; j < n; j++)
-    {
-      b[j * ldb + i] = a[i * lda + j];
-    }
-  }
 }

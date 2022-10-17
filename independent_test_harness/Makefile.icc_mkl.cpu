@@ -6,12 +6,11 @@ LDFLAGS+=-L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -
 
 all: test_icc_mkl
 
-test_icc_mkl: sm.o test.o meuk.o
-	$(CC) $(LDFLAGS) -o test_icc_mkl sm.o test.o meuk.o
+test_icc_mkl: kernels.o test.o helper.o
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o : %.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c -o $@ $<
 
-clean:  
+clean:
 	rm -rf *.o *genmod* test_icc_mkl
-

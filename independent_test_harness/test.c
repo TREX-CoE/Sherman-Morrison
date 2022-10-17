@@ -1,7 +1,6 @@
 #include <stdint.h>
-#include "meuk.h"
+#include "helper.h"
 #include "cycles.h"
-#include "debug.h"
 
 #define DATASET "dataset"
 #define REPETITIONS 1
@@ -31,6 +30,7 @@ int main(int argc, char **argv) {
   for (uint32_t cycles_index = 0; cycles_index < 1; cycles_index++) {
 
     // SETUP TEST PARAMETERS
+    const uint32_t GHz = 2800000000;
     const double breakdown = 0.001; // default = 0.001. 1e-9 might be too small
     const double tolerance = 0.001; // default = 0.001
     double cumulative = 0;
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
     free(Res);
 
     // 10. WRITE RESULTS TO FILE: CYCLE#, #UPDS, ERR_INP, ERR_BREAK, #SPLITS, ERR_OUT, COND, #CLCK_TCKS
-    printf("%u\t%lu\t%u\t%u\t\t%u\t%lu\t\t%lu\t\t%e\t%e\t%e\t%e\t%e\t%e\t%lu\n", cycle, N_updates, err_inp, err_break, err_out, n_splits, block_fail, max, frob, condnr, accumulator, cycles_per_update, cumulative, recursive_calls);
+    printf("%u\t%lu\t%u\t%u\t\t%u\t%lu\t\t%lu\t\t%e\t%e\t%e\t%9.6f\t%9.6f\t%9.6f\t%lu\n", cycle, N_updates, err_inp, err_break, err_out, n_splits, block_fail, max, frob, condnr, (double)accumulator/GHz, (double)cycles_per_update/GHz, (double)cumulative/GHz, recursive_calls);
 
     free(Updates_index);
     free(Updates);

@@ -1,4 +1,4 @@
-#include "meuk.h"
+#include "helper.h"
 #include <stdint.h>
 #include <assert.h>
 
@@ -45,6 +45,17 @@ void convert(double* upds, uint64_t nupds, uint64_t* ui, double* slaterT, uint64
     int col = ui[i] - 1;
     for (int j = 0; j < Lds; j++) {
       upds[i * Lds + j] -= slaterT[col + j * Dim];
+    }
+  }
+}
+
+void transpose(double* a, uint16_t lda, double *b, uint16_t ldb, uint16_t m, uint16_t n)
+{
+  for(uint16_t i = 0; i < m; i++)
+  {
+    for( uint16_t j = 0; j < n; j++)
+    {
+      b[j * ldb + i] = a[i * lda + j];
     }
   }
 }

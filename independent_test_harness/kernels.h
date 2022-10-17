@@ -1,7 +1,9 @@
+#pragma once
+
 #include <mkl_lapacke.h>
 #include <mkl.h>
 
-//#define HAVE_CUBLAS_OFFLOAD
+#define HAVE_CUBLAS_OFFLOAD
 
 #ifdef HAVE_CUBLAS_OFFLOAD
   #include <stdio.h>
