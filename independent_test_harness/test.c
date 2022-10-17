@@ -13,10 +13,10 @@ int main(int argc, char **argv) {
   assert(argc == 2);
   char *version = argv[1];
 
-#ifdef HAVE_CUBLAS_OFFLOAD
-  cublasHandle_t handle = init_cublas();
-  cusolverDnHandle_t s_handle = init_cusolver();
-#endif
+  #ifdef HAVE_CUBLAS_OFFLOAD
+    cublasHandle_t handle = init_cublas();
+    cusolverDnHandle_t s_handle = init_cusolver();
+  #endif
 
   // SETUP DATA ACCESS
   hid_t  file_id = H5Fopen(DATASET, H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -26,10 +26,7 @@ int main(int argc, char **argv) {
   printf("#CYCLE\tUPDS\tERR_IN\tERR_BREAK\tERR_OUT\tSPLITS\t\tBLK_FAILS\tMAX\t\tFROB\t\tCOND\t\tCPU_CYC\t\tCPU_CYC/UPD\tCUMUL\t\tREC\n");
   printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
-
-
   // FOR EACH UPDATE CYCLE DO:
-  // for (uint32_t cycles_index = 0; cycles_index < n_cycles; cycles_index++) {
   for (uint32_t cycles_index = 0; cycles_index < 1; cycles_index++) {
 
     // SETUP TEST PARAMETERS
@@ -72,7 +69,7 @@ int main(int argc, char **argv) {
     block_fail = 0;
     recursive_calls = 0;
 
-    // ## FOR A SET NUMBER OF REPETITIONS DO:
+    // ## FOR A SET NUMBER OF REPETITIONS EXECUTE A CHOSEN KERNEL
     for (int rep = 0; rep < REPETITIONS; rep++) {
 
       // 1. MAKE A FRESH COPY OF THE SLATER INVERSE AND DETERMINANT AND USE THE COPY
@@ -284,6 +281,7 @@ int main(int argc, char **argv) {
     free(Slater_invT_copy);
 
   } // END OF CYCLE LOOP
+
   printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
   printf("#1\t2\t3\t4\t\t5\t6\t\t7\t\t8\t\t9\t\t10\t\t11\t\t12\t\t13\t\t14\n");
   printf("#CYCLE\tUPDS\tERR_IN\tERR_BREAK\tERR_OUT\tSPLITS\t\tBLK_FAILS\tMAX\t\tFROB\t\tCOND\t\tCPU_CYC\t\tCPU_CYC/UPD\tCUMUL\t\tREC\n");
@@ -291,8 +289,10 @@ int main(int argc, char **argv) {
 
   (void) H5Fclose(file_id);
 
-#ifdef HAVE_CUBLAS_OFFLOAD
-  cublasDestroy_v2(handle);
-  cusolverDnDestroy(s_handle);
-#endif
+  #ifdef HAVE_CUBLAS_OFFLOAD
+    cublasDestroy_v2(handle);
+    cusolverDnDestroy(s_handle);
+  #endif
+
+  return 0;
 }
