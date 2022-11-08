@@ -1,6 +1,9 @@
 #!/bin/bash
 
-for SIZE in 32 64 128 256 512 1024 2048 4096 8192 16384
+export OMP_NUM_THREADS=10
+export MKL_NUM_THREADS=$OMP_NUM_THREADS
+
+for SIZE in 32 64 128 256 512 1024 2048 4096 8192 #16384
 do
     echo $SIZE >> SIZES
     for LOAD in 25 50 75 100
@@ -11,13 +14,13 @@ do
         do
             case $KERNEL in
                 MKL)
-                    ./test_nvc_ompol m | awk 'NR==5 {print $11}' >> ${KERNEL}_${LOAD}.dat
+                    ././test_icc_mkl_threaded m | awk 'NR==7 {print $11}' >> ${KERNEL}_${LOAD}.dat
                     ;;
                 WBK_CPU)
-                    ./test_nvc_ompol k | awk 'NR==5 {print $11}' >> ${KERNEL}_${LOAD}.dat
+                    ././test_icc_mkl_threaded o | awk 'NR==7 {print $11}' >> ${KERNEL}_${LOAD}.dat
                     ;;
                 WBK_GPU)
-                    ./test_nvc_ompol c | awk 'NR==5 {print $11}' >> ${KERNEL}_${LOAD}.dat
+                    ./test_nvc_ompol c | awk 'NR==7 {print $11}' >> ${KERNEL}_${LOAD}.dat
                     ;;
             esac
         done

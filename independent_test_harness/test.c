@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
   assert(argc == 2);
   char *version = argv[1];
 
-  #ifdef HAVE_CUBLAS_OFFLOAD
+  #ifdef USE_OMP_OFFLOAD_CUDA
     cublasHandle_t handle = init_cublas();
     cusolverDnHandle_t s_handle = init_cusolver();
   #endif
@@ -21,16 +21,17 @@ int main(int argc, char **argv) {
   // SETUP DATA ACCESS
   hid_t  file_id = H5Fopen(DATASET, H5F_ACC_RDONLY, H5P_DEFAULT);
 
+  printf("\n# %d REPETITIONS\n", REPETITIONS);
   printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
   printf("#1\t2\t3\t4\t\t5\t6\t\t7\t\t8\t\t9\t\t10\t\t11\t\t12\t\t13\t\t14\n");
   printf("#CYCLE\tUPDS\tERR_IN\tERR_BREAK\tERR_OUT\tSPLITS\t\tBLK_FAILS\tMAX\t\tFROB\t\tCOND\t\tCPU_CYC\t\tCPU_CYC/UPD\tCUMUL\t\tREC\n");
   printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
   // FOR EACH UPDATE CYCLE DO:
-  for (uint32_t cycles_index = 0; cycles_index < 1; cycles_index++) {
+  for (uint32_t cycles_index = 0; cycles_index < n_cycles; cycles_index++) {
 
     // SETUP TEST PARAMETERS
-    const uint32_t GHz = 2800000000;
+//    const uint32_t GHz = 2800000000; // 2.8 giga-cycles per second
     const double breakdown = 0.001; // default = 0.001. 1e-9 might be too small
     const double tolerance = 0.001; // default = 0.001
     double cumulative = 0;
@@ -154,15 +155,32 @@ int main(int argc, char **argv) {
         // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
         accumulator += (double) (after - before);
       }
-      #ifdef HAVE_CUBLAS_OFFLOAD
+      #ifdef USE_OMP
+      else if (version[0] == 'o') { // Woodbury K OMP
+
+        // 1. FETCH START TIME
+        uint64_t before = rdtsc();
+
+        // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
+        err_break = qmckl_woodbury_k_omp(Lds, Dim, N_updates, Updates,
+                                          Updates_index, breakdown, Slater_invT_copy, &determinant);
+
+        // 3. FETCH FINISH TIME
+        uint64_t after = rdtsc();
+
+        // 4. ADD TIME DIFFERENCE TO TIME CUMMULATOR
+        accumulator += (double) (after - before);
+      }
+      #endif
+      #ifdef USE_OMP_OFFLOAD_CUDA
       else if (version[0] == 'c') { // Woodbury K cuBLAS
 
         // 1. FETCH START TIME
         uint64_t before = rdtsc();
 
         // 2. EXECUTE KERNEL AND REMEMBER EXIT STATUS
-        err_break = qmckl_woodbury_k_cublas_offload(handle, s_handle, Lds, Dim, N_updates, Updates,
-                                                    Updates_index, breakdown, Slater_invT_copy, &determinant);
+        err_break = qmckl_woodbury_k_ompol_cuda_sync(handle, s_handle, Lds, Dim, N_updates, Updates,
+                                                Updates_index, breakdown, Slater_invT_copy, &determinant);
 
         // 3. FETCH FINISH TIME
         uint64_t after = rdtsc();
@@ -233,7 +251,6 @@ int main(int argc, char **argv) {
     // 4. COPY RESULT BACK TO ORIGINAL
     memcpy(Slater_invT, Slater_invT_copy, Lds * Dim * sizeof(double));
     determinant = determinant_copy;
-    // At this point Slater_invT contains the correct inverse matrix
 
     // 5. DIVIDE CYCLE- AND SPLIT-ACCUMULATOR BY NUMBER OF REPETITIONS AND RECORD
     //    DIVIDE CYCLE-ACCUMULATOR BY NUMBER OF UPDATES AND RECORD
@@ -272,7 +289,8 @@ int main(int argc, char **argv) {
     free(Res);
 
     // 10. WRITE RESULTS TO FILE: CYCLE#, #UPDS, ERR_INP, ERR_BREAK, #SPLITS, ERR_OUT, COND, #CLCK_TCKS
-    printf("%u\t%lu\t%u\t%u\t\t%u\t%lu\t\t%lu\t\t%e\t%e\t%e\t%9.6f\t%9.6f\t%9.6f\t%lu\n", cycle, N_updates, err_inp, err_break, err_out, n_splits, block_fail, max, frob, condnr, (double)accumulator/GHz, (double)cycles_per_update/GHz, (double)cumulative/GHz, recursive_calls);
+    printf("%u\t%lu\t%u\t%u\t\t%u\t%lu\t\t%lu\t\t%e\t%e\t%e\t%e\t%e\t%e\t%lu\n", cycle, N_updates, err_inp, err_break, err_out, n_splits, block_fail, max, frob, condnr, accumulator, cycles_per_update, cumulative, recursive_calls);
+//    printf("%u\t%lu\t%u\t%u\t\t%u\t%lu\t\t%lu\t\t%e\t%e\t%e\t%9.6f\t%9.6f\t%9.6f\t%lu\n", cycle, N_updates, err_inp, err_break, err_out, n_splits, block_fail, max, frob, condnr, (double)accumulator/GHz, (double)cycles_per_update/GHz, (double)cumulative/GHz, recursive_calls);
 
     free(Updates_index);
     free(Updates);
@@ -282,14 +300,14 @@ int main(int argc, char **argv) {
 
   } // END OF CYCLE LOOP
 
-  printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
-  printf("#1\t2\t3\t4\t\t5\t6\t\t7\t\t8\t\t9\t\t10\t\t11\t\t12\t\t13\t\t14\n");
-  printf("#CYCLE\tUPDS\tERR_IN\tERR_BREAK\tERR_OUT\tSPLITS\t\tBLK_FAILS\tMAX\t\tFROB\t\tCOND\t\tCPU_CYC\t\tCPU_CYC/UPD\tCUMUL\t\tREC\n");
-  printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+//  printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+//  printf("#1\t2\t3\t4\t\t5\t6\t\t7\t\t8\t\t9\t\t10\t\t11\t\t12\t\t13\t\t14\n");
+//  printf("#CYCLE\tUPDS\tERR_IN\tERR_BREAK\tERR_OUT\tSPLITS\t\tBLK_FAILS\tMAX\t\tFROB\t\tCOND\t\tCPU_CYC\t\tCPU_CYC/UPD\tCUMUL\t\tREC\n");
+//  printf("#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
   (void) H5Fclose(file_id);
 
-  #ifdef HAVE_CUBLAS_OFFLOAD
+  #ifdef USE_OMP_OFFLOAD_CUDA
     cublasDestroy_v2(handle);
     cusolverDnDestroy(s_handle);
   #endif

@@ -15,7 +15,7 @@ typedef struct Error {
   uint64_t error;
 } Error;
 
-#ifdef HAVE_CUBLAS_OFFLOAD
+#ifdef USE_OMP_OFFLOAD_CUDA
   cublasHandle_t init_cublas();
   cusolverDnHandle_t init_cusolver();
 #endif

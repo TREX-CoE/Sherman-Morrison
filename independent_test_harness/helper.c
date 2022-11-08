@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <assert.h>
 
-#ifdef HAVE_CUBLAS_OFFLOAD
+#ifdef USE_OMP_OFFLOAD_CUDA
   cublasHandle_t init_cublas() {
     cublasHandle_t handle;
     if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
@@ -24,6 +24,7 @@
 
 void copy(double* Slater_invT_copy, uint64_t Lds, double* tmp, uint64_t Dim) {
   for (uint32_t i = 0; i < Dim; i++) {
+//    #pragma omp parallel for
     for (uint32_t j = 0; j < Lds; j++) {
       if (j < Dim) Slater_invT_copy[i * Lds + j] = tmp[i * Dim + j];
       else Slater_invT_copy[i * Lds + j] = 0.0;
@@ -32,29 +33,29 @@ void copy(double* Slater_invT_copy, uint64_t Lds, double* tmp, uint64_t Dim) {
 }
 
 void update(double* slaterT,double* upds, uint64_t* ui, uint64_t nupds,uint64_t Dim, u_int64_t Lds) {
+//  #pragma omp parallel for collapse(2)
   for (int i = 0; i < nupds; i++) {
-    int col = ui[i] - 1;
     for (int j = 0; j < Dim; j++) {
+      int col = ui[i] - 1;
       slaterT[col + j * Dim] += upds[i * Lds + j];
     }
   }
 }
 
 void convert(double* upds, uint64_t nupds, uint64_t* ui, double* slaterT, uint64_t Dim, u_int64_t Lds) {
+//  #pragma omp parallel for collapse(2)
   for (int i = 0; i < nupds; i++) {
-    int col = ui[i] - 1;
     for (int j = 0; j < Lds; j++) {
+      int col = ui[i] - 1;
       upds[i * Lds + j] -= slaterT[col + j * Dim];
     }
   }
 }
 
-void transpose(double* a, uint16_t lda, double *b, uint16_t ldb, uint16_t m, uint16_t n)
-{
-  for(uint16_t i = 0; i < m; i++)
-  {
-    for( uint16_t j = 0; j < n; j++)
-    {
+void transpose(double* a, uint16_t lda, double *b, uint16_t ldb, uint16_t m, uint16_t n) {
+//  #pragma omp parallel for collapse(2)
+  for(uint16_t i = 0; i < m; i++) {
+    for( uint16_t j = 0; j < n; j++) {
       b[j * ldb + i] = a[i * lda + j];
     }
   }
@@ -167,10 +168,10 @@ void read_double(hid_t file_id, const char *key, double *data) {
 void update_slater_matrix(const uint64_t Lds, const uint64_t Dim,
                           const uint64_t N_updates, const double *Updates,
                           const uint64_t *Updates_index, double *Slater) {
-
+//  #pragma omp parallel for collapse(2)
   for (uint32_t i = 0; i < N_updates; i++) {
-    uint32_t col = Updates_index[i] - 1;
     for (uint32_t j = 0; j < Dim; j++) {
+      uint32_t col = Updates_index[i] - 1;
       Slater[col * Dim + j]  += Updates[i * Lds + j];
     }
   }
@@ -185,7 +186,6 @@ uint32_t check_error(const uint64_t Lds, const uint64_t Dim, double *Slater_invT
               Dim, Dim, Dim,
               alpha, Slater, Dim, Slater_invT, Lds,
               beta, res, Dim);
-
   for (uint32_t i = 0; i < Dim; i++) {
     for (uint32_t j = 0; j < Dim; j++) {
       double elm = res[i * Dim + j];
@@ -216,6 +216,7 @@ int32_t check_error_better(const double max, const double tolerance) {
 }
 
 void residual(double *a, double *res, const uint64_t Dim) {
+//  #pragma omp parallel for collapse(2)
   for (uint32_t i = 0; i < Dim; i++) {
     for (uint32_t j = 0; j < Dim; j++) {
       if (i == j) res[i * Dim + j] = a[i * Dim + j] - 1.0;

@@ -281,7 +281,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   const uint32_t Lds = vLDS;
 
   // Compute C = S^{-1} U : Dim x K : standard dgemm
-  double *C = calloc(1, Dim * N_updates * sizeof(double));
+  double* __restrict __attribute__ ((aligned(8))) C = calloc(1, Dim * N_updates * sizeof(double));
   double alpha = 1.0, beta = 0.0;
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
               Dim, N_updates, Lds,
@@ -289,8 +289,8 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
               beta, C, N_updates);
 
   // Construct B = 1 + V C : K x K, construct D = V S^{-1} : K x LDS
-  double* B = calloc(1, sizeof *B * N_updates * N_updates);
-  double* D = calloc(1, sizeof *D * N_updates * Lds);
+  double* __restrict __attribute__ ((aligned(8))) B = malloc(sizeof *B * N_updates * N_updates);
+  double* __restrict __attribute__ ((aligned(8))) D = malloc(sizeof *D * N_updates * Lds);
   for (uint32_t i = 0; i < N_updates; i++) {
     const uint32_t row = Updates_index[i] - 1;
     for (uint32_t j = 0; j < N_updates  ; j++) B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
@@ -298,7 +298,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   }
 
   // Compute determinant by LU decomposition
-  int* pivot  = calloc(1, sizeof *pivot * N_updates);
+  int* pivot = malloc(sizeof *pivot * N_updates);
   (void) LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, pivot);
 
   bool swap = false; uint32_t j = 0; double det = 1.0f;
@@ -317,7 +317,7 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   (void) LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, pivot);
 
   // tmp1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
-  double* tmp1 = calloc(1, sizeof *tmp1 * N_updates * Lds);
+  double* __restrict __attribute__ ((aligned(8))) tmp1 = calloc(1, sizeof *tmp1 * N_updates * Lds);
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
               N_updates, Lds, N_updates,
               alpha, B, N_updates, D, Lds,
@@ -338,33 +338,118 @@ uint32_t qmckl_woodbury_k(const uint64_t vLDS,
   return 0;
 }
 
-#ifdef HAVE_CUBLAS_OFFLOAD
-uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHandle_t s_handle,
-                                         const uint64_t vLDS,
-                                         const uint64_t vDim,
-                                         const uint64_t N_updates,
-                                         const double* Updates,
-                                         const uint64_t* Updates_index,
-                                         const double breakdown,
-                                         double* Slater_inv,
-                                         double* determinant)
+#ifdef USE_OMP
+uint32_t qmckl_woodbury_k_omp(const uint64_t vLDS,
+                              const uint64_t vDim,
+                              const uint64_t N_updates,
+                              const double *__restrict __attribute__((aligned(8))) Updates,
+                              const uint64_t *__restrict Updates_index,
+                              const double breakdown,
+                              double *__restrict __attribute__((aligned(8))) Slater_inv,
+                              double *__restrict determinant) {
+
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
+
+  // Compute C = S^{-1} U : Dim x K : standard dgemm
+  double* __restrict __attribute__ ((aligned(8))) C = calloc(1, Dim * N_updates * sizeof(double));
+  double alpha = 1.0, beta = 0.0;
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+              Dim, N_updates, Lds,
+              alpha, Slater_inv, Lds, Updates, Lds,
+              beta, C, N_updates);
+
+  // Construct B = 1 + V C : K x K
+  double* __restrict __attribute__ ((aligned(8))) B = malloc(sizeof *B * N_updates * N_updates);
+  #pragma omp parallel for collapse(2)
+  for (uint32_t i = 0; i < N_updates; i++) {
+    for (uint32_t j = 0; j < N_updates  ; j++) {
+      const uint32_t row = Updates_index[i] - 1;
+      B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
+    }
+  }
+
+  // Compute determinant by LU decomposition
+  int* pivot  = malloc(sizeof *pivot * N_updates);
+  (void) LAPACKE_dgetrf(LAPACK_ROW_MAJOR, N_updates, N_updates, B, N_updates, pivot);
+
+  bool swap = false; uint32_t j = 0; double det = 1.0f;
+  #pragma omp parallel for reduction(+: j) reduction(*: det)
+  for (uint32_t i = 0; i < N_updates; i++) {
+    swap = (bool)(pivot[i] - (i + 1));     // swap = {0->false: no swap, >0->true: swap}
+    j += (uint32_t)swap;                   // count # of swaps
+    det *= B[i * (N_updates + 1)];         // prod. of diag elm. of B
+  }
+  if (fabs(det) < breakdown) return 1;  // check if determinant of B is too close to zero. If so, exit early.
+  if (determinant) {                       // update det(Slater) if determinant != NULL
+    if ((j & 1) != 0) det = -det;          // multiply det with -1 if # of swaps is odd
+    *determinant *= det;
+  }
+
+  // Compute B^{-1} with explicit formula for K x K inversion
+  (void) LAPACKE_dgetri(LAPACK_ROW_MAJOR, N_updates, B, N_updates, pivot);
+
+  // Construct D = V S^{-1} : K x LDS
+  double* __restrict __attribute__ ((aligned(8))) D = malloc(sizeof *D * N_updates * Lds);
+  #pragma omp parallel for collapse(2)
+  for (uint32_t i = 0; i < N_updates; i++) {
+    for (uint32_t j = 0; j < Lds; j++) {
+      const uint32_t row = Updates_index[i] - 1;
+      D[i * Lds + j] = Slater_inv[row * Lds + j];
+    }
+  }
+
+  // tmp1 = B^{-1} D : KxLDS = KxK X KxLDS : standard dgemm
+  double* __restrict __attribute__ ((aligned(8))) tmp1 = calloc(1, sizeof *tmp1 * N_updates * Lds);
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+              N_updates, Lds, N_updates,
+              alpha, B, N_updates, D, Lds,
+              beta, tmp1, Lds);
+
+  // Compute S^{-1} - C * tmp1 : Dim x LDS : standard dgemm
+  alpha = -1.0, beta = 1.0;
+  cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+              Dim, Lds, N_updates,
+              alpha, C, N_updates, tmp1, Lds,
+              beta, Slater_inv, Lds);
+
+  free(C);
+  free(B);
+  free(D);
+  free(tmp1);
+  free(pivot);
+  return 0;
+}
+#endif
+
+#ifdef USE_OMP_OFFLOAD_CUDA
+uint32_t qmckl_woodbury_k_ompol_cuda_async(cublasHandle_t b_handle, cusolverDnHandle_t s_handle,
+                                           const uint64_t vLDS,
+                                           const uint64_t vDim,
+                                           const uint64_t N_updates,
+                                           const double* __restrict __attribute__((aligned(8))) Updates,
+                                           const uint64_t* __restrict Updates_index,
+                                           const double breakdown,
+                                           double* __restrict __attribute__((aligned(8))) Slater_inv,
+                                           double* __restrict determinant)
 {
+  PUSH_RANGE("Kernel execution", 1)
   const uint32_t Dim = vDim;
   const uint32_t Lds = vLDS;
 
   bool swap;
   uint32_t j;
   double alpha, beta, det;
-  int* pivot   = malloc(sizeof *pivot * N_updates);
-  double* C    = malloc(sizeof *C * Dim * N_updates);
-  double* B    = malloc(sizeof *B * N_updates * N_updates);
-  double* Binv = malloc(sizeof *Binv * N_updates * N_updates);
-  double* D    = malloc(sizeof *D * N_updates * Lds);
-  double* T1   = malloc(sizeof *T1 * N_updates * Lds);
-  double* T2   = malloc(sizeof *T2 * Dim * Lds);
+  int* __restrict pivot   = malloc(sizeof *pivot * N_updates);
+  double* __restrict __attribute__((aligned(8))) C    = malloc(sizeof *C * Dim * N_updates);
+  double* __restrict __attribute__((aligned(8))) B    = malloc(sizeof *B * N_updates * N_updates);
+  double* __restrict __attribute__((aligned(8))) Binv = malloc(sizeof *Binv * N_updates * N_updates);
+  double* __restrict __attribute__((aligned(8))) D    = malloc(sizeof *D * N_updates * Lds);
+  double* __restrict __attribute__((aligned(8))) T1   = malloc(sizeof *T1 * N_updates * Lds);
+  double* __restrict __attribute__((aligned(8))) T2   = malloc(sizeof *T2 * Dim * Lds);
 
   int workspace_size = 0, *info = NULL;
-  double* workspace = NULL;
+  double* __restrict __attribute__((aligned(8))) workspace = NULL;
   cusolverDnDgetrf_bufferSize(s_handle, N_updates, N_updates, B, N_updates, &workspace_size);
 //  printf("SIZE OF CUSOLVER WORKSPACE: %d doubles of %lu byte = %lu byte\n", workspace_size, sizeof *workspace, sizeof *workspace * workspace_size);
   workspace = malloc(sizeof *workspace * workspace_size);
@@ -412,7 +497,7 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   POP_RANGE
   #pragma omp target exit data map(delete: workspace[0:workspace_size])
   swap = false; j = 0; det = 1.0f;
-  PUSH_RANGE("Test det(B) and count LU swaps", 4)
+  PUSH_RANGE("Compute |det(B)| and count # of LU swaps", 4)
   #pragma omp target teams distribute parallel for reduction(+: j) reduction(*: det)
   for (uint32_t i = 0; i < N_updates; i++) {
     swap = (bool)(pivot[i] - (i + 1));     // swap = {0->false: no swap, >0->true: swap}
@@ -420,11 +505,13 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
     det *= B[i * (N_updates + 1)];         // prod. of diag elm. of B
   }
   POP_RANGE
+  PUSH_RANGE("A bunch of branches: test break, det-sign", 4)
   if (fabs(det) < breakdown) return 1;  // check if determinant of B is too close to zero. If so, exit early.
   if (determinant) {                       // update det(Slater) if determinant != NULL
     if ((j & 1) != 0) det = -det;          // multiply det with -1 if # of swaps is odd
     *determinant *= det;
   }
+  POP_RANGE
   
   // Compute B^{-1} : initialise as I for solving BX=I
   PUSH_RANGE("Allocate Binv ON GPU", 2)
@@ -442,7 +529,8 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   #pragma omp target data use_device_ptr(B, pivot, Binv)
   {
     PUSH_RANGE("Compute B^{-1}", 3)
-    (void) cusolverDnDgetrs(s_handle, CUBLAS_OP_T, N_updates, N_updates, B, N_updates, pivot, Binv, N_updates, info); // Needs op(B) = B^T because of line 403
+    (void) cusolverDnDgetrs(s_handle, CUBLAS_OP_T, N_updates, N_updates, B,N_updates,
+                            pivot, Binv, N_updates, info); // Needs op(B) = B^T because of line 403
     POP_RANGE
   }
   PUSH_RANGE("Deallocate B, pivot ON GPU", 2)
@@ -518,6 +606,154 @@ uint32_t qmckl_woodbury_k_cublas_offload(cublasHandle_t b_handle, cusolverDnHand
   free(D);
   free(T1);
 
+  POP_RANGE
+  return 0;
+}
+
+uint32_t qmckl_woodbury_k_ompol_cuda_sync(cublasHandle_t b_handle, cusolverDnHandle_t s_handle,
+                                          const uint64_t vLDS,
+                                          const uint64_t vDim,
+                                          const uint64_t N_updates,
+                                          const double* __restrict __attribute__((aligned(8))) Updates,
+                                          const uint64_t* __restrict Updates_index,
+                                          const double breakdown,
+                                          double* __restrict __attribute__((aligned(8))) Slater_inv,
+                                          double* __restrict determinant) {
+  const uint32_t Dim = vDim;
+  const uint32_t Lds = vLDS;
+
+  uint32_t j;
+  double alpha, beta, det;
+  int *__restrict pivot = malloc(sizeof *pivot * N_updates);
+  double *__restrict __attribute__((aligned(8))) C = malloc(sizeof *C * Dim * N_updates);
+  double *__restrict __attribute__((aligned(8))) B = malloc(sizeof *B * N_updates * N_updates);
+  double *__restrict __attribute__((aligned(8))) Binv = malloc(sizeof *Binv * N_updates * N_updates);
+  double *__restrict __attribute__((aligned(8))) D = malloc(sizeof *D * N_updates * Lds);
+  double *__restrict __attribute__((aligned(8))) T1 = malloc(sizeof *T1 * N_updates * Lds);
+  double *__restrict __attribute__((aligned(8))) T2 = malloc(sizeof *T2 * Dim * Lds);
+
+  int workspace_size = 0, *info = NULL;
+  double *__restrict __attribute__((aligned(8))) workspace = NULL;
+  cusolverDnDgetrf_bufferSize(s_handle, N_updates, N_updates, B, N_updates, &workspace_size);
+  workspace = malloc(sizeof *workspace * workspace_size);
+  PUSH_RANGE("OpenMP OL Synchronous region", 1)
+//  PUSH_RANGE("Data init from host to device", 2)
+  #pragma omp target data map(to:     Updates[0:Lds*N_updates], \
+                                      Updates_index[0:N_updates]) \
+                          map(tofrom: Slater_inv[0:Dim*Lds]) \
+                          map(alloc:  C[0:Dim*N_updates], \
+                                      B[0:N_updates*N_updates],  \
+                                      workspace[0:workspace_size], \
+                                      pivot[0:N_updates], \
+                                      Binv[0:N_updates*N_updates], \
+                                      D[0:N_updates*Lds], \
+                                      T1[0:N_updates*Lds])
+//  POP_RANGE
+  {
+
+    // Compute C <- S^{-1} U : Dim x K : standard dgemm
+    alpha = 1.0f, beta = 0.0f;
+    PUSH_RANGE("Compute C <- S^{-1} U", 3)
+    #pragma omp target data use_device_ptr(Slater_inv, Updates, C)
+    {
+      (void) cublasDgemm_v2(b_handle,
+                            CUBLAS_OP_T, CUBLAS_OP_N,
+                            N_updates, Dim, Lds,
+                            &alpha, Updates, Lds, Slater_inv, Lds,
+                            &beta, C, N_updates);
+    }
+    POP_RANGE
+
+    // Construct B <- 1 + V C : K x K
+    PUSH_RANGE("Construct B <- 1 + V C", 4)
+    #pragma omp target teams distribute parallel for collapse(2)
+    for (int i = 0; i < N_updates; ++i) {
+      for (int j = 0; j < N_updates; ++j) {
+        const uint32_t row = Updates_index[i] - 1;
+        B[i * N_updates + j] = C[row * N_updates + j] + (i == j);
+      }
+    }
+    POP_RANGE
+
+    // Compute det(B) via LU(B)
+    PUSH_RANGE("Compute LU(B)", 3)
+    #pragma omp target data use_device_ptr(B, workspace, pivot)
+    {
+      (void) cusolverDnDgetrf(s_handle, N_updates, N_updates, B, N_updates, workspace, pivot,
+                              info); // col-maj enforced, so res. is LU(B)^T
+    }
+    POP_RANGE
+
+    det = 1.0f;
+    PUSH_RANGE("Compute |det(B)|", 4)
+    #pragma omp target teams distribute parallel for reduction(+: j) reduction(*: det)
+    for (uint32_t i = 0; i < N_updates; i++) {
+      det *= B[i * (N_updates + 1)];         // prod. of diag elm. of B
+    }
+    POP_RANGE
+
+    // Compute B^{-1} : initialise as I for solving BX=I
+    PUSH_RANGE("Construct and init B^{-1} as Id", 4)
+    #pragma omp target teams distribute parallel for collapse(2)
+    for (int i = 0; i < N_updates; ++i) {
+      for (int j = 0; j < N_updates; ++j) {
+        Binv[i * N_updates + j] = (i == j);
+      }
+    }
+    POP_RANGE
+    PUSH_RANGE("Compute B^{-1} from LU(B)", 3)
+    #pragma omp target data use_device_ptr(B, pivot, Binv)
+    {
+      (void) cusolverDnDgetrs(s_handle, CUBLAS_OP_T, N_updates, N_updates, B, N_updates,
+                              pivot, Binv, N_updates, info); // Needs op(B) = B^T because of line 403
+    }
+    POP_RANGE
+
+    // Construct D = V S^{-1} : K x LDS
+    PUSH_RANGE("Construct D = V S^{-1}", 4)
+    #pragma omp target teams distribute parallel for collapse(2)
+    for (uint32_t i = 0; i < N_updates; ++i) {
+      for (uint32_t j = 0; j < Lds; ++j) {
+        const uint32_t row = Updates_index[i] - 1;
+        D[i * Lds + j] = Slater_inv[row * Lds + j];
+      }
+    }
+    POP_RANGE
+
+    // T1 <- B^{-1} D : KxLDS : standard dgemm
+    PUSH_RANGE("Compute T1 <- B^{-1} D", 3)
+    #pragma omp target data use_device_ptr(D, Binv, T1)
+    {
+      (void) cublasDgemm_v2(b_handle,
+                            CUBLAS_OP_N,
+                            CUBLAS_OP_T, // REMEMBER THIS IS Binv TRANSPOSED  because of cusolverDnDgetrs CALL ON l.434 !!!
+                            Lds, N_updates, N_updates,
+                            &alpha, D, Lds, Binv, N_updates,
+                            &beta, T1, Lds);
+    }
+    POP_RANGE
+
+    // Compute S^{-1} <- S^{-1} - C * T1 : Dim x LDS : standard dgemm
+    alpha = -1.0f, beta = 1.0f;
+    PUSH_RANGE("Compute S^{-1} <- S^{-1} - C * T1", 3)
+    #pragma omp target data use_device_ptr(T1, C, Slater_inv)
+    {
+      (void) cublasDgemm_v2(b_handle,
+                            CUBLAS_OP_N, CUBLAS_OP_N,
+                            Dim, Lds, N_updates,
+                            &alpha, T1, Lds, C, N_updates,
+                            &beta, Slater_inv, Lds);
+    }
+    POP_RANGE
+  }
+  POP_RANGE
+
+  free(pivot);
+  free(B);
+  free(Binv);
+  free(C);
+  free(D);
+  free(T1);
   return 0;
 }
 #endif

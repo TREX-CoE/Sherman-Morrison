@@ -4,13 +4,13 @@ CFLAGS=-std=c99 -O3 -Wall -g -xCORE-AVX2
 LDFLAGS=-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5 -lhdf5_hl
 LDFLAGS+=-L$(MKLROOT)/lib/intel64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
 
-all: test_icc_mkl
+all: clean test_icc_mkl_sequential
 
-test_icc_mkl: kernels.o test.o helper.o
-	$(CC) $(LDFLAGS) -o $@ $^
+test_icc_mkl_sequential: kernels.o test.o helper.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o : %.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c -o $@ $<
 
 clean:
-	rm -rf *.o *genmod* test_icc_mkl
+	rm -rf *.o *genmod* test_icc_mkl_sequential
